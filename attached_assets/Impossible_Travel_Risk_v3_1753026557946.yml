@@ -1,0 +1,1204 @@
+id: beff2398-8bb4-4014-8a40-ada81f97ae08
+version: 5
+vcShouldKeepItemLegacyProdMachine: false
+name: Impossible Travel Risk v3
+description: |-
+  This playbook investigates an impossible traveler event gathering user, timestamp and IP information associated with multiple application login attempts.
+  The playbook then measures the time difference between the multiple login attempts and computes the distance between the two locations.
+starttaskid: "0"
+tasks:
+  "0":
+    id: "0"
+    taskid: 485b9949-c71e-4f7c-8415-2f38b1ccc66f
+    type: start
+    task:
+      id: 485b9949-c71e-4f7c-8415-2f38b1ccc66f
+      version: -1
+      name: ""
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "4"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 490,
+          "y": 235
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "4":
+    id: "4"
+    taskid: e7093a60-742c-4f17-8d18-23517fe4794a
+    type: title
+    task:
+      id: e7093a60-742c-4f17-8d18-23517fe4794a
+      version: -1
+      name: Investigation
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "10"
+      - "9"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 490,
+          "y": 400
+        }
+      }
+    note: false
+    timertriggers:
+    - fieldname: detectionsla
+      action: start
+    - fieldname: timetoassignment
+      action: stop
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "9":
+    id: "9"
+    taskid: 9587d566-f59d-4cc5-8a37-257ee3550720
+    type: title
+    task:
+      id: 9587d566-f59d-4cc5-8a37-257ee3550720
+      version: -1
+      name: Enrich Event IP Addresses
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "61"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 705,
+          "y": 545
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "10":
+    id: "10"
+    taskid: 82dd3f56-4e7b-46bf-899e-a4a902253272
+    type: title
+    task:
+      id: 82dd3f56-4e7b-46bf-899e-a4a902253272
+      version: -1
+      name: Enrich Event User Information
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "44"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 275,
+          "y": 545
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "17":
+    id: "17"
+    taskid: ffbe3b26-b40d-4c57-8361-135787c0ae04
+    type: condition
+    task:
+      id: ffbe3b26-b40d-4c57-8361-135787c0ae04
+      version: -1
+      name: Does the User Account have a Manager?
+      description: Verify that the manager ID (DN) of the source user account was
+        returned in context.
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "54"
+      "yes":
+      - "19"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isExists
+          left:
+            value:
+              complex:
+                root: incident
+                accessor: user.manager
+            iscontext: true
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 275,
+          "y": 865
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "19":
+    id: "19"
+    taskid: 3ca786eb-3e70-4eae-8ab1-e0b144221f10
+    type: regular
+    task:
+      id: 3ca786eb-3e70-4eae-8ab1-e0b144221f10
+      version: -1
+      name: Get Manager's Account Information
+      description: commands.local.cmd.set.incident
+      script: Builtin|||setIncident
+      type: regular
+      iscommand: true
+      brand: Builtin
+    nexttasks:
+      '#none#':
+      - "54"
+    scriptarguments:
+      user:
+        complex:
+          root: incident
+          accessor: labels.randomUser
+          transformers:
+          - operator: ParseJSON
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 665,
+          "y": 1040
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "29":
+    id: "29"
+    taskid: 20106c21-63ce-49c4-89c0-cd9955cc81e4
+    type: regular
+    task:
+      id: 20106c21-63ce-49c4-89c0-cd9955cc81e4
+      version: -1
+      name: Calculate Geographical Distance
+      description: Compute the distance between two sets of coordinates, in miles.
+      tags:
+      - geodistance
+      scriptName: CalculateGeoDistance
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "30"
+    scriptarguments:
+      dest_coords:
+        simple: ${incident.labels.locationCoords}
+      src_coords:
+        simple: ${incident.labels.previousLocationCoords}
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 275,
+          "y": 1710
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "30":
+    id: "30"
+    taskid: a7a58dbf-fb73-42b4-881b-3a06dc677fc3
+    type: regular
+    task:
+      id: a7a58dbf-fb73-42b4-881b-3a06dc677fc3
+      version: -1
+      name: Calculate Event Duration
+      description: Calculate the time difference, in minutes
+      tags:
+      - eventduration
+      scriptName: CalculateTimeDifference
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "45"
+      - "57"
+    scriptarguments:
+      end_time:
+        simple: ${incident.labels.riskEventDateTime}
+      start_time:
+        simple: ${incident.labels.previousSigninDateTime}
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 275,
+          "y": 1885
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "31":
+    id: "31"
+    taskid: acae1f95-5a62-48db-8890-b9df740e1a54
+    type: condition
+    task:
+      id: acae1f95-5a62-48db-8890-b9df740e1a54
+      version: -1
+      name: Evaluate Incident Severity
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "40"
+      High:
+      - "36"
+    separatecontext: false
+    conditions:
+    - label: High
+      condition:
+      - - operator: greaterThan
+          left:
+            value:
+              simple: Geo.Distance
+            iscontext: true
+          right:
+            value:
+              simple: "250"
+      - - operator: lessThan
+          left:
+            value:
+              simple: Time.Difference
+            iscontext: true
+          right:
+            value:
+              simple: "120"
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 60,
+          "y": 2585
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "32":
+    id: "32"
+    taskid: feda3e6d-af2e-4866-8526-edff140bbe12
+    type: title
+    task:
+      id: feda3e6d-af2e-4866-8526-edff140bbe12
+      version: -1
+      name: Containment
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "31"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 60,
+          "y": 2425
+        }
+      }
+    note: false
+    timertriggers:
+    - fieldname: detectionsla
+      action: stop
+    - fieldname: remediationsla
+      action: start
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "34":
+    id: "34"
+    taskid: d9944152-02bd-4fce-81d6-d3021d611d0f
+    type: regular
+    task:
+      id: d9944152-02bd-4fce-81d6-d3021d611d0f
+      version: -1
+      name: Disable User Account
+      scriptName: Print
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "38"
+    scriptarguments:
+      value:
+        simple: |-
+          Disabling User Account with Active Directory: ${incident.modified}
+
+          Status: User Account ${UserRecord.User.email_address} Disabled
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 172.5,
+          "y": 2935
+        }
+      }
+    note: true
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "35":
+    id: "35"
+    taskid: 4a2e95f6-a4a9-4409-8e8c-22d1fd67983d
+    type: regular
+    task:
+      id: 4a2e95f6-a4a9-4409-8e8c-22d1fd67983d
+      version: -1
+      name: Notify Management Team
+      description: Prints text to war room (Markdown supported)
+      scriptName: Print
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "40"
+    scriptarguments:
+      value:
+        complex:
+          root: incident
+          accessor: user
+          transformers:
+          - operator: ParseJSON
+          - operator: getField
+            args:
+              field:
+                value:
+                  simple: username
+          - operator: concat
+            args:
+              prefix:
+                value:
+                  simple: |-
+                    ### Notification sent to management team
+
+                    The user "
+              suffix:
+                value:
+                  simple: "\" generated an incident.\n \n"
+          - operator: concat
+            args:
+              prefix: {}
+              suffix:
+                value:
+                  simple: 'The incident is set to '
+          - operator: concat
+            args:
+              prefix: {}
+              suffix:
+                value:
+                  simple: incident.severity
+                iscontext: true
+          - operator: concat
+            args:
+              prefix: {}
+              suffix:
+                value:
+                  simple: |2
+                     and is being handled by the incident team. All appropriate containment actions are being taken care of.
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 172.5,
+          "y": 3460
+        }
+      }
+    note: false
+    timertriggers:
+    - fieldname: systemtimer
+      action: start
+    - fieldname: usertimer
+      action: pause
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "36":
+    id: "36"
+    taskid: 2252d202-dac8-4256-8249-e07a6aa72458
+    type: regular
+    task:
+      id: 2252d202-dac8-4256-8249-e07a6aa72458
+      version: -1
+      name: Set Severity to High
+      description: Set the incident severity to low.
+      script: Builtin|||setIncident
+      type: regular
+      iscommand: true
+      brand: Builtin
+    nexttasks:
+      '#none#':
+      - "34"
+    scriptarguments:
+      phase:
+        simple: 2. Containment
+      severity:
+        simple: high
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 172.5,
+          "y": 2760
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "38":
+    id: "38"
+    taskid: 29607a0e-83c0-4d6b-8ec3-3250bf958668
+    type: condition
+    task:
+      id: 29607a0e-83c0-4d6b-8ec3-3250bf958668
+      version: -1
+      name: Should We Block The External IP Address?
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "No":
+      - "35"
+      "yes":
+      - "39"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 172.5,
+          "y": 3110
+        }
+      }
+    note: false
+    timertriggers:
+    - fieldname: usertimer
+      action: start
+    - fieldname: systemtimer
+      action: pause
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "39":
+    id: "39"
+    taskid: 47af5f77-39cd-4302-8119-7ff6f1f00192
+    type: regular
+    task:
+      id: 47af5f77-39cd-4302-8119-7ff6f1f00192
+      version: -1
+      name: Block Malicious IP Addresses
+      scriptName: Print
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "35"
+    scriptarguments:
+      value:
+        simple: 'Blocking external IP Address:  ${incident.labels.ipAddress}  on ${incident.occurred}.'
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 285,
+          "y": 3285
+        }
+      }
+    note: true
+    timertriggers:
+    - fieldname: usertimer
+      action: pause
+    - fieldname: systemtimer
+      action: start
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "40":
+    id: "40"
+    taskid: e748f18b-87f1-44b8-8346-c5406466deec
+    type: title
+    task:
+      id: e748f18b-87f1-44b8-8346-c5406466deec
+      version: -1
+      name: Recover
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "48"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 60,
+          "y": 3635
+        }
+      }
+    note: false
+    timertriggers:
+    - fieldname: remediationsla
+      action: stop
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "44":
+    id: "44"
+    taskid: 13f3bf4b-7bee-4a50-8059-4565a6f0bb0c
+    type: regular
+    task:
+      id: 13f3bf4b-7bee-4a50-8059-4565a6f0bb0c
+      version: -1
+      name: Search Active Directory
+      description: commands.local.cmd.set.incident
+      tags:
+      - userout
+      script: Builtin|||setIncident
+      type: regular
+      iscommand: true
+      brand: Builtin
+    nexttasks:
+      '#none#':
+      - "17"
+    scriptarguments:
+      user:
+        complex:
+          root: incident.labels
+          accessor: User
+          transformers:
+          - operator: ParseJSON
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 275,
+          "y": 690
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "45":
+    id: "45"
+    taskid: 8d338530-4275-4109-82cd-c7665cdc0269
+    type: regular
+    task:
+      id: 8d338530-4275-4109-82cd-c7665cdc0269
+      version: -1
+      name: Populate traveller information
+      description: commands.local.cmd.set.incident
+      script: Builtin|||setIncident
+      type: regular
+      iscommand: true
+      brand: Builtin
+    nexttasks:
+      '#none#':
+      - "32"
+    scriptarguments:
+      travelinformation:
+        simple: <h2>Detailed Travel Information</h2><p></p><table style="height:100px;border-color:0"
+          border="1" width="500px"><tbody><tr><td style="width:50%"><strong>Previous
+          IP Address</strong></td><td style="width:50%">${incident.labels.previousIPAddress}</td></tr><tr><td
+          style="width:50%"><strong>Previous Sign-In Date</strong></td><td style="width:50%">${incident.labels.previousSigninDateTime}</td></tr><tr><td
+          style="width:50%"><strong>Previous Location</strong></td><td style="width:50%">${incident.labels.previousLocation}</td></tr></tbody></table><p>&nbsp;</p><table
+          style="height:100px;border-color:0" border="1" width="500px"><tbody><tr><td
+          style="width:50%"><strong>Current IP Address</strong></td><td style="width:50%">&nbsp;${incident.labels.ipAddress}</td></tr><tr><td
+          style="width:50%"><strong>Current Sign-In Date</strong></td><td style="width:50%">${incident.labels.riskEventDateTime}</td></tr><tr><td
+          style="width:50%"><strong>Current Location</strong></td><td style="width:50%">${incident.labels.location}</td></tr></tbody></table><p>&nbsp;</p><h3>There
+          are <span style="color:#f60">${Geo.Distance}</span> miles between the locations
+          and the travel time was <span style="color:#f60">${Time.Difference}</span>
+          minutes.</h3>
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 60,
+          "y": 2060
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "48":
+    id: "48"
+    taskid: 60fd2f53-cdc6-4ffc-86ef-2972d33f8c11
+    type: regular
+    task:
+      id: 60fd2f53-cdc6-4ffc-86ef-2972d33f8c11
+      version: -1
+      name: Close Investigation
+      description: commands.local.cmd.close.inv
+      script: Builtin|||closeInvestigation
+      type: regular
+      iscommand: true
+      brand: Builtin
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 60,
+          "y": 3780
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "52":
+    id: "52"
+    taskid: 15d498ef-f5a4-4d91-8a7d-cbf4f6c17c3f
+    type: regular
+    task:
+      id: 15d498ef-f5a4-4d91-8a7d-cbf4f6c17c3f
+      version: -1
+      name: Save previous source IP geolocation data
+      description: Saves the geolocation of the IP associated with the previous user
+        login.
+      scriptName: Set
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "53"
+    scriptarguments:
+      key:
+        simple: PreviousSourceIPGeo
+      value:
+        simple: ${incident.labels.previousLocationCoords}
+    reputationcalc: 1
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 275,
+          "y": 1360
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "53":
+    id: "53"
+    taskid: b1ad3835-f2bd-4502-868c-ee563dad13a7
+    type: regular
+    task:
+      id: b1ad3835-f2bd-4502-868c-ee563dad13a7
+      version: -1
+      name: Save source IP geolocation data
+      description: Saves the geolocation of the IP associated with the user's login.
+      scriptName: Set
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "29"
+    scriptarguments:
+      key:
+        simple: SourceIPGeo
+      value:
+        simple: ${incident.labels.locationCoords}
+    reputationcalc: 1
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 275,
+          "y": 1535
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "54":
+    id: "54"
+    taskid: c4499627-0d72-4f6c-8c5e-1764d82a3a09
+    type: title
+    task:
+      id: c4499627-0d72-4f6c-8c5e-1764d82a3a09
+      version: -1
+      name: Geo Location
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "52"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 275,
+          "y": 1215
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "55":
+    id: "55"
+    taskid: fb1000d6-1df7-4e7e-84ce-007a3c795d16
+    type: condition
+    task:
+      id: fb1000d6-1df7-4e7e-84ce-007a3c795d16
+      version: -1
+      name: Is Rasterize enabled?
+      description: Checks whether the Rasterize integration is enabled.
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "32"
+      "yes":
+      - "56"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isExists
+          left:
+            value:
+              complex:
+                root: modules
+                filters:
+                - - operator: isEqualString
+                    left:
+                      value:
+                        simple: modules.brand
+                      iscontext: true
+                    right:
+                      value:
+                        simple: Rasterize
+                - - operator: isEqualString
+                    left:
+                      value:
+                        simple: modules.state
+                      iscontext: true
+                    right:
+                      value:
+                        simple: active
+            iscontext: true
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 490,
+          "y": 2245
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "56":
+    id: "56"
+    taskid: 0550dd01-6a61-46c6-8837-c9c914193bdc
+    type: regular
+    task:
+      id: 0550dd01-6a61-46c6-8837-c9c914193bdc
+      version: -1
+      name: Create travel map image
+      description: Converts the contents of a URL to an image file or a PDF file.
+      script: '|||rasterize'
+      type: regular
+      iscommand: true
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "60"
+    scriptarguments:
+      url:
+        complex:
+          root: TravelMap
+          transformers:
+          - operator: uniq
+      wait_time:
+        simple: "15"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 665,
+          "y": 2425
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "57":
+    id: "57"
+    taskid: 16784eb9-a04d-4fe1-8359-80a5b0dd0b45
+    type: regular
+    task:
+      id: 16784eb9-a04d-4fe1-8359-80a5b0dd0b45
+      version: -1
+      name: Generate travel map link
+      description: Creates a travel map link and saves it in the context.
+      scriptName: Set
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "55"
+    scriptarguments:
+      key:
+        simple: TravelMap
+      value:
+        complex:
+          root: inputs.DefaultMapLink
+          transformers:
+          - operator: replace
+            args:
+              limit: {}
+              replaceWith:
+                value:
+                  simple: PreviousSourceIPGeo
+                iscontext: true
+              toReplace:
+                value:
+                  simple: SOURCE
+          - operator: replace
+            args:
+              limit: {}
+              replaceWith:
+                value:
+                  simple: SourceIPGeo
+                iscontext: true
+              toReplace:
+                value:
+                  simple: DESTINATION
+          - operator: replace
+            args:
+              limit: {}
+              replaceWith:
+                value:
+                  simple: _
+              toReplace:
+                value:
+                  simple: ','
+    reputationcalc: 1
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 490,
+          "y": 2080
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "60":
+    id: "60"
+    taskid: 69bce6c0-dcd3-4b31-8d60-037521e90544
+    type: regular
+    task:
+      id: 69bce6c0-dcd3-4b31-8d60-037521e90544
+      version: -1
+      name: Rasterize Geo Map with Locations
+      description: Rasterize Map with Locations
+      script: RasterizeGeoMap
+      type: regular
+      iscommand: false
+      brand: ""
+    scriptarguments:
+      cur_location:
+        simple: ${SourceIPGeo}
+      prev_location:
+        simple: ${PreviousSourceIPGeo}
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 665,
+          "y": 2610
+        }
+      }
+    note: true
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "61":
+    id: "61"
+    taskid: 539be2ee-3c63-4821-8e22-d9a5725dece8
+    type: playbook
+    task:
+      id: 539be2ee-3c63-4821-8e22-d9a5725dece8
+      version: -1
+      name: Entity Enrichment - Generic v3
+      playbookName: Entity Enrichment - Generic v3
+      type: playbook
+      iscommand: false
+      brand: ""
+    separatecontext: true
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 705,
+          "y": 690
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+view: |-
+  {
+    "linkLabelsPosition": {},
+    "paper": {
+      "dimensions": {
+        "height": 3640,
+        "width": 1025,
+        "x": 60,
+        "y": 235
+      }
+    }
+  }
+inputs:
+- key: SrcIP
+  value:
+    complex:
+      root: incident
+      accessor: src
+  required: false
+  description: The source IP address from which the incident originated.
+  playbookInputQuery: null
+- key: DstIP
+  value:
+    complex:
+      root: incident
+      accessor: dest
+  required: false
+  description: The target IP address that was accessed.
+  playbookInputQuery: null
+- key: Username
+  value:
+    complex:
+      root: incident
+      accessor: srcuser
+  required: false
+  description: The username of the account that was used to access the DstIP.
+  playbookInputQuery: null
+- key: Role
+  value:
+    simple: Administrator
+  required: true
+  description: The default role to assign the incident to.
+  playbookInputQuery: null
+- key: DefaultMapLink
+  value:
+    simple: https://bing.com/maps/default.aspx?rtp=pos.SOURCE~pos.DESTINATION
+  required: false
+  description: The default link from which to create a travel map. The "SOURCE" and
+    "DESTINATION" words are replaced with the previous coordinates and current coordinates
+    of the traveler, respectively.
+  playbookInputQuery: null
+outputs:
+- contextPath: Account.Email.Address
+  description: The email address object associated with the Account
+  type: string
+- contextPath: DBotScore
+  description: Indicator, Score, Type, Vendor
+  type: unknown
+- contextPath: Account.ID
+  description: The unique Account DN (Distinguished Name)
+  type: string
+- contextPath: Account.Username
+  description: The Account username
+  type: string
+- contextPath: Account.Email
+  description: The email address associated with the Account
+- contextPath: Account.Type
+  description: Type of the Account entity
+  type: string
+- contextPath: Account.Groups
+  description: The groups the Account is part of
+- contextPath: Account
+  description: Account object
+  type: unknown
+- contextPath: Account.DisplayName
+  description: The Account display name
+  type: string
+- contextPath: Account.Manager
+  description: The Account's manager
+  type: string
+- contextPath: DBotScore.Indicator
+  description: The indicator value
+  type: string
+- contextPath: DBotScore.Type
+  description: The indicator's type
+  type: string
+- contextPath: DBotScore.Vendor
+  description: The indicator's vendor
+  type: string
+- contextPath: DBotScore.Score
+  description: The indicator's score
+  type: number
+- contextPath: IP
+  description: The IP objects
+  type: unknown
+- contextPath: Endpoint
+  description: The Endpoint's object
+  type: unknown
+- contextPath: Endpoint.Hostname
+  description: The hostname to enrich
+  type: string
+- contextPath: Endpoint.OS
+  description: Endpoint OS
+  type: string
+- contextPath: Endpoint.IP
+  description: List of endpoint IP addresses
+- contextPath: Endpoint.MAC
+  description: List of endpoint MAC addresses
+- contextPath: Endpoint.Domain
+  description: Endpoint domain name
+  type: string
+dirtyInputs: true

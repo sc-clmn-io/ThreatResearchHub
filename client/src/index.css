@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(240, 10%, 3.9%);
+  --muted: hsl(240, 4.8%, 95.9%);
+  --muted-foreground: hsl(240, 3.8%, 46.1%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(240, 10%, 3.9%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(240, 10%, 3.9%);
+  --border: hsl(240, 5.9%, 90%);
+  --input: hsl(240, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 4.8%, 95.9%);
+  --secondary-foreground: hsl(240, 5.9%, 10%);
+  --accent: hsl(240, 4.8%, 95.9%);
+  --accent-foreground: hsl(240, 5.9%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(240, 10%, 3.9%);
+  --radius: 0.5rem;
+  
+  /* Cortex-specific colors */
+  --cortex-blue: hsl(207, 90%, 54%);
+  --cortex-success: hsl(122, 39%, 49%);
+  --cortex-warning: hsl(33, 100%, 50%);
+  --cortex-error: hsl(0, 74%, 49%);
+  --cortex-dark: hsl(204, 16%, 31%);
+  --cortex-light: hsl(199, 18%, 93%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  
+  /* Dark mode Cortex colors */
+  --cortex-blue: hsl(207, 90%, 64%);
+  --cortex-success: hsl(122, 39%, 59%);
+  --cortex-warning: hsl(33, 100%, 60%);
+  --cortex-error: hsl(0, 74%, 59%);
+  --cortex-dark: hsl(204, 16%, 81%);
+  --cortex-light: hsl(199, 18%, 13%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Roboto', sans-serif;
+  }
+  
+  .font-roboto-mono {
+    font-family: 'Roboto Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .shadow-material {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1);
+  }
+  
+  .shadow-material-lg {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12), 0 16px 24px rgba(0,0,0,0.12);
+  }
+  
+  .text-cortex-blue {
+    color: var(--cortex-blue);
+  }
+  
+  .text-cortex-success {
+    color: var(--cortex-success);
+  }
+  
+  .text-cortex-warning {
+    color: var(--cortex-warning);
+  }
+  
+  .text-cortex-error {
+    color: var(--cortex-error);
+  }
+  
+  .text-cortex-dark {
+    color: var(--cortex-dark);
+  }
+  
+  .bg-cortex-blue {
+    background-color: var(--cortex-blue);
+  }
+  
+  .bg-cortex-success {
+    background-color: var(--cortex-success);
+  }
+  
+  .bg-cortex-warning {
+    background-color: var(--cortex-warning);
+  }
+  
+  .bg-cortex-error {
+    background-color: var(--cortex-error);
+  }
+  
+  .bg-cortex-light {
+    background-color: var(--cortex-light);
+  }
+  
+  .border-cortex-blue {
+    border-color: var(--cortex-blue);
+  }
+  
+  .border-cortex-warning {
+    border-color: var(--cortex-warning);
+  }
+  
+  .hover\:bg-blue-50:hover {
+    background-color: hsl(207, 100%, 97%);
+  }
+  
+  .hover\:bg-blue-700:hover {
+    background-color: hsl(207, 90%, 44%);
+  }
+}

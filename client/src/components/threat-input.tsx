@@ -1,0 +1,314 @@
+import { useState } from "react";
+import { Upload, Link, Rss, Target } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useSaveThreatReport, useSaveUseCase } from "@/hooks/use-local-storage";
+import { scrapeURL, extractUseCasesFromWebContent } from "@/lib/url-scraper";
+import { parsePDFFile, extractUseCasesFromPDFText } from "@/lib/pdf-parser";
+import { threatFeeds, fetchThreatFeedData, extractUseCasesFromFeedItem } from "@/lib/threat-feeds";
+import { ManualUseCaseForm } from "./manual-use-case-form";
+import type { UseCase } from "@shared/schema";
+
+export default function ThreatInput() {
+  const [activeTab, setActiveTab] = useState("url");
+  const [urlInput, setUrlInput] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const { toast } = useToast();
+  const saveThreatReport = useSaveThreatReport();
+  const saveUseCase = useSaveUseCase();
+
+  const handleURLParse = async () => {
+    if (!urlInput.trim()) {
+      toast({
+        title: "Input Required",
+        description: "Please enter a valid URL.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const scrapedContent = await scrapeURL(urlInput);
+      
+      const threatReport = {
+        id: `report_${Date.now()}`,
+        title: scrapedContent.title,
+        url: scrapedContent.url,
+        content: scrapedContent.content,
+        source: "url" as const,
+        extractedAt: new Date(),
+        processed: false,
+      };
+
+      await saveThreatReport.mutateAsync(threatReport);
+      
+      toast({
+        title: "URL Parsed Successfully",
+        description: `Extracted content from: ${scrapedContent.title}`,
+      });
+      
+      setUrlInput("");
+    } catch (error) {
+      toast({
+        title: "Parsing Failed",
+        description: error instanceof Error ? error.message : "Failed to parse URL",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsProcessing(true);
+    try {
+      for (const file of Array.from(files)) {
+        if (file.type !== "application/pdf") {
+          toast({
+            title: "Invalid File Type",
+            description: "Only PDF files are supported.",
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        const parseResult = await parsePDFFile(file);
+        
+        const threatReport = {
+          id: `report_${Date.now()}_${file.name}`,
+          title: parseResult.metadata.title || file.name,
+          content: parseResult.text,
+          source: "pdf" as const,
+          extractedAt: new Date(),
+          processed: false,
+        };
+
+        await saveThreatReport.mutateAsync(threatReport);
+      }
+      
+      toast({
+        title: "PDF Processing Complete",
+        description: `Successfully processed ${files.length} file(s).`,
+      });
+      
+      // Clear the input
+      event.target.value = "";
+    } catch (error) {
+      toast({
+        title: "Processing Failed",
+        description: error instanceof Error ? error.message : "Failed to process PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleThreatFeed = async (feedId: string) => {
+    setIsProcessing(true);
+    try {
+      const feedItems = await fetchThreatFeedData(feedId);
+      
+      for (const item of feedItems) {
+        const threatReport = {
+          id: `report_${Date.now()}_${item.id}`,
+          title: item.title,
+          url: item.url,
+          content: item.description,
+          source: feedId as any,
+          extractedAt: new Date(),
+          processed: false,
+        };
+
+        await saveThreatReport.mutateAsync(threatReport);
+      }
+      
+      toast({
+        title: "Feed Data Retrieved",
+        description: `Successfully imported ${feedItems.length} threat reports.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Feed Import Failed",
+        description: error instanceof Error ? error.message : "Failed to import threat feed",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleManualUseCaseSubmit = async (useCase: UseCase) => {
+    try {
+      await saveUseCase.mutateAsync(useCase);
+      setShowManualForm(false);
+      setActiveTab("manual");
+      toast({
+        title: "POC Use Case Created",
+        description: `"${useCase.title}" has been created for customer POC development.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save use case",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (showManualForm) {
+    return (
+      <ManualUseCaseForm
+        onSubmit={handleManualUseCaseSubmit}
+        onCancel={() => setShowManualForm(false)}
+      />
+    );
+  }
+
+  return (
+    <Card className="shadow-material">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <Upload className="text-cortex-blue text-xl mr-3" />
+            <h2 className="text-xl font-medium text-cortex-dark">Threat Intelligence Input</h2>
+          </div>
+          <Button
+            onClick={() => setShowManualForm(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Target className="w-4 h-4" />
+            Customer POC Entry
+          </Button>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="url" className="flex items-center gap-2">
+              <Link className="w-4 h-4" />
+              URL Link
+            </TabsTrigger>
+            <TabsTrigger value="pdf" className="flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              PDF Upload
+            </TabsTrigger>
+            <TabsTrigger value="feeds" className="flex items-center gap-2">
+              <Rss className="w-4 h-4" />
+              Threat Feeds
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="url" className="space-y-4">
+            <div>
+              <Label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-2">
+                Threat Report URL
+              </Label>
+              <div className="flex">
+                <Input
+                  id="url"
+                  type="url"
+                  placeholder="https://example.com/threat-report"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  className="flex-1 rounded-r-none"
+                />
+                <Button
+                  onClick={handleURLParse}
+                  disabled={isProcessing}
+                  className="rounded-l-none bg-cortex-blue hover:bg-blue-700"
+                >
+                  <i className="fas fa-download mr-2" />
+                  {isProcessing ? "Parsing..." : "Parse"}
+                </Button>
+              </div>
+            </div>
+            <div className="text-sm text-gray-500">
+              Supported sources: Security blogs, MITRE ATT&CK reports, vendor advisories
+            </div>
+          </TabsContent>
+
+          <TabsContent value="pdf" className="space-y-4">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-cortex-blue transition-colors">
+              <i className="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4" />
+              <p className="text-lg font-medium text-gray-700 mb-2">Drop PDF files here</p>
+              <p className="text-sm text-gray-500 mb-4">or click to browse</p>
+              <Button variant="outline" asChild>
+                <label htmlFor="pdf-upload" className="cursor-pointer">
+                  Select Files
+                </label>
+              </Button>
+              <input
+                id="pdf-upload"
+                type="file"
+                accept=".pdf"
+                multiple
+                className="hidden"
+                onChange={handleFileUpload}
+                disabled={isProcessing}
+              />
+            </div>
+            {isProcessing && (
+              <div className="text-center text-sm text-gray-500">
+                Processing PDF files...
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="feeds" className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {threatFeeds.map((feed) => (
+                <Card
+                  key={feed.id}
+                  className="cursor-pointer hover:border-cortex-blue transition-colors"
+                  onClick={() => handleThreatFeed(feed.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center">
+                      <i className={`${feed.icon} text-xl mr-3`} 
+                         style={{ color: getFeedColor(feed.id) }} />
+                      <div>
+                        <h3 className="font-medium">{feed.name}</h3>
+                        <p className="text-sm text-gray-500">{feed.description}</p>
+                        {feed.requiresAuth && (
+                          <span className="inline-block mt-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                            API Key Required
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            {isProcessing && (
+              <div className="text-center text-sm text-gray-500">
+                Importing threat feed data...
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+}
+
+function getFeedColor(feedId: string): string {
+  const colors: Record<string, string> = {
+    unit42: '#FF6B35',
+    cisa: '#2563EB',
+    recordedfuture: '#7C3AED',
+    wiz: '#059669',
+    datadog: '#6366F1'
+  };
+  return colors[feedId] || '#6B7280';
+}

@@ -1,0 +1,136 @@
+id: 003c865b-b547-4b5c-86aa-788e8fb14649
+version: 6
+vcShouldKeepItemLegacyProdMachine: false
+name: Process Email Headers
+starttaskid: "0"
+tasks:
+  "0":
+    id: "0"
+    taskid: c2fe54d9-8ff5-43c2-8185-2c89c81759b2
+    type: start
+    task:
+      id: c2fe54d9-8ff5-43c2-8185-2c89c81759b2
+      version: -1
+      name: ""
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "1"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 50
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "1":
+    id: "1"
+    taskid: c88fc7dc-f25b-4fbf-8a90-c9308d0c3a7f
+    type: regular
+    task:
+      id: c88fc7dc-f25b-4fbf-8a90-c9308d0c3a7f
+      version: -1
+      name: Set Headers
+      description: Set a value in context under the key you entered.
+      scriptName: Set
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "2"
+    scriptarguments:
+      key:
+        simple: EmailHeaders
+      value:
+        simple: ${inputs.Headers}
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 210
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "2":
+    id: "2"
+    taskid: 3e6676fd-3f51-4bbc-8684-b92a8f061cad
+    type: regular
+    task:
+      id: 3e6676fd-3f51-4bbc-8684-b92a8f061cad
+      version: -1
+      name: Set Headers Grid Fields
+      description: Creates a Grid table from items or key-value pairs.
+      scriptName: SetGridField
+      type: regular
+      iscommand: false
+      brand: ""
+    scriptarguments:
+      columns:
+        simple: headername,headervalue
+      context_path:
+        simple: Email.Headers
+      grid_id:
+        simple: emailheaders
+      keys:
+        simple: name,value
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 390
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+view: |-
+  {
+    "linkLabelsPosition": {},
+    "paper": {
+      "dimensions": {
+        "height": 435,
+        "width": 380,
+        "x": 450,
+        "y": 50
+      }
+    }
+  }
+inputs:
+- key: Headers
+  value:
+    simple: ${alert.labels.Headers}
+  required: false
+  description: |-
+    The email headers map in the form
+
+    [{
+     "name": "header1",
+     "value" : "headervalue1"
+    }]
+  playbookInputQuery: null
+outputs: []

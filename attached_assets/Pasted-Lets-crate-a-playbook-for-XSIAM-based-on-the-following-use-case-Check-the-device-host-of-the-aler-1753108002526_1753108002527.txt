@@ -1,0 +1,205 @@
+Lets crate a playbook for XSIAM  based on the following use case:
+
+Check the device/host of the alert’s privilege/access to protected data a. If it is a low classification device, we really do not care about suspicious VPN  activity since there is little risk 
+
+An asset is priority if it is a member of the groups "3-Medium", "4-High Risk", "5-Research",  or "10-IT Infrastructure"
+
+Reach out to the user via email or internal ticketing system 
+a. Ask if they are travelling, knowingly using a VPN, or if the activity is not sanctioned 
+3. Resolve as true positive if activity is not sanctioned, otherwise resolve as “Other”
+
+
+Here are the initial alert context fields that we will use to develop the playbook:
+
+AbuselPDB: {
+IP: {
+Hostnames: [
+
+]
+AbuseConfidenceScore:
+
+ISP:
+NumDistinctUsers:
+IsTor:
+
+Country:
+
+CountryCode:
+
+}
+IsPublic:
+Address:
+
+}
+AttackPattern: {
+Value:
+
+}
+DBotScore: [
+O: {
+
+Address:
+FeedRelatedIndicators: [
+0: {
+description:
+type:
+
+value:
+
+}
+
+EntityBType:
+
+Relationship:
+
+}
+
+Name:
+
+alert: {
+custom_status:
+
+canvases:
+
+rawCategory:
+
+sla:
+dbotDirtyFields:
+created:
+linkedIncidents:
+modified:
+
+closeNotes:
+t
+name:
+
+sourceBrand:
+closed:
+ount:
+
+parentXDRIncident:
+droppedCount:
+rawJSON:
+sourcelnstance:
+
+lastJobRunTime:
+activated:
+reminder:
+status:
+
+dbotMirrorLastSync:
+ra
+
+se:
+
+feedBased:
+dbotCurrentDirtyFields :
+notifyTime:
+
+inkedCount:
+dbotMirrorlnstance:
+version:
+
+playbookld:
+eduplD:
+
+halntegrationEventID:
+
+id:
+phase:
+closingUserld:
+otMirrorlags :
+
+closeReason:
+
+tion:
+
+containsfeaturedipaddress: [
+
+agentid:
+isphishing: [
+O:
+
+alert_domain:
+_vendor:
+
+(e)
+
+ategoryname:
+
+initiatorsignature: [
+
+osparentsignature: [
+
+excluded:
+dispatch_state:
+ostos:
+
+followup:
+cgosignature: [
+O:
+
+detection_modules: [
+
+fwserialnumber: [
+
+asmdevcheck:
+tip: [
+
+processexecutionsignature: [
+O:
+
+external_id:
+roduct:
+
+agentossubtype:
+local_insert_ts:
+mitreattcktechnique: [
+O:
+
+localip: [
+O:
+
+remoteagenthostname: [
+O:
+
+family_tags: [
+(0) .
+
+1:
+2:
+
+]
+eventtype: [
+O:
+
+containsfeaturedhost: [
+O:
+
+username: [
+O:
+
+timestamp:
+
+mitreattcktactic: [
+
+]
+action:
+
+country: [
+
+ruleid
+containsfeatureduser:
+O:
+
+is_rule_triggering:
+tags:
+
+[
+
+emailsentsuccessfully
+
+:
+
+passwordresetsuccessfully:
+starred:

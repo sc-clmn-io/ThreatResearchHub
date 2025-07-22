@@ -1,0 +1,596 @@
+id: bf182b22-d365-44ba-83ec-5b2f704a5cc1
+version: 11
+vcShouldKeepItemLegacyProdMachine: false
+name: SE Summit - Large Upload
+starttaskid: "0"
+tasks:
+  "0":
+    id: "0"
+    taskid: 76842695-eddb-4d6d-8bd2-41f3dd1532b0
+    type: start
+    task:
+      id: 76842695-eddb-4d6d-8bd2-41f3dd1532b0
+      version: -1
+      name: ""
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "3"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 807.5,
+          "y": 50
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "1":
+    id: "1"
+    taskid: 3d55b95c-4e0a-48a7-83c2-6ebef0bc7a87
+    type: playbook
+    task:
+      id: 3d55b95c-4e0a-48a7-83c2-6ebef0bc7a87
+      version: -1
+      name: Check For Previous False Positives
+      playbookName: Check For Previous False Positives
+      type: playbook
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "2"
+    scriptarguments:
+      CloseReason:
+        simple: Resolved - False Positive,Resolved - Duplicate Incident,Resolved -
+          Known Issue
+      query:
+        simple: remotehost:${alert.remotehost.[0]} and sourceBrand:${alert.sourceBrand}
+          and name:"${alert.name}"
+      threshold:
+        simple: "2"
+    separatecontext: true
+    continueonerrortype: ""
+    loop:
+      iscommand: false
+      exitCondition: ""
+      wait: 1
+      max: 100
+    view: |-
+      {
+        "position": {
+          "x": 807.5,
+          "y": 340
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "2":
+    id: "2"
+    taskid: aade9e24-3bfc-4a4e-854d-2a916ee50291
+    type: condition
+    task:
+      id: aade9e24-3bfc-4a4e-854d-2a916ee50291
+      version: -1
+      name: Continue by Verdict
+      description: Checks the verdict returned by the 'Enrichment for Verdict' playbook.
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "5"
+      False Positive:
+      - "4"
+    separatecontext: false
+    conditions:
+    - label: False Positive
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              simple: PreviousVerdict
+            iscontext: true
+          right:
+            value:
+              simple: False Positive
+          ignorecase: true
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 807.5,
+          "y": 515
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "3":
+    id: "3"
+    taskid: fcf10a90-4bc6-4dc5-8bf9-f0ae53ac449d
+    type: title
+    task:
+      id: fcf10a90-4bc6-4dc5-8bf9-f0ae53ac449d
+      version: -1
+      name: Analysis
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "1"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 807.5,
+          "y": 195
+        }
+      }
+    note: false
+    timertriggers:
+    - fieldname: detectionsla
+      action: start
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "4":
+    id: "4"
+    taskid: abfebf42-41a5-43ea-839d-b97ba2574d1e
+    type: regular
+    task:
+      id: abfebf42-41a5-43ea-839d-b97ba2574d1e
+      version: -1
+      name: Close alert as FP
+      description: commands.local.cmd.close.inv
+      script: Builtin|||closeInvestigation
+      type: regular
+      iscommand: true
+      brand: Builtin
+    nexttasks:
+      '#none#':
+      - "13"
+    scriptarguments:
+      closeReason:
+        simple: Resolved - False Positive
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 1350,
+          "y": 865
+        }
+      }
+    note: false
+    timertriggers:
+    - fieldname: detectionsla
+      action: stop
+    - fieldname: remediationsla
+      action: start
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "5":
+    id: "5"
+    taskid: 297c890d-7ba8-482a-85ce-177f904300cd
+    type: condition
+    task:
+      id: 297c890d-7ba8-482a-85ce-177f904300cd
+      version: -1
+      name: Known good destination
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "7"
+      - "10"
+      - "9"
+      "yes":
+      - "4"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: inList
+          left:
+            value:
+              simple: alert.remotehost.[0]
+            iscontext: true
+          right:
+            value:
+              complex:
+                root: lists
+                accessor: KnownGoodDestinations
+                transformers:
+                - operator: splitAndTrim
+                  args:
+                    delimiter:
+                      value:
+                        simple: ','
+            iscontext: true
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 460,
+          "y": 690
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "6":
+    id: "6"
+    taskid: 70354cb5-68ec-4499-8866-615c8613967c
+    type: condition
+    task:
+      id: 70354cb5-68ec-4499-8866-615c8613967c
+      version: -1
+      name: Non-standard app-id
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "13"
+      "yes":
+      - "8"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: inList
+          left:
+            value:
+              complex:
+                root: alert
+                accessor: appid
+                transformers:
+                - operator: splitAndTrim
+                  args:
+                    delimiter:
+                      value:
+                        simple: ','
+                - operator: GetRange
+                  args:
+                    range:
+                      value:
+                        simple: 2-
+            iscontext: true
+          right:
+            value:
+              complex:
+                root: lists
+                accessor: Good-appIDs
+                transformers:
+                - operator: splitAndTrim
+                  args:
+                    delimiter:
+                      value:
+                        simple: ','
+            iscontext: true
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 50,
+          "y": 1040
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "7":
+    id: "7"
+    taskid: 97030cf0-6470-4a29-8b03-b5737e0904cb
+    type: condition
+    task:
+      id: 97030cf0-6470-4a29-8b03-b5737e0904cb
+      version: -1
+      name: Only IP and TCP in App-ID?
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "6"
+      "yes":
+      - "13"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              simple: alert.appid
+            iscontext: true
+          right:
+            value:
+              simple: ip,tcp
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 50,
+          "y": 865
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "8":
+    id: "8"
+    taskid: ae44fd75-65e3-4489-87ea-7c4b4887419c
+    type: regular
+    task:
+      id: ae44fd75-65e3-4489-87ea-7c4b4887419c
+      version: -1
+      name: Raise Alert severity to High
+      description: commands.local.cmd.set.incident
+      script: Builtin|||setAlert
+      type: regular
+      iscommand: true
+      brand: Builtin
+    nexttasks:
+      '#none#':
+      - "13"
+    scriptarguments:
+      severity:
+        simple: "3"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 490,
+          "y": 1310
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "9":
+    id: "9"
+    taskid: a8c075db-3892-4dbc-81ff-df2297956635
+    type: condition
+    task:
+      id: a8c075db-3892-4dbc-81ff-df2297956635
+      version: -1
+      name: Non browser process
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "13"
+      "yes":
+      - "8"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: notInList
+          left:
+            value:
+              simple: alert.initiatedby.[0]
+            iscontext: true
+          right:
+            value:
+              complex:
+                root: lists
+                accessor: KnownBrowsers
+                transformers:
+                - operator: splitAndTrim
+                  args:
+                    delimiter:
+                      value:
+                        simple: ','
+            iscontext: true
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 490,
+          "y": 1040
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "10":
+    id: "10"
+    taskid: 00f47994-3d3b-4b37-87b1-846df01c982a
+    type: regular
+    task:
+      id: 00f47994-3d3b-4b37-87b1-846df01c982a
+      version: -1
+      name: 'Extract Transferred data amount '
+      description: Set a value in context under the key you entered.
+      scriptName: Set
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "11"
+    scriptarguments:
+      key:
+        simple: TransferredData
+      value:
+        complex:
+          root: ${alert
+          accessor: details}
+          transformers:
+          - operator: RegexGroups
+            args:
+              flags: {}
+              groups: {}
+              keys: {}
+              regex:
+                value:
+                  simple: uploaded (.*MB|GB|TB)
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 865
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "11":
+    id: "11"
+    taskid: bae8de36-ac09-481b-812c-7989cd0ada6e
+    type: condition
+    task:
+      id: bae8de36-ac09-481b-812c-7989cd0ada6e
+      version: -1
+      name: More than 100 MB transferred?
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "13"
+      "yes":
+      - "8"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: greaterThanOrEqual
+          left:
+            value:
+              complex:
+                root: TransferredData
+                transformers:
+                - operator: StripChars
+                  args:
+                    chars:
+                      value:
+                        simple: MB
+                - operator: StripChars
+                  args:
+                    chars:
+                      value:
+                        simple: GB
+                - operator: StripChars
+                  args:
+                    chars:
+                      value:
+                        simple: TB
+            iscontext: true
+          right:
+            value:
+              simple: "100"
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 930,
+          "y": 1040
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "13":
+    id: "13"
+    taskid: 84fdce7b-5955-4ca5-865f-441578445cd3
+    type: title
+    task:
+      id: 84fdce7b-5955-4ca5-865f-441578445cd3
+      version: -1
+      name: Done
+      type: title
+      iscommand: false
+      brand: ""
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 1635
+        }
+      }
+    note: false
+    timertriggers:
+    - fieldname: remediationsla
+      action: stop
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+view: |-
+  {
+    "linkLabelsPosition": {},
+    "paper": {
+      "dimensions": {
+        "height": 1650,
+        "width": 1680,
+        "x": 50,
+        "y": 50
+      }
+    }
+  }
+inputs: []
+outputs: []

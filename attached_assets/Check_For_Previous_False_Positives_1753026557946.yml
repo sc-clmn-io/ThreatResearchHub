@@ -1,0 +1,244 @@
+id: 1fddb929-8c05-41e4-8a16-afb0789043e9
+version: 1
+vcShouldKeepItemLegacyProdMachine: false
+name: Check For Previous False Positives
+starttaskid: "0"
+tasks:
+  "0":
+    id: "0"
+    taskid: 13dc5fe4-70cc-4640-8188-ea3f73802877
+    type: start
+    task:
+      id: 13dc5fe4-70cc-4640-8188-ea3f73802877
+      version: -1
+      name: ""
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "1"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 162.5,
+          "y": 50
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "1":
+    id: "1"
+    taskid: 7f931f0d-f8d7-4263-8294-5cf566b5e5fd
+    type: regular
+    task:
+      id: 7f931f0d-f8d7-4263-8294-5cf566b5e5fd
+      version: -1
+      name: 'Check previous alerts '
+      description: |-
+        Searches XSIAM alerts.
+
+        This automation runs using the default Limited User role, unless you explicitly change the permissions.
+        For more information, see the section about permissions here:
+        https://docs.paloaltonetworks.com/cortex/cortex-xsoar/6-2/cortex-xsoar-admin/playbooks/automations.html
+      scriptName: SearchIncidentsV2
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "2"
+    scriptarguments:
+      query:
+        complex:
+          root: inputs.query
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 162.5,
+          "y": 195
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "2":
+    id: "2"
+    taskid: 16fa6e53-9b99-4e89-84ab-472447c6cf02
+    type: condition
+    task:
+      id: 16fa6e53-9b99-4e89-84ab-472447c6cf02
+      version: -1
+      name: Were previous alerts closed as false positive?
+      description: Were previous alerts closed as false positive?
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "5"
+      "yes":
+      - "3"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: containsGeneral
+          left:
+            value:
+              simple: foundIncidents.rawCloseReason
+            iscontext: true
+          right:
+            value:
+              complex:
+                root: inputs.CloseReason
+                transformers:
+                - operator: split
+                  args:
+                    delimiter:
+                      value:
+                        simple: ','
+            iscontext: true
+      - - operator: greaterThanOrEqual
+          left:
+            value:
+              complex:
+                root: foundIncidents
+                accessor: id
+                transformers:
+                - operator: count
+            iscontext: true
+          right:
+            value:
+              complex:
+                root: inputs.threshold
+            iscontext: true
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 162.5,
+          "y": 370
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "3":
+    id: "3"
+    taskid: dd2a0d26-7b1c-46ae-860f-10647e96492c
+    type: regular
+    task:
+      id: dd2a0d26-7b1c-46ae-860f-10647e96492c
+      version: -1
+      name: Set PreviousVerdict to Previously closed as False Positive
+      description: Set the PreviousVerdict key in context to closed as False Positive.
+      scriptName: Set
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "5"
+    scriptarguments:
+      append:
+        simple: "false"
+      key:
+        simple: PreviousVerdict
+      value:
+        simple: False Positive
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 50,
+          "y": 545
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "5":
+    id: "5"
+    taskid: 243093a2-9771-490e-8038-4bb103583340
+    type: title
+    task:
+      id: 243093a2-9771-490e-8038-4bb103583340
+      version: -1
+      name: Done
+      type: title
+      iscommand: false
+      brand: ""
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 162.5,
+          "y": 720
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+view: |-
+  {
+    "linkLabelsPosition": {},
+    "paper": {
+      "dimensions": {
+        "height": 735,
+        "width": 492.5,
+        "x": 50,
+        "y": 50
+      }
+    }
+  }
+inputs:
+- key: threshold
+  value:
+    simple: "2"
+  required: false
+  description: ""
+  playbookInputQuery: null
+- key: query
+  value:
+    simple: (initiatorsha256:${alert.initiatorsha256.[0]}) and alertsource:${alert.sourceBrand}
+      and alertname:${alert.name}
+  required: false
+  description: ""
+  playbookInputQuery: null
+- key: CloseReason
+  value:
+    simple: Resolved - False Positive,Resolved - Duplicate Incident,Resolved - Known
+      Issue
+  required: false
+  description: ""
+  playbookInputQuery: null
+outputs:
+- contextPath: PreviousVerdict
+  type: string
