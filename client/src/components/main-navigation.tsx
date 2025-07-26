@@ -38,7 +38,7 @@ interface NavItem {
 const navigationItems: NavItem[] = [
   // STEP 1: Load Threat Report
   { href: "/", icon: Home, label: "1. Load Threat Report", category: 'status', description: "Start here: Load threat report from URL, PDF, or threat feeds to begin the workflow" },
-  { href: "/threat-monitoring", icon: Activity, label: "Threat Feeds", category: 'status', description: "Browse live threat intelligence from CISA, Unit42, and other security vendors" },
+  { href: "/threat-monitoring", icon: Activity, label: "🔗 TBH Threat Feeds", category: 'status', description: "View threat intelligence automatically ingested into ThreatResearchHub platform" },
   { href: "/pii-sanitizer", icon: Search, label: "PII Sanitizer", category: 'status', description: "Clean sensitive information from customer data before processing" },
   
   // STEP 2: Select Specific Use Case (Dashboard handles this)

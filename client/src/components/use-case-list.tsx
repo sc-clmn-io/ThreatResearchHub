@@ -291,7 +291,7 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
         <CardContent className="p-6">
           <div className="flex items-center mb-6">
             <List className="text-cortex-blue text-xl mr-3" />
-            <h2 className="text-xl font-medium text-cortex-dark">Active Use Cases</h2>
+            <h2 className="text-xl font-medium text-cortex-dark">Active Use Cases in Workflow</h2>
           </div>
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cortex-blue mx-auto"></div>
@@ -308,7 +308,7 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
         <CardContent className="p-6">
           <div className="flex items-center mb-6">
             <List className="text-cortex-blue text-xl mr-3" />
-            <h2 className="text-xl font-medium text-cortex-dark">Active Use Cases</h2>
+            <h2 className="text-xl font-medium text-cortex-dark">Active Use Cases in Workflow</h2>
           </div>
           <div className="text-center py-8">
             <List className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -342,7 +342,7 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <List className="text-cortex-blue text-xl mr-3" />
-            <h2 className="text-xl font-medium text-cortex-dark">Active Use Cases</h2>
+            <h2 className="text-xl font-medium text-cortex-dark">Active Use Cases in Workflow</h2>
           </div>
           <div className="flex items-center space-x-2">
             {validatedCount > 0 && (
@@ -367,9 +367,31 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-medium text-cortex-dark mb-1">
-                      {useCase.title}
-                    </h3>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-medium text-cortex-dark">
+                        {useCase.title}
+                      </h3>
+                      <div className="flex items-center text-xs text-gray-500 ml-2">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {(() => {
+                          const createdTime = useCase.createdAt ? new Date(useCase.createdAt) : new Date();
+                          const now = new Date();
+                          const diffMs = now.getTime() - createdTime.getTime();
+                          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                          const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                          
+                          if (diffHours > 24) {
+                            return `${Math.floor(diffHours / 24)}d ago`;
+                          } else if (diffHours > 0) {
+                            return `${diffHours}h ago`;
+                          } else if (diffMins > 0) {
+                            return `${diffMins}m ago`;
+                          } else {
+                            return 'Just now';
+                          }
+                        })()}
+                      </div>
+                    </div>
                     <p className="text-sm text-gray-600 mb-3">
                       {useCase.description}
                     </p>
@@ -379,17 +401,17 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
                       {getValidationBadge(useCase.validationStatus).label}
                     </Badge>
                     
-                    {/* Security Operations Workflow Button */}
+                    {/* Security Operations Workflow Button - Blue for workflow continuation */}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           size="sm"
                           onClick={() => handleStartSecurityWorkflow(useCase)}
                           disabled={useCase.validationStatus === 'rejected'}
-                          className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+                          className="bg-blue-600 hover:bg-blue-700 text-white w-full"
                         >
                           <Workflow className="w-4 h-4 mr-1" />
-                          SOC Investigation Workflow
+                          Continue Workflow
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -405,7 +427,7 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
                               size="sm"
                               variant="outline"
                               disabled={useCase.validationStatus === 'rejected'}
-                              className="border-green-500 text-green-700 hover:bg-green-50 w-full"
+                              className="border-gray-300 text-gray-600 hover:bg-gray-50 w-full"
                             >
                               <Server className="w-4 h-4 mr-1" />
                               Lab Setup

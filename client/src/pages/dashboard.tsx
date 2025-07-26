@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Shield, FileText, Zap, Monitor, Github, Search, Trash2, Database, ArrowRight, CheckCircle, Cog, Brain, Users, Globe, Archive } from "lucide-react";
+import { Shield, FileText, Zap, Monitor, Github, Search, Trash2, Database, ArrowRight, ArrowLeft, CheckCircle, Cog, Brain, Users, Globe, Archive, Play } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import ThreatInput from "@/components/threat-input";
 import UseCaseList from "@/components/use-case-list";
@@ -23,34 +24,62 @@ export default function Dashboard() {
   const [useCases, setUseCases] = useState<any[]>([]);
 
   useEffect(() => {
-    // Calculate workflow progress from localStorage
-    const storedUseCases = JSON.parse(localStorage.getItem('useCases') || '[]');
-    const contentLibrary = JSON.parse(localStorage.getItem('contentLibrary') || '[]');
+    // Function to refresh workflow data
+    const refreshWorkflowData = () => {
+      const storedUseCases = JSON.parse(localStorage.getItem('useCases') || '[]');
+      const contentLibrary = JSON.parse(localStorage.getItem('contentLibrary') || '[]');
+      
+      console.log('Stored use cases:', storedUseCases);
+      console.log('Use cases length:', storedUseCases.length);
+      setUseCases(storedUseCases);
+      
+      setWorkflowStats({
+        threatsLoaded: storedUseCases.length,
+        contentGenerated: contentLibrary.length,
+        labsPlanned: 0,
+        xsiamDeployed: 0,
+        githubBackups: 0
+      });
+    };
+
+    // Initial load
+    refreshWorkflowData();
+
+    // Listen for use case additions
+    const handleUseCaseAdded = () => {
+      setTimeout(refreshWorkflowData, 100); // Small delay to ensure storage is updated
+    };
+
+    window.addEventListener('useCaseAdded', handleUseCaseAdded);
+    window.addEventListener('storage', handleUseCaseAdded);
     
-    console.log('Stored use cases:', storedUseCases);
-    setUseCases(storedUseCases);
-    
-    setWorkflowStats({
-      threatsLoaded: storedUseCases.length,
-      contentGenerated: contentLibrary.length,
-      labsPlanned: 0,
-      xsiamDeployed: 0,
-      githubBackups: 0
-    });
+    return () => {
+      window.removeEventListener('useCaseAdded', handleUseCaseAdded);
+      window.removeEventListener('storage', handleUseCaseAdded);
+    };
   }, []);
 
-  // Correct workflow sequence - infrastructure BEFORE content generation
-  // Step 1: Load threat reports
-  // Step 2: Select specific use case  
-  // Step 3: Plan lab infrastructure for selected threat
-  // Step 4: Onboard data sources & ingest logs
-  // Step 5: Generate content (after infrastructure is ready)
-  // Step 6: Test & deploy
-  const currentStep = workflowStats.threatsLoaded === 0 ? 1 :
-                     !selectedUseCase ? 2 : 
-                     workflowStats.labsPlanned === 0 ? 3 :
-                     workflowStats.xsiamDeployed === 0 ? 4 :
-                     workflowStats.contentGenerated === 0 ? 5 : 6;
+  // Check for forced step navigation first  
+  const forceStep = localStorage.getItem('forceStep');
+  let currentStep;
+  
+  if (forceStep) {
+    currentStep = parseInt(forceStep);
+    localStorage.removeItem('forceStep'); // Remove after using
+  } else {
+    // Normal workflow sequence - infrastructure BEFORE content generation
+    // Step 1: Load threat reports
+    // Step 2: Select specific use case  
+    // Step 3: Plan lab infrastructure for selected threat
+    // Step 4: Onboard data sources & ingest logs
+    // Step 5: Generate content (after infrastructure is ready)
+    // Step 6: Test & deploy
+    currentStep = useCases.length === 0 ? 1 :
+                       !selectedUseCase ? 2 : 
+                       workflowStats.labsPlanned === 0 ? 3 :
+                       workflowStats.xsiamDeployed === 0 ? 4 :
+                       workflowStats.contentGenerated === 0 ? 5 : 6;
+  }
                      
   console.log('Current step calculated:', currentStep);
   console.log('Selected use case:', selectedUseCase);
@@ -66,64 +95,64 @@ export default function Dashboard() {
 
   const stepInstructions = {
     1: {
-      title: "Load Threat Intelligence",
-      instruction: "Load your specific threat intelligence or customer requirements:",
+      title: "Intelligence Ingestion",
+      instruction: "Ingest threat intelligence and generate structured raw reports for content engineering workflow:",
       options: [
-        "Upload PDF threat report with specific CVEs/IOCs",
-        "Paste URL from threat intelligence source",
-        "Enter customer POV requirements and success criteria"
+        "Process threats from integrated intelligence feeds and generate raw reports",
+        "Import threat reports via PDF upload or URL ingestion for analysis",
+        "Define custom security outcomes based on organizational requirements"
       ],
-      verification: "Threat details with specific indicators appear in the list below"
+      verification: "Raw intelligence reports generated and available for threat selection and use case development"
     },
     2: {
-      title: "Select Specific Threat",
-      instruction: "Choose exactly which threat/use case to build infrastructure for:",
+      title: "Threat Selection & Use Case Definition",
+      instruction: "Select target threat scenario and define comprehensive security use case parameters:",
       options: [
-        "Review threat details, CVEs, and attack vectors",
-        "Verify customer requirements and success criteria",
-        "Select the precise use case for infrastructure planning"
+        "Analyze generated intelligence reports and select primary threat vector",
+        "Define security objectives, success criteria, and detection requirements", 
+        "Establish scope boundaries and technology stack requirements"
       ],
-      verification: "Selected use case details are displayed with specific requirements"
+      verification: "Primary threat vector selected with comprehensive use case definition and measurable objectives"
     },
     3: {
-      title: "Plan Infrastructure",
-      instruction: "Design infrastructure to support your selected threat scenario:",
+      title: "Infrastructure Architecture & Deployment Planning",
+      instruction: "Design and deploy comprehensive infrastructure architecture to replicate threat scenarios:",
       options: [
-        "Infrastructure matching threat environment (Windows/Linux/Cloud)",
-        "Data sources required for threat detection (EDR, logs, network)",
-        "Attack simulation environment for threat vectors"
+        "Deploy network infrastructure, endpoints, and cloud environments with configurations matching threat requirements",
+        "Configure identity platforms, email systems, and security controls based on threat attack vectors", 
+        "Establish controlled attack simulation environment with complete infrastructure stack"
       ],
-      verification: "Lab plan includes infrastructure costs, timeline, and deployment steps"
+      verification: "Infrastructure architecture deployed with comprehensive documentation enabling threat scenario replication"
     },
     4: {
-      title: "Setup Data Sources",
-      instruction: "Set up data ingestion and XSIAM configuration:",
+      title: "Data Source Integration & XSIAM Configuration",
+      instruction: "Configure comprehensive data source integration with XSIAM platform:",
       options: [
-        "Connect XSIAM to your data sources",
-        "Configure log parsing and field mapping",
-        "Validate data ingestion with test queries"
+        "Configure enterprise data sources for log generation and collection across infrastructure stack",
+        "Implement XSIAM broker/connector architecture with field mapping and data normalization",
+        "Validate data ingestion pipeline through XQL query testing and field verification"
       ],
-      verification: "XSIAM shows live data from your configured sources"
+      verification: "XSIAM platform successfully ingesting production data with validated field mappings and operational XQL queries"
     },
     5: {
-      title: "Generate Content",
-      instruction: "Create detection content using your live data sources:",
+      title: "Production-Ready Content Generation & Validation",
+      instruction: "Generate comprehensive XSIAM security content package for operational deployment:",
       options: [
-        "XQL correlation rules tested against real data",
-        "Automation playbooks validated with actual incidents",
-        "Alert layouts designed for your specific data fields"
+        "XQL correlation rules with authenticated field mappings and production-grade threat detection logic",
+        "Alert layouts featuring analyst decision workflows and automated response capabilities",
+        "XSIAM automation playbooks with threat response procedures and operational monitoring dashboards"
       ],
-      verification: "Generated content works with your actual XSIAM data"
+      verification: "Complete content package generated with validated field references and operational readiness confirmation"
     },
     6: {
-      title: "Test & Deploy",
-      instruction: "Validate and deploy your working content:",
+      title: "Testing, Deployment & Operational Readiness",
+      instruction: "Execute comprehensive testing protocol and deployment validation:",
       options: [
-        "Test detection rules against threat scenarios", 
-        "Validate playbooks execute correctly",
-        "Deploy to production XSIAM environment"
+        "Validate XQL correlation rules against live threat simulation with confirmed detection accuracy", 
+        "Test alert layouts, decision workflows, and playbook execution with production incident data",
+        "Complete operational testing with pass/fail validation and immediate remediation protocols"
       ],
-      verification: "Content successfully detects threats in production"
+      verification: "All content validates successfully with confirmed threat detection, workflow execution, and operational readiness"
     }
   };
 
@@ -150,7 +179,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-gray-900">ThreatResearchHub</h1>
-              <span className="ml-2 text-sm text-gray-500">XSIAM Enablement Platform</span>
+              <span className="ml-2 text-sm text-gray-500">Content Engineering Workflow</span>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -185,13 +214,24 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               {[1, 2, 3, 4, 5, 6].map((step) => (
                 <div key={step} className="flex items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                    step < currentStep ? 'bg-green-500 text-white' :
-                    step === currentStep ? 'bg-blue-500 text-white' :
-                    'bg-gray-200 text-gray-600'
-                  }`}>
+                  <button 
+                    onClick={() => {
+                      if (step <= currentStep || step === 1) {
+                        // Allow navigation to completed steps or step 1
+                        localStorage.setItem('forceStep', step.toString());
+                        window.location.reload();
+                      }
+                    }}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
+                      step < currentStep ? 'bg-green-500 text-white hover:bg-green-600 cursor-pointer' :
+                      step === currentStep ? 'bg-blue-500 text-white' :
+                      'bg-gray-200 text-gray-600'
+                    } ${step <= currentStep || step === 1 ? 'hover:scale-105' : 'cursor-not-allowed'}`}
+                    disabled={step > currentStep && step !== 1}
+                    title={step <= currentStep || step === 1 ? `Go to Step ${step}` : 'Complete previous steps first'}
+                  >
                     {step < currentStep ? '✓' : step}
-                  </div>
+                  </button>
                   {step < 6 && (
                     <div className={`flex-1 h-1 mx-2 ${
                       step < currentStep ? 'bg-green-500' : 'bg-gray-200'
@@ -202,28 +242,55 @@ export default function Dashboard() {
             </div>
             <div className="grid grid-cols-6 gap-2 text-xs text-center">
               <div className={currentStep === 1 ? 'font-semibold text-blue-600' : 'text-gray-500'}>
-                Load Intelligence
+                Intelligence Ingestion
               </div>
               <div className={currentStep === 2 ? 'font-semibold text-blue-600' : 'text-gray-500'}>
-                Select Threat
+                Threat Selection
               </div>
               <div className={currentStep === 3 ? 'font-semibold text-blue-600' : 'text-gray-500'}>
-                Plan Infrastructure
+                Infrastructure Planning
               </div>
               <div className={currentStep === 4 ? 'font-semibold text-blue-600' : 'text-gray-500'}>
-                Setup Data Sources
+                Data Source Integration
               </div>
               <div className={currentStep === 5 ? 'font-semibold text-blue-600' : 'text-gray-500'}>
-                Generate Content
+                Content Generation
               </div>
               <div className={currentStep === 6 ? 'font-semibold text-blue-600' : 'text-gray-500'}>
-                Test & Deploy
+                Testing & Deployment
               </div>
+            </div>
+            
+            {/* Navigation Help Text */}
+            <div className="mt-4 text-xs text-gray-600 text-center">
+              <span className="inline-flex items-center">
+                <span className="w-3 h-3 bg-green-500 rounded-full mr-1"></span>
+                Click completed steps (✓) to review or modify previous work
+                <span className="mx-3">•</span>
+                <span className="w-3 h-3 bg-blue-500 rounded-full mr-1"></span>
+                Current step in progress
+                <span className="mx-3">•</span>
+                <span className="w-3 h-3 bg-gray-200 rounded-full mr-1"></span>
+                Future steps (complete previous steps first)
+              </span>
             </div>
             
             {/* Step Navigation for Steps 2+ */}
             {currentStep > 1 && currentStep < 6 && (
-              <div className="mt-6 text-center">
+              <div className="mt-6 flex justify-between items-center">
+                <Button 
+                  variant="outline"
+                  size="lg" 
+                  onClick={() => {
+                    localStorage.setItem('forceStep', (currentStep - 1).toString());
+                    window.location.reload();
+                  }}
+                  className="px-8"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Previous Step
+                </Button>
+                
                 <Button 
                   size="lg" 
                   onClick={() => {
@@ -268,11 +335,11 @@ export default function Dashboard() {
           
           {/* Show sequence context for clarity */}
           <div className="text-sm text-blue-600 mb-3">
-            Step {currentStep} of 6: {currentStep === 1 ? "Load threat intelligence first" : 
-                                     currentStep === 2 ? "Select which specific threat to work with" :
-                                     currentStep === 3 ? "Plan infrastructure for selected threat" :
-                                     currentStep === 4 ? "Setup data sources and XSIAM ingestion" :
-                                     currentStep === 5 ? "Generate content using live data" : "Test and deploy to production"}
+            Step {currentStep} of 6: {currentStep === 1 ? "Intelligence ingestion and raw report generation" : 
+                                     currentStep === 2 ? "Threat selection and use case definition" :
+                                     currentStep === 3 ? "Infrastructure architecture and deployment planning" :
+                                     currentStep === 4 ? "Data source integration and XSIAM configuration" :
+                                     currentStep === 5 ? "Production-ready content generation and validation" : "Testing, deployment, and operational readiness"}
           </div>
           
           <p className="text-blue-700 mb-4 text-lg">{currentInstructions.instruction}</p>
@@ -298,84 +365,144 @@ export default function Dashboard() {
         {/* Show only current step content */}
         {currentStep === 1 && (
           <div className="space-y-6">
-            {/* Prominent Upload Options */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="text-lg font-semibold mb-4 text-center">Choose How to Load Threat Intelligence</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link href="/threat-input">
-                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 cursor-pointer transition-all">
-                    <div className="text-center">
-                      <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                      <h4 className="font-medium text-gray-900 mb-2">Upload PDF Report</h4>
-                      <p className="text-sm text-gray-600">Upload threat intelligence PDF documents</p>
+            {/* Show Created Use Cases First */}
+            {useCases.length > 0 && (
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-green-200">
+                <h3 className="text-lg font-semibold mb-4 text-green-800 flex items-center">
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  ✅ Your Security Outcomes/Use Cases ({useCases.length} total)
+                </h3>
+                <div className="space-y-3">
+                  {useCases.map((useCase, index) => (
+                    <div key={useCase.id} className="flex items-center justify-between bg-green-50 p-4 rounded-lg border border-green-200">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-green-900">{useCase.title}</h4>
+                        <p className="text-sm text-green-700 mt-1">{useCase.description?.substring(0, 100)}...</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline" className="text-xs">{useCase.category}</Badge>
+                          <Badge variant="outline" className="text-xs">{useCase.severity}</Badge>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => {
+                          setSelectedUseCase(useCase);
+                          toast({
+                            title: "Security Outcome Selected",
+                            description: `Selected "${useCase.title}" for the 6-step workflow. You can now proceed to Step 2.`
+                          });
+                        }}
+                      >
+                        Select This Security Outcome
+                      </Button>
                     </div>
-                  </div>
-                </Link>
-                
-                <Link href="/threat-input">
-                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 cursor-pointer transition-all">
-                    <div className="text-center">
-                      <Globe className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                      <h4 className="font-medium text-gray-900 mb-2">Paste URL</h4>
-                      <p className="text-sm text-gray-600">Load from threat intelligence URLs</p>
-                    </div>
-                  </div>
-                </Link>
-                
-                <Link href="/threat-input">
-                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 cursor-pointer transition-all">
-                    <div className="text-center">
-                      <Users className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                      <h4 className="font-medium text-gray-900 mb-2">Customer POV</h4>
-                      <p className="text-sm text-gray-600">Enter customer requirements manually</p>
-                    </div>
-                  </div>
-                </Link>
+                  ))}
+                </div>
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Next Step:</strong> Select one security outcome above, then click "Continue to Step 2" to proceed with infrastructure planning.
+                  </p>
+                </div>
               </div>
+            )}
+            
+            {/* Simplified Input Options */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <h3 className="text-lg font-semibold mb-4 text-center">Intelligence Processing & Use Case Generation</h3>
+              <p className="text-sm text-gray-600 mb-6 text-center">Process threat intelligence sources or define custom security requirements for content engineering</p>
               
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600 mb-4">Or browse existing threat intelligence:</p>
-                <Link href="/threat-feeds">
-                  <Button variant="outline" className="mr-3">
-                    <Database className="h-4 w-4 mr-2" />
-                    View Threat Feeds
-                  </Button>
-                </Link>
-                <Link href="/threat-archive">
-                  <Button variant="outline">
-                    <Archive className="h-4 w-4 mr-2" />
-                    Browse Archive
-                  </Button>
-                </Link>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Threat Intelligence Sources */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">Intelligence Sources</h4>
+                  
+                  <div 
+                    onClick={() => window.location.href = '/threat-input?tab=feeds'}
+                    className="p-4 border border-gray-200 rounded-lg hover:border-green-500 cursor-pointer transition-all bg-gray-50 hover:bg-green-50"
+                  >
+                    <div className="flex items-center">
+                      <Shield className="h-6 w-6 text-green-600 mr-3" />
+                      <div>
+                        <h5 className="font-medium text-gray-900">TBH Threat Feeds</h5>
+                        <p className="text-xs text-gray-600">Access integrated threat intelligence repository</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div 
+                    onClick={() => window.location.href = '/threat-input?tab=pdf'}
+                    className="p-4 border border-gray-200 rounded-lg hover:border-blue-500 cursor-pointer transition-all bg-gray-50 hover:bg-blue-50"
+                  >
+                    <div className="flex items-center">
+                      <FileText className="h-6 w-6 text-blue-600 mr-3" />
+                      <div>
+                        <h5 className="font-medium text-gray-900">PDF Intelligence Import</h5>
+                        <p className="text-xs text-gray-600">Process threat intelligence from PDF documents</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div 
+                    onClick={() => window.location.href = '/threat-input?tab=url'}
+                    className="p-4 border border-gray-200 rounded-lg hover:border-blue-500 cursor-pointer transition-all bg-gray-50 hover:bg-blue-50"
+                  >
+                    <div className="flex items-center">
+                      <Globe className="h-6 w-6 text-blue-600 mr-3" />
+                      <div>
+                        <h5 className="font-medium text-gray-900">URL Intelligence Ingestion</h5>
+                        <p className="text-xs text-gray-600">Process intelligence from security research URLs</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Customer POV */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">Custom Requirements</h4>
+                  
+                  <div 
+                    onClick={() => window.location.href = '/threat-input?mode=customer-pov'}
+                    className="p-4 border border-purple-200 rounded-lg hover:border-purple-500 cursor-pointer transition-all bg-purple-50 hover:bg-purple-100"
+                  >
+                    <div className="flex items-center">
+                      <Users className="h-6 w-6 text-purple-600 mr-3" />
+                      <div>
+                        <h5 className="font-medium text-purple-900">Requirements Definition</h5>
+                        <p className="text-xs text-purple-700">Define security objectives from organizational requirements</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <p className="text-xs text-purple-800">
+                      <strong>For Customer POV:</strong> Define the specific security outcome you want to achieve, including the threat scenario, required infrastructure, and success criteria.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
             
-            <ThreatInput />
-            <UseCaseList onGenerateTraining={() => {}} />
-            
             {/* Step 1 Completion */}
-            {useCases.length > 0 && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-6 mt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold text-green-800">Step 1 Complete!</h4>
-                    <p className="text-green-700 text-sm">
-                      You've loaded {useCases.length} threat report{useCases.length !== 1 ? 's' : ''}. Ready to continue to Step 2.
-                    </p>
-                  </div>
-                  <Button 
-                    size="lg" 
-                    onClick={() => {
-                      // Advance to step 2
-                      setWorkflowStats(prev => ({...prev, threatsLoaded: useCases.length}));
-                      // Trigger re-render to show step 2
-                      window.location.reload();
-                    }}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Continue to Step 2
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+            {useCases.length > 0 ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                <div className="text-center">
+                  <h4 className="font-semibold text-green-800 mb-2">Step 1 Complete!</h4>
+                  <p className="text-green-700 text-sm mb-4">
+                    You have {useCases.length} security outcome{useCases.length !== 1 ? 's' : ''} ready for the 6-step workflow.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Select a security outcome above to proceed to infrastructure planning.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <div className="text-center">
+                  <h4 className="font-medium text-blue-800 mb-2">Create Your First Security Outcome</h4>
+                  <p className="text-blue-700 text-sm mb-4">
+                    Choose a method above to create a security outcome or use case definition.
+                  </p>
                 </div>
               </div>
             )}
