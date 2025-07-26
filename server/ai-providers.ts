@@ -69,7 +69,7 @@ Return a JSON array of attack vector names.`;
 
 class GrokProvider implements AIProvider {
   private client: OpenAI;
-  name = 'Grok-2 Vision';
+  name = 'Grok-4';
 
   constructor(apiKey: string) {
     this.client = new OpenAI({ 
@@ -100,7 +100,7 @@ Provide detailed JSON response with:
 Focus on practical, production-ready XSIAM content.`;
 
     const response = await this.client.chat.completions.create({
-      model: "grok-2-vision-1212",
+      model: "grok-4-0709", // Latest Grok-4 model for enhanced XSIAM content generation
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
     });
@@ -126,7 +126,7 @@ Requirements:
 Return only the XQL query with comments.`;
 
     const response = await this.client.chat.completions.create({
-      model: "grok-2-1212", // Use text-only model for XQL generation
+      model: "grok-4-0709", // Latest Grok-4 model for optimal XQL generation
       messages: [{ role: "user", content: prompt }],
     });
 
@@ -154,7 +154,7 @@ Return JSON with array of attack vectors, focusing on:
 Format: {"vectors": ["Attack Vector 1", "Attack Vector 2", ...]}`;
 
     const response = await this.client.chat.completions.create({
-      model: "grok-2-1212",
+      model: "grok-4-0709", // Latest Grok-4 model for attack vector analysis
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
     });

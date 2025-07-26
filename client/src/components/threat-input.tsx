@@ -11,6 +11,7 @@ import { useSaveThreatReport, useSaveUseCase } from "@/hooks/use-local-storage";
 import { scrapeURL, extractUseCasesFromWebContent } from "@/lib/url-scraper";
 import { parsePDFFile, extractUseCasesFromPDFText } from "@/lib/pdf-parser";
 import { threatFeeds, fetchThreatFeedData, extractUseCasesFromFeedItem } from "@/lib/threat-feeds";
+import { parseSimpleThreatReport, convertSimpleToUseCase } from "@/lib/simple-threat-parser";
 import { ManualUseCaseForm } from "./manual-use-case-form";
 import type { UseCase } from "@shared/schema";
 
@@ -37,6 +38,9 @@ export default function ThreatInput() {
     try {
       const scrapedContent = await scrapeURL(urlInput);
       
+      // Parse threat intelligence with simple but effective parser
+      const parsedThreat = parseSimpleThreatReport(scrapedContent.content, scrapedContent.title);
+      
       const threatReport = {
         id: `report_${Date.now()}`,
         title: scrapedContent.title,
@@ -48,6 +52,15 @@ export default function ThreatInput() {
       };
 
       await saveThreatReport.mutateAsync(threatReport);
+      
+      // Convert to use case with multi-data source support
+      const useCase = convertSimpleToUseCase(parsedThreat, {
+        url: scrapedContent.url,
+        author: scrapedContent.author,
+        publishedDate: scrapedContent.publishedDate
+      });
+      
+      await saveUseCase.mutateAsync(useCase);
       
       toast({
         title: "URL Parsed Successfully",
@@ -84,16 +97,28 @@ export default function ThreatInput() {
 
         const parseResult = await parsePDFFile(file);
         
+        // Parse threat intelligence from PDF
+        const parsedThreat = parseSimpleThreatReport(parseResult.text, parseResult.metadata.title || file.name);
+        
         const threatReport = {
           id: `report_${Date.now()}_${file.name}`,
           title: parseResult.metadata.title || file.name,
           content: parseResult.text,
           source: "pdf" as const,
-          extractedAt: new Date(),
+
           processed: false,
         };
 
         await saveThreatReport.mutateAsync(threatReport);
+        
+        // Convert to use case
+        const useCase = convertSimpleToUseCase(parsedThreat, {
+          filename: file.name,
+          pages: parseResult.metadata.pages,
+          author: parseResult.metadata.author
+        });
+        
+        await saveUseCase.mutateAsync(useCase);
       }
       
       toast({
@@ -126,7 +151,6 @@ export default function ThreatInput() {
           url: item.url,
           content: item.description,
           source: feedId as any,
-          extractedAt: new Date(),
           processed: false,
         };
 
@@ -177,8 +201,7 @@ export default function ThreatInput() {
           validationStatus: 'needs_review' as const,
           metadata: {
             source: 'threat_feed' as const,
-            customerInfo: { source: threat.source || 'ThreatResearchHub' },
-            extractedAt: new Date().toISOString()
+            customerInfo: { source: threat.source || 'ThreatResearchHub' }
           },
           createdAt: new Date(),
           updatedAt: new Date()

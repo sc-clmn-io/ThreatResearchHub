@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Shield, FileText, Zap, Monitor, Github, Search, Trash2, Database, ArrowRight, CheckCircle, Cog, Brain } from "lucide-react";
+import { Shield, FileText, Zap, Monitor, Github, Search, Trash2, Database, ArrowRight, CheckCircle, Cog, Brain, Users, Globe, Archive } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -221,20 +221,12 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Integrated Continue Button */}
-            <div className="mt-6 text-center">
-              {currentStep < 6 && (
+            {/* Step Navigation for Steps 2+ */}
+            {currentStep > 1 && currentStep < 6 && (
+              <div className="mt-6 text-center">
                 <Button 
                   size="lg" 
                   onClick={() => {
-                    if (currentStep === 1 && useCases.length === 0) {
-                      toast({
-                        title: "Load Threat Report First",
-                        description: "Please load at least one threat report using the input options below before continuing.",
-                        variant: "destructive"
-                      });
-                      return;
-                    }
                     if (currentStep === 2 && !selectedUseCase) {
                       toast({
                         title: "Select Use Case First", 
@@ -252,14 +244,16 @@ export default function Dashboard() {
                   <ArrowRight className="h-4 w-4 mr-2" />
                   Continue to Step {currentStep + 1}
                 </Button>
-              )}
-              
-              {currentStep === 6 && (
-                <div className="text-green-600 font-semibold">
+              </div>
+            )}
+            
+            {currentStep === 6 && (
+              <div className="mt-6 text-center">
+                <div className="text-green-600 font-semibold text-lg">
                   ✓ Workflow Complete! Your XSIAM content is ready for deployment.
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -304,8 +298,87 @@ export default function Dashboard() {
         {/* Show only current step content */}
         {currentStep === 1 && (
           <div className="space-y-6">
+            {/* Prominent Upload Options */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <h3 className="text-lg font-semibold mb-4 text-center">Choose How to Load Threat Intelligence</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Link href="/threat-input">
+                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 cursor-pointer transition-all">
+                    <div className="text-center">
+                      <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                      <h4 className="font-medium text-gray-900 mb-2">Upload PDF Report</h4>
+                      <p className="text-sm text-gray-600">Upload threat intelligence PDF documents</p>
+                    </div>
+                  </div>
+                </Link>
+                
+                <Link href="/threat-input">
+                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 cursor-pointer transition-all">
+                    <div className="text-center">
+                      <Globe className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                      <h4 className="font-medium text-gray-900 mb-2">Paste URL</h4>
+                      <p className="text-sm text-gray-600">Load from threat intelligence URLs</p>
+                    </div>
+                  </div>
+                </Link>
+                
+                <Link href="/threat-input">
+                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 cursor-pointer transition-all">
+                    <div className="text-center">
+                      <Users className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                      <h4 className="font-medium text-gray-900 mb-2">Customer POV</h4>
+                      <p className="text-sm text-gray-600">Enter customer requirements manually</p>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+              
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-600 mb-4">Or browse existing threat intelligence:</p>
+                <Link href="/threat-feeds">
+                  <Button variant="outline" className="mr-3">
+                    <Database className="h-4 w-4 mr-2" />
+                    View Threat Feeds
+                  </Button>
+                </Link>
+                <Link href="/threat-archive">
+                  <Button variant="outline">
+                    <Archive className="h-4 w-4 mr-2" />
+                    Browse Archive
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
             <ThreatInput />
             <UseCaseList onGenerateTraining={() => {}} />
+            
+            {/* Step 1 Completion */}
+            {useCases.length > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6 mt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-green-800">Step 1 Complete!</h4>
+                    <p className="text-green-700 text-sm">
+                      You've loaded {useCases.length} threat report{useCases.length !== 1 ? 's' : ''}. Ready to continue to Step 2.
+                    </p>
+                  </div>
+                  <Button 
+                    size="lg" 
+                    onClick={() => {
+                      // Advance to step 2
+                      setWorkflowStats(prev => ({...prev, threatsLoaded: useCases.length}));
+                      // Trigger re-render to show step 2
+                      window.location.reload();
+                    }}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Continue to Step 2
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
         

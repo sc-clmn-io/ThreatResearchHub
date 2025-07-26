@@ -15,7 +15,11 @@ export const xsiamContent = pgTable("xsiam_content", {
   // Content data stored as JSONB
   contentData: jsonb("content_data").notNull(), // The actual XQL, YAML, JSON content
   requirements: jsonb("requirements").notNull(), // Original wizard requirements
-  metadata: jsonb("metadata"), // Additional metadata like MITRE mapping, data sources
+  metadata: jsonb("metadata"), // Additional metadata like MITRE mapping
+  
+  // Multi-Data Source Support
+  dataSources: jsonb("data_sources").notNull(), // Array of data sources this content uses
+  dataSourceMappings: jsonb("data_source_mappings"), // Field mappings between data sources
   
   // Export formats available
   formats: jsonb("formats").default([]), // ['json', 'yaml', 'xml'] - supported export formats
@@ -48,21 +52,24 @@ export const contentCollections = pgTable("content_collections", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Use Case History for tracking all platform activity for 1+ years
-export const useCaseHistory = pgTable("use_case_history", {
+// Standardized Use Case Definition Template
+export const useCaseDefinitions = pgTable("use_case_definitions", {
   id: varchar("id").primaryKey().notNull(),
+  
+  // Security Outcome Definition
+  securityOutcome: text("security_outcome").notNull(), // Primary goal: "Detect lateral movement", "Block malware", etc.
+  threatScenario: text("threat_scenario").notNull(), // Complete threat scenario description
+  successCriteria: jsonb("success_criteria").notNull(), // What constitutes success
   
   // Core use case data
   title: varchar("title").notNull(),
   description: text("description"),
   category: varchar("category").notNull(), // 'endpoint', 'network', 'cloud', 'identity'
   severity: varchar("severity").notNull(), // 'critical', 'high', 'medium', 'low'
-  status: varchar("status").default("active"), // 'active', 'archived', 'completed'
   
-  // Source information
-  sourceType: varchar("source_type").notNull(), // 'threat_feed', 'manual_url', 'pdf_upload', 'bulk_processing'
-  sourceVendor: varchar("source_vendor"), // 'Unit42', 'CISA', 'Mandiant', etc.
-  sourceUrl: text("source_url"),
+  // Source information (POV customer or threat report)
+  sourceType: varchar("source_type").notNull(), // 'customer_pov', 'threat_report', 'threat_feed'
+  sourceDetails: jsonb("source_details"), // Customer info or threat report details
   
   // Threat intelligence data
   cves: jsonb("cves").default([]), // Array of CVE IDs
@@ -70,9 +77,35 @@ export const useCaseHistory = pgTable("use_case_history", {
   attackVectors: jsonb("attack_vectors").default([]), // MITRE ATT&CK techniques
   threatActors: jsonb("threat_actors").default([]), // Associated threat groups
   
+  // Multi-Data Source Requirements
+  dataSources: jsonb("data_sources").default([]), // Array of required data sources
+  /*
+  Data source structure:
+  {
+    category: "endpoint" | "network" | "cloud" | "identity" | "email" | "web" | "database",
+    type: "Windows Event Logs" | "Sysmon" | "AWS CloudTrail" | "Azure AD" | "CrowdStrike" | "Palo Alto" | etc,
+    fields: ["field1", "field2"], // Required fields for this data source
+    priority: "critical" | "high" | "medium" | "low", // How important this data source is
+    vendor: "Microsoft" | "AWS" | "Palo Alto" | "CrowdStrike" | etc,
+    integration_method: "API" | "Syslog" | "Agent" | "Direct" | "Broker"
+  }
+  */
+  
+  // Infrastructure Requirements (Step-by-Step)
+  infrastructureRequirements: jsonb("infrastructure_requirements").notNull(), // Detailed infrastructure needs
+  dataSourceRequirements: jsonb("data_source_requirements").notNull(), // Required data sources and configuration
+  
+  // Workflow Progress Tracking
+  currentStep: integer("current_step").default(1), // Current workflow step (1-6)
+  stepStatus: jsonb("step_status").default({}), // Status of each step
+  infrastructureDeployed: boolean("infrastructure_deployed").default(false),
+  dataSourcesConfigured: boolean("data_sources_configured").default(false),
+  xsiamIntegrated: boolean("xsiam_integrated").default(false),
+  contentGenerated: boolean("content_generated").default(false),
+  contentTested: boolean("content_tested").default(false),
+  
   // Generated content tracking
   generatedContent: jsonb("generated_content").default({}), // Track what was generated: XQL, playbooks, etc.
-  workflowSteps: jsonb("workflow_steps").default([]), // Security operations workflow progress
   labConfiguration: jsonb("lab_configuration"), // Lab setup details if applicable
   
   // Activity tracking
@@ -93,7 +126,7 @@ export const exportHistory = pgTable("export_history", {
   id: varchar("id").primaryKey().notNull(),
   contentId: varchar("content_id").references(() => xsiamContent.id),
   collectionId: varchar("collection_id").references(() => contentCollections.id),
-  useCaseHistoryId: varchar("use_case_history_id").references(() => useCaseHistory.id),
+  useCaseDefinitionId: varchar("use_case_definition_id").references(() => useCaseDefinitions.id),
   exportType: varchar("export_type").notNull(), // 'single', 'collection', 'bulk'
   format: varchar("format").notNull(), // 'json', 'yaml', 'zip'
   platform: varchar("platform"), // 'xsiam', 'xsoar', 'phantom', 'generic'
@@ -128,6 +161,8 @@ export type InsertXSIAMContent = typeof xsiamContent.$inferInsert;
 export type ContentCollection = typeof contentCollections.$inferSelect;
 export type InsertContentCollection = typeof contentCollections.$inferInsert;
 export type ExportHistory = typeof exportHistory.$inferSelect;
+export type UseCaseDefinition = typeof useCaseDefinitions.$inferSelect;
+export type InsertUseCaseDefinition = typeof useCaseDefinitions.$inferInsert;
 export type InsertExportHistory = typeof exportHistory.$inferInsert;
 export type ContentValidation = typeof contentValidation.$inferSelect;
 export type InsertContentValidation = typeof contentValidation.$inferInsert;

@@ -22,12 +22,14 @@ import LabEnvironmentPage from "@/pages/lab-environment";
 import UserGuidePage from "@/pages/user-guide";
 import PIISanitizerPage from "@/pages/pii-sanitizer";
 import ThreatArchivePage from "@/pages/threat-archive";
+import ThreatInputPage from "@/pages/threat-input";
 import ThreatMonitoringPage from "@/pages/threat-monitoring";
 import FindingsReportPage from "@/pages/findings-report";
 import XSIAMDebuggerPage from "@/pages/xsiam-debugger";
 import XSIAMDeployment from "@/pages/xsiam-deployment";
 import GitHubExportPage from "@/pages/github-export";
 import ContentRecommendationsPage from "@/pages/content-recommendations";
+import SequentialWorkflowPage from "@/pages/sequential-workflow";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -35,6 +37,8 @@ function Router() {
     <PlatformLayout>
       <Switch>
         <Route path="/" component={Dashboard} />
+        <Route path="/sequential-workflow" component={SequentialWorkflowPage} />
+        <Route path="/threat-input" component={ThreatInputPage} />
         <Route path="/threat-feeds" component={ThreatFeeds} />
         <Route path="/threat-intelligence" component={ThreatIntelligence} />
 
