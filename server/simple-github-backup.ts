@@ -54,12 +54,11 @@ export async function simpleGitHubBackup(config: GitHubBackupConfig): Promise<Ba
 async function collectProjectFiles(): Promise<string[]> {
   const files: string[] = [];
   const includePatterns = [
-    // Generated XSIAM Content
-    'content/xql-rules',
-    'content/playbooks',
-    'content/alert-layouts',
-    'content/dashboards',
-    'content/use-cases',
+    // Complete XSIAM Content Directory
+    'content',
+    
+    // Infrastructure Automation
+    'infra',
     
     // Core Platform Files
     'client/src',
@@ -77,7 +76,9 @@ async function collectProjectFiles(): Promise<string[]> {
     
     // Documentation
     'GITHUB_EXPORT_GUIDE.md',
-    'DEVELOPMENT_MANIFEST.md'
+    'DEVELOPMENT_MANIFEST.md',
+    'CONTRIBUTING.md',
+    'docs'
   ];
   
   const excludePatterns = [
@@ -86,7 +87,9 @@ async function collectProjectFiles(): Promise<string[]> {
     'dist',
     '.replit',
     'attached_assets',
-    'backups'
+    'backups',
+    '.DS_Store',
+    'package-lock.json'
   ];
   
   function scanDirectory(dir: string, relativePath = '') {
@@ -125,7 +128,49 @@ async function collectProjectFiles(): Promise<string[]> {
     }
   }
   
+  // Ensure content directory is fully included
+  ensureContentDirectorySync(files);
+  
+  console.log(`📋 Collected ${files.length} files for backup including complete content/ directory`);
+  
+  // Debug: Show content files being backed up
+  const contentFiles = files.filter(f => f.startsWith('content/'));
+  console.log(`🗂️ Content files in backup: ${contentFiles.length}`);
+  contentFiles.forEach(f => console.log(`   📄 ${f}`));
+  
   return files;
+}
+
+function ensureContentDirectorySync(files: string[]) {
+  // Ensure all content files are included
+  const contentDir = path.join(process.cwd(), 'content');
+  if (!fs.existsSync(contentDir)) return;
+  
+  const contentFiles = [];
+  
+  function scanContentDir(dir: string, relativePath = 'content') {
+    const items = fs.readdirSync(dir);
+    
+    for (const item of items) {
+      const fullPath = path.join(dir, item);
+      const relPath = path.join(relativePath, item);
+      
+      const stat = fs.statSync(fullPath);
+      
+      if (stat.isDirectory()) {
+        scanContentDir(fullPath, relPath);
+      } else if (stat.isFile()) {
+        contentFiles.push(relPath);
+        // Add if not already in files array
+        if (!files.includes(relPath)) {
+          files.push(relPath);
+        }
+      }
+    }
+  }
+  
+  scanContentDir(contentDir);
+  console.log(`✅ Content directory sync: ${contentFiles.length} content files ensured in backup`);
 }
 
 async function createBackupContent(files: string[]): Promise<Record<string, string>> {
