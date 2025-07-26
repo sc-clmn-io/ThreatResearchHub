@@ -270,6 +270,13 @@ const ContentBuilderWizard: React.FC = () => {
 
   const renderBasicInfo = () => (
     <div className="space-y-6">
+      <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 mb-6">
+        <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">POV Content Generation from Customer DoR</h3>
+        <p className="text-blue-800 dark:text-blue-200 text-sm">
+          Generate comprehensive POV content: 5 use cases each with data source integrations, XSIAM correlation rules, 
+          alert layouts with analyst decision support (isolate endpoint, reset credentials, etc.), automation playbooks, and operational dashboards.
+        </p>
+      </div>
       <div className="space-y-2">
         <Label htmlFor="threatName">Threat/Use Case Name</Label>
         <Input

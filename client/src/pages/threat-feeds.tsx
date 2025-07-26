@@ -236,6 +236,70 @@ export default function ThreatFeeds() {
   const [selectedSource, setSelectedSource] = useState<string>('all');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
   const [ingestingThreatId, setIngestingThreatId] = useState<string | null>(null);
+  const [ingestedCount, setIngestedCount] = useState(0);
+  const [actionMessage, setActionMessage] = useState('');
+
+  const calculateThreatAge = (publishedDate: string): string => {
+    const now = new Date();
+    const published = new Date(publishedDate);
+    const diffInDays = Math.floor((now.getTime() - published.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) return 'Today';
+    if (diffInDays === 1) return '1 day ago';
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
+    return `${Math.floor(diffInDays / 30)} months ago`;
+  };
+
+  const updateThreatMetrics = (useCase: any) => {
+    const existingMetrics = JSON.parse(localStorage.getItem('threatMetrics') || '{}');
+    const now = new Date().toISOString();
+    
+    const updatedMetrics = {
+      ...existingMetrics,
+      lastUpdate: now,
+      totalIngested: (existingMetrics.totalIngested || 0) + 1,
+      recentIngestions: [
+        ...(existingMetrics.recentIngestions || []).slice(-9),
+        {
+          timestamp: now,
+          title: useCase.title,
+          source: useCase.source,
+          severity: useCase.severity
+        }
+      ]
+    };
+    
+    localStorage.setItem('threatMetrics', JSON.stringify(updatedMetrics));
+  };
+
+  const detectThreatCategory = (threat: ThreatReport): string => {
+    const techStr = threat.technologies.join(' ').toLowerCase();
+    const titleStr = threat.title.toLowerCase();
+    
+    if (techStr.includes('kubernetes') || techStr.includes('docker') || techStr.includes('container') || 
+        techStr.includes('cloud') || techStr.includes('aws') || techStr.includes('azure') || techStr.includes('gcp') ||
+        titleStr.includes('cloud') || titleStr.includes('container')) {
+      return 'cloud';
+    }
+    
+    if (techStr.includes('windows') || techStr.includes('endpoint') || techStr.includes('agent') || 
+        techStr.includes('workstation') || techStr.includes('desktop') || titleStr.includes('endpoint')) {
+      return 'endpoint';
+    }
+    
+    if (techStr.includes('network') || techStr.includes('firewall') || techStr.includes('router') || 
+        techStr.includes('switch') || techStr.includes('proxy') || titleStr.includes('network')) {
+      return 'network';
+    }
+    
+    if (techStr.includes('identity') || techStr.includes('authentication') || techStr.includes('oauth') || 
+        techStr.includes('saml') || techStr.includes('sso') || titleStr.includes('auth')) {
+      return 'identity';
+    }
+    
+    return 'endpoint'; // Default fallback
+  };
 
   useEffect(() => {
     let filtered = threats;
@@ -486,6 +550,12 @@ Technical Summary: This ${threat.severity} severity vulnerability affects ${thre
       const category = determineCategory(threat.technologies);
       console.log('📂 Category determined:', category);
 
+      // Extract additional threat intelligence
+      const indicators = extractIndicators(threat);
+      const attackVectors = extractAttackVectors(threat);
+      const threatActors = extractThreatActors(threat);
+      const mitreMapping = extractMitreMapping(threat);
+
       // Generate contextual use case with source information
       const useCase = {
         id: `usecase_${Date.now()}`,
@@ -505,7 +575,21 @@ Technical Summary: This ${threat.severity} severity vulnerability affects ${thre
         vulnerabilityTypes: threat.vulnerabilityTypes,
         cvssScore: threat.cvssScore,
         exploitAvailable: threat.exploitAvailable,
-        createdAt: new Date().toISOString()
+        indicators: indicators,
+        attackVectors: attackVectors,
+        threatActors: threatActors,
+        mitreMapping: mitreMapping,
+        extractedTechniques: mitreMapping.slice(0, 5), // For compatibility
+        extractedMitigations: generateMitigations(threat.vulnerabilityTypes),
+        estimatedDuration: calculateEstimatedDuration(category, threat.severity).toString(),
+        validated: false,
+        validationStatus: 'needs_review' as const,
+        metadata: {
+          source: 'threat_feed' as const,
+          entryDate: new Date().toISOString()
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
 
       console.log('💾 Storing use case...');
@@ -558,7 +642,9 @@ The use case has been created and is ready for Security Operations Workflow.
       }, 1500); // Reduced delay for better UX
     } catch (error) {
       console.error('❌ Error ingesting threat:', error);
-      console.error('Error details:', error.message, error.stack);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : '';
+      console.error('Error details:', errorMessage, errorStack);
       alert(`❌ Failed to ingest threat: ${threat.title}. Please check the console for details.`);
     } finally {
       setIngestingThreatId(null);
@@ -584,6 +670,204 @@ The use case has been created and is ready for Security Operations Workflow.
     }
     
     return 'identity'; // Default fallback
+  }
+
+  function extractIndicators(threat: ThreatReport): string[] {
+    const indicators: string[] = [];
+    const content = `${threat.title} ${threat.summary}`.toLowerCase();
+
+    // IP address patterns
+    const ipPattern = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
+    const ips = content.match(ipPattern) || [];
+    indicators.push(...ips.map(ip => `IP: ${ip}`));
+
+    // Domain patterns
+    const domainPattern = /\b[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}\b/g;
+    const domains = content.match(domainPattern) || [];
+    indicators.push(...domains.slice(0, 3).map(domain => `Domain: ${domain}`));
+
+    // Hash patterns (MD5, SHA1, SHA256)
+    const hashPattern = /\b[a-fA-F0-9]{32,64}\b/g;
+    const hashes = content.match(hashPattern) || [];
+    indicators.push(...hashes.slice(0, 2).map(hash => `Hash: ${hash.substring(0, 16)}...`));
+
+    // File extensions and names
+    const filePattern = /\b\w+\.(exe|dll|bat|ps1|vbs|jar|zip|rar)\b/gi;
+    const files = content.match(filePattern) || [];
+    indicators.push(...files.slice(0, 3).map(file => `File: ${file}`));
+
+    // Registry keys
+    if (content.includes('registry') || content.includes('hkey')) {
+      indicators.push('Registry modifications detected');
+    }
+
+    // Process names
+    const processPattern = /\b(cmd|powershell|explorer|lsass|winlogon|svchost|rundll32)\.exe\b/gi;
+    const processes = content.match(processPattern) || [];
+    indicators.push(...processes.slice(0, 2).map(proc => `Process: ${proc}`));
+
+    return indicators.slice(0, 5); // Limit to 5 indicators
+  }
+
+  function extractAttackVectors(threat: ThreatReport): string[] {
+    const vectors: string[] = [];
+    const content = `${threat.title} ${threat.summary} ${threat.vulnerabilityTypes.join(' ')}`.toLowerCase();
+
+    // Common attack vectors
+    const vectorPatterns = [
+      { pattern: /phishing|email|spear.?phish/i, vector: 'Email/Phishing' },
+      { pattern: /remote.?code.?execution|rce/i, vector: 'Remote Code Execution' },
+      { pattern: /sql.?injection|sqli/i, vector: 'SQL Injection' },
+      { pattern: /cross.?site.?scripting|xss/i, vector: 'Cross-Site Scripting' },
+      { pattern: /privilege.?escalation/i, vector: 'Privilege Escalation' },
+      { pattern: /lateral.?movement/i, vector: 'Lateral Movement' },
+      { pattern: /brute.?force|password.?attack/i, vector: 'Brute Force' },
+      { pattern: /denial.?of.?service|ddos/i, vector: 'Denial of Service' },
+      { pattern: /supply.?chain/i, vector: 'Supply Chain' },
+      { pattern: /social.?engineering/i, vector: 'Social Engineering' },
+      { pattern: /zero.?day/i, vector: 'Zero-Day Exploit' },
+      { pattern: /malware|trojan|ransomware/i, vector: 'Malware Deployment' },
+      { pattern: /web.?application|webapp/i, vector: 'Web Application' }
+    ];
+
+    vectorPatterns.forEach(({ pattern, vector }) => {
+      if (pattern.test(content) && !vectors.includes(vector)) {
+        vectors.push(vector);
+      }
+    });
+
+    // Add vectors based on technologies
+    if (threat.technologies.some(tech => ['AWS', 'Azure', 'GCP'].includes(tech))) {
+      vectors.push('Cloud Infrastructure');
+    }
+    if (threat.technologies.some(tech => ['Kubernetes', 'Docker'].includes(tech))) {
+      vectors.push('Container Escape');
+    }
+
+    return vectors.slice(0, 4); // Limit to 4 vectors
+  }
+
+  function extractThreatActors(threat: ThreatReport): string[] {
+    const actors: string[] = [];
+    const content = `${threat.title} ${threat.summary}`.toLowerCase();
+
+    // Known APT groups
+    const aptPattern = /apt[0-9]+|apt-[0-9]+/gi;
+    const apts = content.match(aptPattern) || [];
+    actors.push(...apts.slice(0, 2));
+
+    // Common threat actor names/types
+    const actorPatterns = [
+      { pattern: /nation.?state|state.?sponsor/i, actor: 'Nation-State' },
+      { pattern: /cybercriminal|criminal.?group/i, actor: 'Cybercriminal Group' },
+      { pattern: /insider.?threat/i, actor: 'Insider Threat' },
+      { pattern: /hacktivist/i, actor: 'Hacktivist' },
+      { pattern: /script.?kiddie/i, actor: 'Script Kiddie' },
+      { pattern: /advanced.?persistent.?threat/i, actor: 'APT Group' },
+      { pattern: /ransomware.?group/i, actor: 'Ransomware Group' }
+    ];
+
+    actorPatterns.forEach(({ pattern, actor }) => {
+      if (pattern.test(content) && !actors.includes(actor)) {
+        actors.push(actor);
+      }
+    });
+
+    // If no specific actors found, infer from severity and type
+    if (actors.length === 0) {
+      if (threat.severity === 'critical' && threat.exploitAvailable) {
+        actors.push('Advanced Threat Actor');
+      } else if (threat.vulnerabilityTypes.some(type => type.includes('ransomware'))) {
+        actors.push('Ransomware Group');
+      } else {
+        actors.push('Unknown Threat Actor');
+      }
+    }
+
+    return actors.slice(0, 3); // Limit to 3 actors
+  }
+
+  function extractMitreMapping(threat: ThreatReport): string[] {
+    const techniques: string[] = [];
+    const content = `${threat.title} ${threat.summary} ${threat.vulnerabilityTypes.join(' ')}`.toLowerCase();
+
+    // MITRE ATT&CK technique mapping based on vulnerability types and content
+    const mitreMap: Record<string, string[]> = {
+      'remote code execution': ['T1203', 'T1055', 'T1106'],
+      'privilege escalation': ['T1068', 'T1134', 'T1543'],
+      'lateral movement': ['T1021', 'T1077', 'T1105'],
+      'persistence': ['T1053', 'T1547', 'T1543'],
+      'credential access': ['T1003', 'T1110', 'T1212'],
+      'defense evasion': ['T1055', 'T1027', 'T1562'],
+      'discovery': ['T1083', 'T1057', 'T1018'],
+      'collection': ['T1005', 'T1039', 'T1056'],
+      'exfiltration': ['T1041', 'T1020', 'T1002'],
+      'command and control': ['T1071', 'T1090', 'T1573']
+    };
+
+    // Extract techniques based on vulnerability types
+    threat.vulnerabilityTypes.forEach(vulnType => {
+      const key = vulnType.toLowerCase();
+      Object.keys(mitreMap).forEach(mitreKey => {
+        if (key.includes(mitreKey)) {
+          techniques.push(...mitreMap[mitreKey]);
+        }
+      });
+    });
+
+    // Extract direct MITRE technique references
+    const mitrePattern = /T\d{4}(?:\.\d{3})?/g;
+    const directTechniques = content.match(mitrePattern) || [];
+    techniques.push(...directTechniques);
+
+    // Remove duplicates and return limited set
+    return [...new Set(techniques)].slice(0, 6);
+  }
+
+  function generateMitigations(vulnerabilityTypes: string[]): string[] {
+    const mitigations: string[] = [];
+    
+    vulnerabilityTypes.forEach(vulnType => {
+      const type = vulnType.toLowerCase();
+      if (type.includes('injection')) {
+        mitigations.push('Input validation and sanitization');
+      }
+      if (type.includes('authentication')) {
+        mitigations.push('Multi-factor authentication');
+      }
+      if (type.includes('privilege')) {
+        mitigations.push('Principle of least privilege');
+      }
+      if (type.includes('remote')) {
+        mitigations.push('Network segmentation');
+      }
+    });
+
+    // Default mitigations
+    if (mitigations.length === 0) {
+      mitigations.push('Apply security patches', 'Monitor for indicators', 'Implement access controls');
+    }
+
+    return [...new Set(mitigations)].slice(0, 4);
+  }
+
+  function calculateEstimatedDuration(category: string, severity: string): number {
+    const baseDuration = {
+      endpoint: 45,
+      network: 60,
+      cloud: 75,
+      identity: 50
+    };
+
+    const severityMultiplier = {
+      low: 0.8,
+      medium: 1.0,
+      high: 1.3,
+      critical: 1.6
+    };
+
+    return Math.round((baseDuration[category as keyof typeof baseDuration] || 45) * 
+                     (severityMultiplier[severity as keyof typeof severityMultiplier] || 1.0));
   }
 
   return (

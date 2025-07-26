@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Upload, Link, Rss, Target } from "lucide-react";
+import { Upload, Link, Rss, Target, Shield } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useSaveThreatReport, useSaveUseCase } from "@/hooks/use-local-storage";
 import { scrapeURL, extractUseCasesFromWebContent } from "@/lib/url-scraper";
@@ -147,6 +148,60 @@ export default function ThreatInput() {
     }
   };
 
+  const handleLoadPreIngestedThreats = async () => {
+    setIsProcessing(true);
+    try {
+      // Fetch threats from ThreatResearchHub's threat intelligence system
+      const response = await fetch('/api/threats');
+      if (!response.ok) {
+        throw new Error('Failed to fetch pre-ingested threats');
+      }
+      
+      const threats = await response.json();
+      
+      // Convert threats to use cases and save them
+      for (const threat of threats) {
+        const useCase: UseCase = {
+          id: `usecase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          title: threat.title,
+          description: threat.description || threat.summary || 'Pre-ingested threat from ThreatResearchHub',
+          category: (threat.category === 'general' ? 'endpoint' : threat.category) as 'endpoint' | 'network' | 'cloud' | 'identity',
+          severity: threat.severity as 'critical' | 'high' | 'medium' | 'low',
+          threatReportId: threat.id || `report_${Date.now()}`,
+          estimatedDuration: '240 minutes', // 4 hours default  
+          mitreMapping: [],
+          indicators: threat.threatActors || [],
+          extractedTechniques: [],
+          extractedMitigations: [],
+          validated: false,
+          validationStatus: 'needs_review' as const,
+          metadata: {
+            source: 'threat_feed' as const,
+            customerInfo: { source: threat.source || 'ThreatResearchHub' },
+            extractedAt: new Date().toISOString()
+          },
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        await saveUseCase.mutateAsync(useCase);
+      }
+      
+      toast({
+        title: "Pre-Ingested Threats Loaded",
+        description: `Successfully loaded ${threats.length} threats from ThreatResearchHub intelligence system.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Load Failed", 
+        description: error instanceof Error ? error.message : "Failed to load pre-ingested threats",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleManualUseCaseSubmit = async (useCase: UseCase) => {
     try {
       await saveUseCase.mutateAsync(useCase);
@@ -182,30 +237,58 @@ export default function ThreatInput() {
             <Upload className="text-cortex-blue text-xl mr-3" />
             <h2 className="text-xl font-medium text-cortex-dark">Threat Intelligence Input</h2>
           </div>
-          <Button
-            onClick={() => setShowManualForm(true)}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <Target className="w-4 h-4" />
-            Customer POC Entry
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => setShowManualForm(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Target className="w-4 h-4" />
+                Customer DoR Entry
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Customer Design of Record (DoR) - Create 5 comprehensive POV use cases with data source integration, correlation rules, alert layouts, automation playbooks, and dashboards</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="url" className="flex items-center gap-2">
-              <Link className="w-4 h-4" />
-              URL Link
-            </TabsTrigger>
-            <TabsTrigger value="pdf" className="flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              PDF Upload
-            </TabsTrigger>
-            <TabsTrigger value="feeds" className="flex items-center gap-2">
-              <Rss className="w-4 h-4" />
-              Threat Feeds
-            </TabsTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="url" className="flex items-center gap-2">
+                  <Link className="w-4 h-4" />
+                  URL Link
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Parse threat reports from web URLs (security blogs, advisories, research posts)</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="pdf" className="flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  PDF Upload
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Upload PDF threat reports for automated content extraction and analysis</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="feeds" className="flex items-center gap-2">
+                  <Rss className="w-4 h-4" />
+                  Threat Feeds
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Import latest threats from live intelligence feeds (CISA, Unit42, SANS ISC)</p>
+              </TooltipContent>
+            </Tooltip>
           </TabsList>
 
           <TabsContent value="url" className="space-y-4">
@@ -222,14 +305,21 @@ export default function ThreatInput() {
                   onChange={(e) => setUrlInput(e.target.value)}
                   className="flex-1 rounded-r-none"
                 />
-                <Button
-                  onClick={handleURLParse}
-                  disabled={isProcessing}
-                  className="rounded-l-none bg-cortex-blue hover:bg-blue-700"
-                >
-                  <i className="fas fa-download mr-2" />
-                  {isProcessing ? "Parsing..." : "Parse"}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleURLParse}
+                      disabled={isProcessing}
+                      className="rounded-l-none bg-cortex-blue hover:bg-blue-700"
+                    >
+                      <i className="fas fa-download mr-2" />
+                      {isProcessing ? "Parsing..." : "Parse"}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Extract threat intelligence content from the provided URL</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
             <div className="text-sm text-gray-500">
@@ -265,30 +355,58 @@ export default function ThreatInput() {
           </TabsContent>
 
           <TabsContent value="feeds" className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {threatFeeds.map((feed) => (
-                <Card
-                  key={feed.id}
-                  className="cursor-pointer hover:border-cortex-blue transition-colors"
-                  onClick={() => handleThreatFeed(feed.id)}
-                >
-                  <CardContent className="p-4">
+            <div className="space-y-4">
+              {/* Load Pre-Ingested Threats */}
+              <Card className="border-green-200 bg-green-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <i className={`${feed.icon} text-xl mr-3`} 
-                         style={{ color: getFeedColor(feed.id) }} />
+                      <Shield className="text-green-600 text-xl mr-3" />
                       <div>
-                        <h3 className="font-medium">{feed.name}</h3>
-                        <p className="text-sm text-gray-500">{feed.description}</p>
-                        {feed.requiresAuth && (
-                          <span className="inline-block mt-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
-                            API Key Required
-                          </span>
-                        )}
+                        <h3 className="font-medium text-green-800">Load Pre-Ingested Threats</h3>
+                        <p className="text-sm text-green-600">Use threats already processed by ThreatResearchHub</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <Button
+                      onClick={handleLoadPreIngestedThreats}
+                      disabled={isProcessing}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {isProcessing ? "Loading..." : "Load Threats"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Live Feed Sources */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-gray-700 mb-3">Or fetch from live sources:</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {threatFeeds.map((feed) => (
+                    <Card
+                      key={feed.id}
+                      className="cursor-pointer hover:border-cortex-blue transition-colors"
+                      onClick={() => handleThreatFeed(feed.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center">
+                          <i className={`${feed.icon} text-xl mr-3`} 
+                             style={{ color: getFeedColor(feed.id) }} />
+                          <div>
+                            <h3 className="font-medium">{feed.name}</h3>
+                            <p className="text-sm text-gray-500">{feed.description}</p>
+                            {feed.requiresAuth && (
+                              <span className="inline-block mt-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                                API Key Required
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             </div>
             {isProcessing && (
               <div className="text-center text-sm text-gray-500">

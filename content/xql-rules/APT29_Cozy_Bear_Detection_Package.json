@@ -1,0 +1,7 @@
+{
+  "rule_name": "APT29 Cozy Bear Activity Detection",
+  "xql_query": "dataset = xdr_data | filter event_type = ENUM.PROCESS and action_process_image_name contains \"powershell\" and action_process_command_line contains \"WMI\" and action_process_command_line contains \"embassy\"",
+  "severity": "HIGH",
+  "enabled": true,
+  "description": "Detects APT29 Cozy Bear PowerShell WMI execution patterns"
+}

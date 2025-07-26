@@ -149,7 +149,7 @@ export default function ThreatIntelligenceManager({ onThreatSelected }: ThreatIn
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Threat Intelligence Sources</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Threat Sources</h2>
           <p className="text-sm text-gray-600">Manage real-time threat feeds from security vendors</p>
         </div>
         

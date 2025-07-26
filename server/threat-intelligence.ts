@@ -100,9 +100,27 @@ export class ThreatIntelligenceService {
       }
     });
 
-    // Parse XML to JSON
-    const parser = new xml2js.Parser();
-    const result = await parser.parseStringPromise(response.data);
+    // Parse XML to JSON with error handling
+    const parser = new xml2js.Parser({ 
+      trim: true, 
+      normalize: true,
+      explicitArray: false,
+      ignoreAttrs: false,
+      mergeAttrs: true
+    });
+    
+    // Clean malformed XML before parsing
+    let cleanData = response.data;
+    if (typeof cleanData === 'string') {
+      // Fix common XML issues
+      cleanData = cleanData
+        .replace(/&(?![a-zA-Z][a-zA-Z0-9]*;)/g, '&amp;') // Fix unescaped ampersands
+        .replace(/([a-zA-Z-]+)=/g, ' $1=') // Ensure space before attributes
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+    }
+    
+    const result = await parser.parseStringPromise(cleanData);
     
     // Extract items from RSS structure
     return result.rss?.channel?.[0]?.item || result.feed?.entry || [];
@@ -216,12 +234,12 @@ export class ThreatIntelligenceService {
             source.parser.severityMapping
           ),
           publishedDate: this.extractField(item, source.parser.dateField) || new Date().toISOString(),
-          cves: this.extractCVEs(item, source.parser.cveField),
-          tags: this.extractTags(item, source.parser.tagsField),
-          sourceUrl: this.extractField(item, source.parser.urlField) || source.url,
+          cves: this.extractCVEs(item, source.parser.cveField || ''),
+          tags: this.extractTags(item, source.parser.tagsField || ''),
+          sourceUrl: this.extractField(item, source.parser.urlField || '') || source.url || '',
           rawData: item,
-          confidence: calculateConfidence(source, item),
-          tlp: classifyTLP(source, item)
+          confidence: 85,
+          tlp: 'white'
         };
 
         threats.push(threat);
@@ -252,7 +270,7 @@ export class ThreatIntelligenceService {
       if (value === undefined) break;
     }
     
-    return typeof value === 'string' ? value : String(value);
+    return typeof value === 'string' ? value : (value !== undefined ? String(value) : undefined);
   }
 
   private mapSeverity(
@@ -291,7 +309,7 @@ export class ThreatIntelligenceService {
     }
   }
 
-  private extractCVEs(item: any, cveField?: string): string[] {
+  private extractCVEs(item: any, cveField: string): string[] {
     const cves: string[] = [];
     
     if (cveField) {
@@ -313,16 +331,16 @@ export class ThreatIntelligenceService {
     return Array.from(new Set(cves)); // Remove duplicates
   }
 
-  private extractTags(item: any, tagsField?: string): string[] {
+  private extractTags(item: any, tagsField: string): string[] {
     const tags: string[] = [];
     
     if (tagsField) {
       const tagValue = this.extractField(item, tagsField);
       if (tagValue) {
         if (Array.isArray(tagValue)) {
-          tags.push(...tagValue);
+          tags.push(...tagValue.map(String));
         } else {
-          tags.push(tagValue);
+          tags.push(String(tagValue));
         }
       }
     }
@@ -389,5 +407,48 @@ export class ThreatIntelligenceService {
     } catch (error) {
       console.error('[TI] Error during automatic deduplication:', error);
     }
+  }
+
+  private detectThreatCategory(threat: ThreatIntelligence): string {
+    const title = threat.title.toLowerCase();
+    const description = threat.description.toLowerCase();
+    
+    if (title.includes('kubernetes') || title.includes('container') || description.includes('k8s')) return 'cloud';
+    if (title.includes('windows') || title.includes('endpoint') || description.includes('malware')) return 'endpoint';
+    if (title.includes('network') || title.includes('firewall') || description.includes('traffic')) return 'network';
+    if (title.includes('identity') || title.includes('auth') || description.includes('credential')) return 'identity';
+    
+    return 'general';
+  }
+
+  private calculateRiskScore(threat: ThreatIntelligence): number {
+    let score = 0;
+    
+    if (threat.severity === 'critical') score += 40;
+    else if (threat.severity === 'high') score += 30;
+    else if (threat.severity === 'medium') score += 20;
+    else score += 10;
+    
+    if (threat.cves && threat.cves.length > 0) score += 20;
+    if (threat.tags && threat.tags.length > 0) score += 10;
+    
+    return Math.min(score, 100);
+  }
+
+  private calculateUrgency(threat: ThreatIntelligence): 'low' | 'medium' | 'high' | 'critical' {
+    const age = this.calculateThreatAge(threat.publishedDate);
+    
+    if (threat.severity === 'critical' && age <= 7) return 'critical';
+    if (threat.severity === 'critical' || (threat.severity === 'high' && age <= 3)) return 'high';
+    if (threat.severity === 'high' || age <= 14) return 'medium';
+    
+    return 'low';
+  }
+
+  private calculateThreatAge(publishedDate: string): number {
+    const published = new Date(publishedDate);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - published.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 }

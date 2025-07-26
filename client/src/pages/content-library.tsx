@@ -23,7 +23,18 @@ import {
   Edit,
   Eye,
   Package,
-  ArrowLeft
+  ArrowLeft,
+  GitBranch,
+  GitCommit,
+  GitPullRequest,
+  GitMerge,
+  Users,
+  Clock,
+  Star,
+  GitFork,
+  RefreshCw,
+  ArrowRight,
+  TestTube
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import JSZip from 'jszip';
@@ -47,6 +58,42 @@ interface XSIAMContent {
   isTemplate: boolean;
   createdAt: Date;
   updatedAt: Date;
+  
+  // GitHub-style version control
+  gitInfo: {
+    branch: string;
+    commit: string;
+    author: string;
+    message: string;
+    pullRequest?: number;
+    reviewStatus: 'none' | 'pending' | 'approved' | 'changes_requested';
+    mergeStatus: 'unmerged' | 'merged' | 'conflict';
+  };
+  
+  // Collaboration features
+  collaboration: {
+    contributors: string[];
+    lastModifiedBy: string;
+    changeLog: Array<{
+      version: number;
+      author: string;
+      timestamp: Date;
+      message: string;
+      changes: string[];
+    }>;
+    reviews: Array<{
+      reviewer: string;
+      status: 'approved' | 'changes_requested' | 'commented';
+      comment: string;
+      timestamp: Date;
+    }>;
+  };
+  
+  // Content relationships
+  dependencies: string[]; // Content IDs this depends on
+  dependents: string[];   // Content IDs that depend on this
+  forks: string[];        // Forked versions
+  originalId?: string;    // If this is a fork
 }
 
 const ContentLibrary: React.FC = () => {
@@ -60,6 +107,12 @@ const ContentLibrary: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [githubModalOpen, setGithubModalOpen] = useState(false);
+  const [branchModalOpen, setBranchModalOpen] = useState(false);
+  const [pullRequestModalOpen, setPullRequestModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState('main');
+  const [showConflicts, setShowConflicts] = useState(false);
+  const [ddlcModalOpen, setDdlcModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,6 +123,224 @@ const ContentLibrary: React.FC = () => {
     filterContent();
   }, [content, searchTerm, categoryFilter, typeFilter, statusFilter]);
 
+  // GitHub-style workflow functions
+  const createBranch = (contentId: string, branchName: string) => {
+    const content = filteredContent.find(c => c.id === contentId);
+    if (!content) return;
+
+    const newContent: XSIAMContent = {
+      ...content,
+      id: `${contentId}_${branchName}_${Date.now()}`,
+      gitInfo: {
+        ...content.gitInfo,
+        branch: branchName,
+        commit: `${Math.random().toString(36).substr(2, 7)}`,
+        message: `Created branch ${branchName}`,
+        author: 'Current User',
+        reviewStatus: 'none',
+        mergeStatus: 'unmerged'
+      },
+      collaboration: {
+        ...content.collaboration,
+        changeLog: [
+          ...content.collaboration.changeLog,
+          {
+            version: content.version + 1,
+            author: 'Current User',
+            timestamp: new Date(),
+            message: `Created branch ${branchName}`,
+            changes: ['Branch created']
+          }
+        ]
+      },
+      version: content.version + 1,
+      updatedAt: new Date()
+    };
+
+    setContent(prev => [...prev, newContent]);
+    toast({ title: "Branch Created", description: `Successfully created branch '${branchName}'` });
+  };
+
+  const createPullRequest = (contentId: string, targetBranch: string, description: string) => {
+    const content = filteredContent.find(c => c.id === contentId);
+    if (!content) return;
+
+    const updatedContent = {
+      ...content,
+      gitInfo: {
+        ...content.gitInfo,
+        pullRequest: Math.floor(Math.random() * 1000) + 1,
+        reviewStatus: 'pending' as const,
+        message: description
+      },
+      collaboration: {
+        ...content.collaboration,
+        changeLog: [
+          ...content.collaboration.changeLog,
+          {
+            version: content.version,
+            author: 'Current User',
+            timestamp: new Date(),
+            message: `Created PR to ${targetBranch}: ${description}`,
+            changes: ['Pull request created']
+          }
+        ]
+      }
+    };
+
+    setContent(prev => prev.map(c => c.id === contentId ? updatedContent : c));
+    toast({ title: "Pull Request Created", description: `PR #${updatedContent.gitInfo.pullRequest} ready for review` });
+  };
+
+  const reviewContent = (contentId: string, status: 'approved' | 'changes_requested', comment: string) => {
+    const content = filteredContent.find(c => c.id === contentId);
+    if (!content) return;
+
+    const updatedContent = {
+      ...content,
+      gitInfo: {
+        ...content.gitInfo,
+        reviewStatus: status
+      },
+      collaboration: {
+        ...content.collaboration,
+        reviews: [
+          ...content.collaboration.reviews,
+          {
+            reviewer: 'Current User',
+            status,
+            comment,
+            timestamp: new Date()
+          }
+        ]
+      }
+    };
+
+    setContent(prev => prev.map(c => c.id === contentId ? updatedContent : c));
+    toast({ title: "Review Submitted", description: `Content ${status.replace('_', ' ')}` });
+  };
+
+  const mergeContent = (contentId: string) => {
+    const content = filteredContent.find(c => c.id === contentId);
+    if (!content || content.gitInfo.reviewStatus !== 'approved') return;
+
+    const updatedContent = {
+      ...content,
+      gitInfo: {
+        ...content.gitInfo,
+        mergeStatus: 'merged' as const,
+        branch: 'main'
+      },
+      status: 'published' as const,
+      collaboration: {
+        ...content.collaboration,
+        changeLog: [
+          ...content.collaboration.changeLog,
+          {
+            version: content.version,
+            author: 'Current User',
+            timestamp: new Date(),
+            message: `Merged PR #${content.gitInfo.pullRequest} to main`,
+            changes: ['Content merged to main branch']
+          }
+        ]
+      }
+    };
+
+    setContent(prev => prev.map(c => c.id === contentId ? updatedContent : c));
+    toast({ title: "Content Merged", description: "Successfully merged to main branch" });
+  };
+
+  const forkContent = (contentId: string) => {
+    const original = filteredContent.find(c => c.id === contentId);
+    if (!original) return;
+
+    const forkedContent: XSIAMContent = {
+      ...original,
+      id: `${contentId}_fork_${Date.now()}`,
+      name: `${original.name} (Fork)`,
+      gitInfo: {
+        branch: 'fork-main',
+        commit: `${Math.random().toString(36).substr(2, 7)}`,
+        author: 'Current User',
+        message: 'Forked content',
+        reviewStatus: 'none',
+        mergeStatus: 'unmerged'
+      },
+      collaboration: {
+        contributors: ['Current User'],
+        lastModifiedBy: 'Current User',
+        changeLog: [{
+          version: 1,
+          author: 'Current User',
+          timestamp: new Date(),
+          message: 'Forked content',
+          changes: ['Content forked']
+        }],
+        reviews: []
+      },
+      originalId: contentId,
+      forks: [],
+      dependencies: original.dependencies,
+      dependents: [],
+      version: 1,
+      status: 'draft',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Update original to include this fork
+    const updatedOriginal = {
+      ...original,
+      forks: [...(original.forks || []), forkedContent.id]
+    };
+
+    setContent(prev => [...prev.map(c => c.id === contentId ? updatedOriginal : c), forkedContent]);
+    toast({ title: "Content Forked", description: "Successfully created a fork for customization" });
+  };
+
+  const advanceDdlcPhase = (contentId: string) => {
+    const phaseOrder = ['requirement', 'design', 'development', 'testing', 'deployed', 'monitoring'];
+    
+    setContent(prev => prev.map(c => {
+      if (c.id === contentId) {
+        const currentPhaseIndex = phaseOrder.indexOf(c.metadata?.ddlcPhase || 'requirement');
+        const nextPhaseIndex = Math.min(currentPhaseIndex + 1, phaseOrder.length - 1);
+        const nextPhase = phaseOrder[nextPhaseIndex];
+        
+        return {
+          ...c,
+          metadata: {
+            ...c.metadata,
+            ddlcPhase: nextPhase,
+            testStatus: nextPhase === 'testing' ? 'in_progress' : 
+                       nextPhase === 'deployed' ? 'validated' : c.metadata?.testStatus
+          },
+          collaboration: {
+            ...c.collaboration,
+            changeLog: [
+              ...c.collaboration.changeLog,
+              {
+                version: c.version,
+                author: 'Current User',
+                timestamp: new Date(),
+                message: `Advanced to ${nextPhase} phase`,
+                changes: [`DDLC phase updated to ${nextPhase}`]
+              }
+            ]
+          },
+          updatedAt: new Date()
+        };
+      }
+      return c;
+    }));
+    
+    toast({ 
+      title: "DDLC Phase Advanced", 
+      description: `Content advanced following NVISO Detection-as-Code framework` 
+    });
+  };
+
   const loadContent = () => {
     // Load from localStorage for now
     const stored = localStorage.getItem('xsiam-content');
@@ -78,9 +349,228 @@ const ContentLibrary: React.FC = () => {
       setContent(parsed.map((c: any) => ({
         ...c,
         createdAt: new Date(c.createdAt),
-        updatedAt: new Date(c.updatedAt)
+        updatedAt: new Date(c.updatedAt),
+        // Ensure GitHub-style metadata exists
+        gitInfo: c.gitInfo || {
+          branch: 'main',
+          commit: Math.random().toString(36).substr(2, 7),
+          author: 'Current User',
+          message: 'Initial commit',
+          reviewStatus: 'none',
+          mergeStatus: 'merged'
+        },
+        collaboration: c.collaboration || {
+          contributors: ['Current User'],
+          lastModifiedBy: 'Current User',
+          changeLog: [{
+            version: c.version || 1,
+            author: 'Current User',
+            timestamp: new Date(c.createdAt || Date.now()),
+            message: 'Initial creation',
+            changes: ['Content created']
+          }],
+          reviews: []
+        },
+        dependencies: c.dependencies || [],
+        dependents: c.dependents || [],
+        forks: c.forks || []
       })));
+    } else {
+      // Add sample content to demonstrate GitHub-style features
+      const sampleContent = generateSampleContent();
+      setContent(sampleContent);
+      localStorage.setItem('xsiam-content', JSON.stringify(sampleContent));
     }
+  };
+
+  const generateSampleContent = (): XSIAMContent[] => {
+    return [
+      {
+        id: 'correlation-1',
+        contentType: 'correlation',
+        name: 'Kubernetes Pod Privilege Escalation',
+        description: 'Detects privilege escalation attempts in Kubernetes pods',
+        category: 'cloud',
+        severity: 'high',
+        threatName: 'K8s Privilege Escalation',
+        contentData: {
+          rule_name: 'K8s Pod PrivEsc Detection',
+          xql_query: 'dataset = kubernetes_audit_logs | filter action="create" and resource_type="pod"',
+          severity: 'high'
+        },
+        requirements: { dataSources: ['kubernetes_audit_logs'] },
+        metadata: { 
+          mitre_attack: ['T1068'],
+          ddlcPhase: 'deployed',
+          testStatus: 'validated',
+          dataSourcesRequired: ['kubernetes_audit_logs'],
+          performanceImpact: 'low',
+          falsePositiveRate: '< 5%',
+          references: ['https://attack.mitre.org/techniques/T1068/']
+        },
+        formats: ['json', 'yaml'],
+        status: 'published',
+        version: 2,
+        isTemplate: false,
+        createdAt: new Date('2025-01-20'),
+        updatedAt: new Date('2025-01-22'),
+        gitInfo: {
+          branch: 'main',
+          commit: 'a7b8c9d',
+          author: 'Security Team',
+          message: 'Updated detection logic for better accuracy',
+          reviewStatus: 'approved',
+          mergeStatus: 'merged'
+        },
+        collaboration: {
+          contributors: ['Security Team', 'K8s Expert', 'SOC Analyst'],
+          lastModifiedBy: 'K8s Expert',
+          changeLog: [
+            {
+              version: 1,
+              author: 'Security Team',
+              timestamp: new Date('2025-01-20'),
+              message: 'Initial correlation rule',
+              changes: ['Created XQL query', 'Added field mappings']
+            },
+            {
+              version: 2,
+              author: 'K8s Expert',
+              timestamp: new Date('2025-01-22'),
+              message: 'Improved detection accuracy',
+              changes: ['Enhanced XQL logic', 'Added severity threshold']
+            }
+          ],
+          reviews: [
+            {
+              reviewer: 'SOC Manager',
+              status: 'approved',
+              comment: 'Excellent detection logic, ready for production',
+              timestamp: new Date('2025-01-21')
+            }
+          ]
+        },
+        dependencies: [],
+        dependents: ['playbook-1'],
+        forks: []
+      },
+      {
+        id: 'playbook-1',
+        contentType: 'playbook',
+        name: 'K8s Incident Response',
+        description: 'Automated response for Kubernetes security incidents',
+        category: 'cloud',
+        severity: 'high',
+        threatName: 'K8s Security Response',
+        contentData: {
+          playbook_name: 'K8s Security Incident Response',
+          tasks: ['isolate_pod', 'collect_logs', 'notify_team'],
+          automation_level: 'semi-automated'
+        },
+        requirements: { integrations: ['kubernetes', 'slack'] },
+        metadata: { 
+          response_time: '< 5 minutes',
+          ddlcPhase: 'testing',
+          testStatus: 'in_progress',
+          automationLevel: 'semi-automated',
+          integrations: ['kubernetes', 'slack', 'servicenow'],
+          references: ['https://kubernetes.io/docs/concepts/security/']
+        },
+        formats: ['yaml'],
+        status: 'validated',
+        version: 1,
+        isTemplate: false,
+        createdAt: new Date('2025-01-21'),
+        updatedAt: new Date('2025-01-21'),
+        gitInfo: {
+          branch: 'feature/k8s-response',
+          commit: 'e1f2g3h',
+          author: 'SOC Analyst',
+          message: 'Added automated pod isolation',
+          pullRequest: 42,
+          reviewStatus: 'pending',
+          mergeStatus: 'unmerged'
+        },
+        collaboration: {
+          contributors: ['SOC Analyst', 'K8s Expert'],
+          lastModifiedBy: 'SOC Analyst',
+          changeLog: [
+            {
+              version: 1,
+              author: 'SOC Analyst',
+              timestamp: new Date('2025-01-21'),
+              message: 'Created response playbook',
+              changes: ['Added isolation steps', 'Integrated Slack notifications']
+            }
+          ],
+          reviews: []
+        },
+        dependencies: ['correlation-1'],
+        dependents: [],
+        forks: []
+      },
+      {
+        id: 'layout-1',
+        contentType: 'alert_layout',
+        name: 'K8s Security Alert Layout',
+        description: 'Custom layout for Kubernetes security alerts',
+        category: 'cloud',
+        severity: 'medium',
+        threatName: 'K8s Alert Display',
+        contentData: {
+          layout_name: 'K8s Security Alert',
+          fields: ['pod_name', 'namespace', 'escalation_method', 'severity'],
+          sections: ['overview', 'technical_details', 'response_actions']
+        },
+        requirements: { alert_fields: ['kubernetes_context'] },
+        metadata: { 
+          ui_version: '3.1',
+          ddlcPhase: 'development',
+          testStatus: 'needs_validation',
+          layoutType: 'incident_response',
+          compatibleWith: ['XSIAM 3.1+', 'Cortex XSOAR 6.10+'],
+          designPatterns: ['contextual_fields', 'action_buttons']
+        },
+        formats: ['json'],
+        status: 'draft',
+        version: 1,
+        isTemplate: true,
+        createdAt: new Date('2025-01-23'),
+        updatedAt: new Date('2025-01-23'),
+        gitInfo: {
+          branch: 'feature/alert-layouts',
+          commit: 'i4j5k6l',
+          author: 'UI Designer',
+          message: 'Initial alert layout design',
+          reviewStatus: 'changes_requested',
+          mergeStatus: 'unmerged'
+        },
+        collaboration: {
+          contributors: ['UI Designer'],
+          lastModifiedBy: 'UI Designer',
+          changeLog: [
+            {
+              version: 1,
+              author: 'UI Designer',
+              timestamp: new Date('2025-01-23'),
+              message: 'Created alert layout',
+              changes: ['Designed field layout', 'Added action buttons']
+            }
+          ],
+          reviews: [
+            {
+              reviewer: 'UX Lead',
+              status: 'changes_requested',
+              comment: 'Please add more contextual fields for better analyst workflow',
+              timestamp: new Date('2025-01-23')
+            }
+          ]
+        },
+        dependencies: [],
+        dependents: [],
+        forks: ['layout-1-fork-1']
+      }
+    ];
   };
 
   const saveContent = (newContent: XSIAMContent[]) => {
@@ -381,12 +871,73 @@ This is a production-ready threat intelligence platform with enterprise-grade fe
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-          <span className="capitalize">{item.category}</span>
-          <span>v{item.version}</span>
+        {/* GitHub-style metadata */}
+        <div className="space-y-2 mb-3">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span className="capitalize">{item.category}</span>
+            <span>v{item.version}</span>
+          </div>
+          
+          {item.gitInfo && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <GitBranch className="w-3 h-3" />
+                  <span className="font-mono">{item.gitInfo.branch}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <GitCommit className="w-3 h-3" />
+                  <span className="font-mono">{item.gitInfo.commit.slice(0, 7)}</span>
+                </div>
+                {item.gitInfo.pullRequest && (
+                  <div className="flex items-center gap-1">
+                    <GitPullRequest className="w-3 h-3" />
+                    <span>#{item.gitInfo.pullRequest}</span>
+                  </div>
+                )}
+                <Badge variant="secondary" className={`text-xs ${
+                  item.gitInfo.reviewStatus === 'approved' ? 'bg-green-100 text-green-800' :
+                  item.gitInfo.reviewStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                  item.gitInfo.reviewStatus === 'changes_requested' ? 'bg-red-100 text-red-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {item.gitInfo.reviewStatus.replace('_', ' ')}
+                </Badge>
+              </div>
+              
+              {/* DDLC Phase Indicator */}
+              <div className="flex items-center gap-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${
+                    item.metadata?.ddlcPhase === 'deployed' ? 'bg-green-500' :
+                    item.metadata?.ddlcPhase === 'testing' ? 'bg-blue-500' :
+                    item.metadata?.ddlcPhase === 'development' ? 'bg-orange-500' :
+                    item.metadata?.ddlcPhase === 'design' ? 'bg-purple-500' :
+                    'bg-gray-400'
+                  }`}></div>
+                  <span className="text-gray-600">DDLC: {item.metadata?.ddlcPhase || 'requirement'}</span>
+                </div>
+                {item.metadata?.testStatus && (
+                  <div className="flex items-center gap-1">
+                    <TestTube className="w-3 h-3" />
+                    <span className="text-gray-600">{item.metadata.testStatus}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {item.collaboration && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Users className="w-3 h-3" />
+              <span>{item.collaboration.contributors.length} contributors</span>
+              <Clock className="w-3 h-3" />
+              <span>{item.collaboration.lastModifiedBy}</span>
+            </div>
+          )}
         </div>
         
-        <div className="flex space-x-1">
+        <div className="flex flex-wrap gap-1">
           <Button size="sm" variant="outline" onClick={() => setSelectedContent(item)}>
             <Eye className="w-3 h-3" />
           </Button>
@@ -396,6 +947,19 @@ This is a production-ready threat intelligence platform with enterprise-grade fe
           <Button size="sm" variant="outline" onClick={() => exportContent(item, 'yaml')}>
             <FileText className="w-3 h-3" />
           </Button>
+          <Button size="sm" variant="outline" onClick={() => forkContent(item.id)}>
+            <GitFork className="w-3 h-3" />
+          </Button>
+          {item.gitInfo?.reviewStatus === 'none' && (
+            <Button size="sm" variant="outline" onClick={() => createPullRequest(item.id, 'main', 'Ready for review')}>
+              <GitPullRequest className="w-3 h-3" />
+            </Button>
+          )}
+          {item.gitInfo?.reviewStatus === 'approved' && item.gitInfo?.mergeStatus === 'unmerged' && (
+            <Button size="sm" variant="outline" onClick={() => mergeContent(item.id)} className="bg-green-50 text-green-700">
+              <GitMerge className="w-3 h-3" />
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -416,7 +980,30 @@ This is a production-ready threat intelligence platform with enterprise-grade fe
               </Link>
               <div>
                 <h1 className="text-xl font-semibold">XSIAM Content Library</h1>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <GitBranch className="w-3 h-3" />
+                  <span className="font-medium">{selectedBranch}</span>
+                  <span>•</span>
+                  <span>{content.filter(c => c.gitInfo?.mergeStatus === 'unmerged').length} unmerged</span>
+                  <span>•</span>
+                  <span>{content.filter(c => c.gitInfo?.reviewStatus === 'pending').length} pending review</span>
+                </div>
               </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setDdlcModalOpen(true)} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                DDLC Workflow
+              </Button>
+              <Button onClick={() => setBranchModalOpen(true)} variant="outline" size="sm">
+                <GitBranch className="w-4 h-4 mr-2" />
+                Branches
+              </Button>
+              <Button onClick={() => setPullRequestModalOpen(true)} variant="outline" size="sm">
+                <GitPullRequest className="w-4 h-4 mr-2" />
+                Pull Requests
+              </Button>
             </div>
           </div>
         </div>
@@ -674,6 +1261,368 @@ This is a production-ready threat intelligence platform with enterprise-grade fe
           </DialogContent>
         </Dialog>
       )}
+
+      {/* DDLC Workflow Management Modal */}
+      <Dialog open={ddlcModalOpen} onOpenChange={setDdlcModalOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="w-5 h-5" />
+              Detection Development Life Cycle (DDLC) - NVISO Framework
+            </DialogTitle>
+            <p className="text-sm text-gray-600">
+              Following Detection-as-Code principles for systematic detection engineering
+            </p>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* DDLC Phase Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">DDLC Framework Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {[
+                    { phase: 'requirement', color: 'bg-gray-500', count: content.filter(c => c.metadata?.ddlcPhase === 'requirement').length },
+                    { phase: 'design', color: 'bg-purple-500', count: content.filter(c => c.metadata?.ddlcPhase === 'design').length },
+                    { phase: 'development', color: 'bg-orange-500', count: content.filter(c => c.metadata?.ddlcPhase === 'development').length },
+                    { phase: 'testing', color: 'bg-blue-500', count: content.filter(c => c.metadata?.ddlcPhase === 'testing').length },
+                    { phase: 'deployed', color: 'bg-green-500', count: content.filter(c => c.metadata?.ddlcPhase === 'deployed').length },
+                    { phase: 'monitoring', color: 'bg-cyan-500', count: content.filter(c => c.metadata?.ddlcPhase === 'monitoring').length }
+                  ].map(({ phase, color, count }) => (
+                    <div key={phase} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className={`w-4 h-4 rounded-full ${color}`}></div>
+                      <div>
+                        <div className="font-medium capitalize">{phase}</div>
+                        <div className="text-sm text-gray-600">{count} detections</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Content by DDLC Phase */}
+            <Tabs defaultValue="development">
+              <TabsList className="grid grid-cols-6 w-full">
+                <TabsTrigger value="requirement">Requirements</TabsTrigger>
+                <TabsTrigger value="design">Design</TabsTrigger>
+                <TabsTrigger value="development">Development</TabsTrigger>
+                <TabsTrigger value="testing">Testing</TabsTrigger>
+                <TabsTrigger value="deployed">Deployed</TabsTrigger>
+                <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+              </TabsList>
+
+              {['requirement', 'design', 'development', 'testing', 'deployed', 'monitoring'].map(phase => (
+                <TabsContent key={phase} value={phase} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium capitalize">{phase} Phase</h3>
+                    <Badge variant="outline">
+                      {content.filter(c => c.metadata?.ddlcPhase === phase).length} items
+                    </Badge>
+                  </div>
+                  
+                  {/* Phase Description */}
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      {phase === 'requirement' && "Understanding what threat needs to be detected and defining success criteria."}
+                      {phase === 'design' && "Selecting data sources, identifying fields, and mapping to taxonomies."}
+                      {phase === 'development' && "Creating the actual detection rule or logic with proper documentation."}
+                      {phase === 'testing' && "Validating detection with attack data and tuning for optimal performance."}
+                      {phase === 'deployed' && "Production-ready detections actively monitoring for threats."}
+                      {phase === 'monitoring' && "Continuous review and adjustment to maintain optimal performance."}
+                    </p>
+                  </div>
+
+                  {/* Content in this phase */}
+                  <div className="space-y-2">
+                    {content.filter(c => c.metadata?.ddlcPhase === phase).map(item => (
+                      <Card key={item.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {getContentIcon(item.contentType)}
+                              <div>
+                                <div className="font-medium">{item.name}</div>
+                                <div className="text-sm text-gray-600">
+                                  {item.contentType} • {item.category} • v{item.version}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {item.metadata?.testStatus && (
+                                <Badge variant="outline" className="text-xs">
+                                  {item.metadata.testStatus}
+                                </Badge>
+                              )}
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => advanceDdlcPhase(item.id)}
+                              >
+                                <ArrowRight className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* DDLC Phase Specific Metadata */}
+                          {phase === 'development' && item.metadata?.references && (
+                            <div className="mt-2 text-xs text-gray-600">
+                              References: {Array.isArray(item.metadata.references) ? item.metadata.references.slice(0, 2).join(', ') : 'None'}
+                            </div>
+                          )}
+                          {phase === 'testing' && item.metadata?.testStatus && (
+                            <div className="mt-2 text-xs text-gray-600">
+                              Test Status: {item.metadata.testStatus} • Performance: {item.metadata?.performanceImpact || 'unknown'}
+                            </div>
+                          )}
+                          {phase === 'deployed' && item.metadata?.falsePositiveRate && (
+                            <div className="mt-2 text-xs text-gray-600">
+                              FP Rate: {item.metadata.falsePositiveRate} • Data Sources: {item.metadata?.dataSourcesRequired?.join(', ')}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                    
+                    {content.filter(c => c.metadata?.ddlcPhase === phase).length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        No content in {phase} phase
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+
+            {/* Detection-as-Code Principles */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Detection-as-Code Principles Applied</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-sm">Version Control (Git workflow)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-sm">Code Reviews & Pull Requests</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-sm">Testing & Validation Framework</span>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-sm">Standardized Format (YAML/JSON)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-sm">Reusable Components</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-sm">CI/CD Pipeline Integration</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Branch Management Modal */}
+      <Dialog open={branchModalOpen} onOpenChange={setBranchModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GitBranch className="w-5 h-5" />
+              Branch Management
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Active Branches</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {Array.from(new Set(content.map(c => c.gitInfo?.branch).filter(Boolean))).map(branch => (
+                    <div key={branch} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div className="flex items-center gap-2">
+                        <GitBranch className="w-4 h-4" />
+                        <span className="font-mono">{branch}</span>
+                        {branch === 'main' && <Badge variant="secondary">main</Badge>}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {content.filter(c => c.gitInfo?.branch === branch).length} items
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Create New Branch</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <Input placeholder="feature/new-correlation-rule" />
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select content to branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {content.map(c => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name} ({c.contentType})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button className="w-full">
+                      <GitBranch className="w-4 h-4 mr-2" />
+                      Create Branch
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pull Request Modal */}
+      <Dialog open={pullRequestModalOpen} onOpenChange={setPullRequestModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GitPullRequest className="w-5 h-5" />
+              Pull Requests
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Tabs defaultValue="open">
+              <TabsList>
+                <TabsTrigger value="open">
+                  Open ({content.filter(c => c.gitInfo?.reviewStatus === 'pending').length})
+                </TabsTrigger>
+                <TabsTrigger value="merged">
+                  Merged ({content.filter(c => c.gitInfo?.mergeStatus === 'merged').length})
+                </TabsTrigger>
+                <TabsTrigger value="all">All</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="open" className="space-y-3">
+                {content.filter(c => c.gitInfo?.reviewStatus === 'pending').map(item => (
+                  <Card key={item.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <GitPullRequest className="w-4 h-4" />
+                          <div>
+                            <div className="font-medium">{item.name}</div>
+                            <div className="text-sm text-gray-600">
+                              PR #{item.gitInfo?.pullRequest} • {item.gitInfo?.branch} → main
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => reviewContent(item.id, 'approved', 'Looks good to me!')}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => reviewContent(item.id, 'changes_requested', 'Please address the feedback')}
+                          >
+                            <AlertCircle className="w-4 h-4 mr-1" />
+                            Request Changes
+                          </Button>
+                        </div>
+                      </div>
+                      {item.collaboration?.reviews.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {item.collaboration.reviews.map((review, idx) => (
+                            <div key={idx} className="text-sm p-2 bg-gray-50 rounded">
+                              <div className="flex items-center gap-2">
+                                <Users className="w-3 h-3" />
+                                <span className="font-medium">{review.reviewer}</span>
+                                <Badge variant={review.status === 'approved' ? 'default' : 'destructive'}>
+                                  {review.status.replace('_', ' ')}
+                                </Badge>
+                              </div>
+                              <p className="mt-1">{review.comment}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </TabsContent>
+
+              <TabsContent value="merged" className="space-y-3">
+                {content.filter(c => c.gitInfo?.mergeStatus === 'merged').map(item => (
+                  <Card key={item.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <GitMerge className="w-4 h-4 text-green-600" />
+                        <div>
+                          <div className="font-medium">{item.name}</div>
+                          <div className="text-sm text-gray-600">
+                            Merged PR #{item.gitInfo?.pullRequest} • {item.gitInfo?.author}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </TabsContent>
+
+              <TabsContent value="all" className="space-y-3">
+                {content.filter(c => c.gitInfo?.pullRequest).map(item => (
+                  <Card key={item.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {item.gitInfo?.mergeStatus === 'merged' ? (
+                            <GitMerge className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <GitPullRequest className="w-4 h-4" />
+                          )}
+                          <div>
+                            <div className="font-medium">{item.name}</div>
+                            <div className="text-sm text-gray-600">
+                              PR #{item.gitInfo?.pullRequest} • {item.gitInfo?.branch} → main
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant={item.gitInfo?.mergeStatus === 'merged' ? 'default' : 'secondary'}>
+                          {item.gitInfo?.mergeStatus === 'merged' ? 'Merged' : item.gitInfo?.reviewStatus}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </TabsContent>
+            </Tabs>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

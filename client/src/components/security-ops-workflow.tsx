@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FindingsReportGenerator } from "./findings-report-generator";
 import { 
   CheckCircle, 
   Circle, 
@@ -48,6 +49,7 @@ export default function SecurityOpsWorkflow({ useCase, onClose }: SecurityOpsWor
   const [currentStep, setCurrentStep] = useState<string>('threat-analysis');
   const [workflowData, setWorkflowData] = useState<any>({});
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
+  const [showFindingsReportDialog, setShowFindingsReportDialog] = useState(false);
 
   // Load workflow progress from localStorage
   useEffect(() => {
@@ -276,14 +278,37 @@ export default function SecurityOpsWorkflow({ useCase, onClose }: SecurityOpsWor
       }
     },
     {
+      id: 'findings-report',
+      title: 'Security Findings Report',
+      description: 'Generate comprehensive findings report with attack analysis, dwell time, scope, containment, remediation, and prevention measures',
+      icon: <FileText className="h-5 w-5" />,
+      status: completedSteps.includes('findings-report') ? 'completed' : 
+              completedSteps.includes('dashboard-visualization') ? 'pending' : 'blocked',
+      estimatedTime: '30 minutes',
+      prerequisites: ['dashboard-visualization'],
+      actions: {
+        primary: {
+          label: 'Generate Report',
+          action: () => {
+            const findingsReport = generateFindingsReport(useCase, workflowData);
+            handleStepComplete('findings-report', { findingsReport });
+          }
+        },
+        view: {
+          label: 'Open Report Generator',
+          action: () => setShowFindingsReportDialog(true)
+        }
+      }
+    },
+    {
       id: 'export-collaboration-package',
       title: 'Export Collaboration Package',
       description: 'Generate complete export package for team collaboration and deployment',
       icon: <Download className="h-5 w-5" />,
       status: completedSteps.includes('export-collaboration-package') ? 'completed' : 
-              completedSteps.includes('dashboard-visualization') ? 'pending' : 'blocked',
+              completedSteps.includes('findings-report') ? 'pending' : 'blocked',
       estimatedTime: '10 minutes',
-      prerequisites: ['dashboard-visualization'],
+      prerequisites: ['findings-report'],
       actions: {
         primary: {
           label: 'Generate Export',
@@ -458,6 +483,23 @@ export default function SecurityOpsWorkflow({ useCase, onClose }: SecurityOpsWor
           </CardContent>
         </Card>
       )}
+
+      {/* Findings Report Dialog */}
+      <Dialog open={showFindingsReportDialog} onOpenChange={setShowFindingsReportDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Security Findings Report Generator</DialogTitle>
+          </DialogHeader>
+          <FindingsReportGenerator 
+            useCase={useCase}
+            onGenerateSubplaybook={(reportData) => {
+              console.log('Findings report generated:', reportData);
+              handleStepComplete('findings-report', { findingsReport: reportData });
+              setShowFindingsReportDialog(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -509,6 +551,24 @@ function generatePlaybook(useCase: any) {
     playbook: `${useCase.title.replace(/\s+/g, '_').toLowerCase()}_response`,
     automationLevel: '80%',
     responseTime: '< 5 minutes'
+  };
+}
+
+function generateFindingsReport(useCase: any, workflowData: any) {
+  return {
+    reportId: `FR-${Date.now()}`,
+    threatName: useCase.title,
+    severity: useCase.severity || 'high',
+    detectionTime: new Date().toISOString(),
+    attackVector: useCase.vulnerabilityTypes?.[0] || 'Unknown',
+    dwellTime: 'To be calculated during incident response',
+    affectedSystems: ['Systems identified during investigation'],
+    containmentActions: ['Actions taken during incident response'],
+    remediationSteps: ['Remediation measures implemented'],
+    preventionMeasures: ['Security improvements for prevention'],
+    executiveSummary: `Security incident involving ${useCase.title} threat`,
+    technicalDetails: `Technical analysis of ${useCase.title} incident`,
+    recommendations: ['Security recommendations based on incident analysis']
   };
 }
 

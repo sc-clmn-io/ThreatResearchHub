@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "id": "apt29-cozy-bear",
+    "name": "APT29 Cozy Bear Detection Package",
+    "description": "Complete detection package for APT29 (Cozy Bear) threat group activities including embassy infiltration techniques",
+    "category": "endpoint",
+    "severity": "critical",
+    "version": "1.0.0",
+    "ddlc_phase": "testing",
+    "created_date": "2025-01-15T10:00:00Z",
+    "modified_date": "2025-01-15T13:00:00Z"
+  },
+  "threat_report": {
+    "id": "tr-apt29-2025",
+    "title": "APT29 Cozy Bear: Advanced Persistent Threat Analysis",
+    "description": "Comprehensive analysis of APT29 threat group tactics, techniques, and procedures",
+    "source": "Unit42 Threat Intelligence",
+    "published_date": "2025-01-15",
+    "cves": [
+      "CVE-2024-4367",
+      "CVE-2024-0519"
+    ],
+    "mitre_attack": {
+      "tactics": [
+        "Initial Access",
+        "Persistence",
+        "Defense Evasion"
+      ],
+      "techniques": [
+        "T1566.001",
+        "T1055",
+        "T1027"
+      ],
+      "sub_techniques": [
+        "T1566.001",
+        "T1055.001",
+        "T1027.002"
+      ]
+    },
+    "indicators": {
+      "ips": [
+        "192.168.1.100",
+        "10.0.0.25"
+      ],
+      "domains": [
+        "malicious.example.com",
+        "c2.example.org"
+      ],
+      "hashes": [
+        "d41d8cd98f00b204e9800998ecf8427e",
+        "e3b0c44298fc1c149afbf4c8996fb924"
+      ],
+      "file_paths": [
+        "/tmp/malware.exe",
+        "C:\\Windows\\Temp\\payload.dll"
+      ]
+    },
+    "technologies": [
+      "Windows",
+      "PowerShell",
+      "WMI"
+    ],
+    "threat_actors": [
+      "APT29",
+      "Cozy Bear"
+    ],
+    "attack_vectors": [
+      "Spear Phishing",
+      "Watering Hole",
+      "Supply Chain"
+    ]
+  },
+  "ddlc_metadata": {
+    "phase_history": [
+      {
+        "phase": "requirement",
+        "timestamp": "2025-01-15T10:00:00Z",
+        "notes": "Initial requirements gathered"
+      },
+      {
+        "phase": "design",
+        "timestamp": "2025-01-15T11:00:00Z",
+        "notes": "Detection logic designed"
+      },
+      {
+        "phase": "development",
+        "timestamp": "2025-01-15T12:00:00Z",
+        "notes": "XQL rule developed"
+      },
+      {
+        "phase": "testing",
+        "timestamp": "2025-01-15T13:00:00Z",
+        "notes": "Currently under testing"
+      }
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { List, Play, Clock, Shield, AlertTriangle, Database, Server, Workflow, ArrowRight } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ import XSIAMIntegrationGuide from "./xsiam-integration-guide";
 import AttackSimulationGuide from "./attack-simulation-guide";
 import AnalystWorkflowGuide from "./analyst-workflow-guide";
 import SecurityOpsWorkflow from "./security-ops-workflow";
-import type { UseCase, ThreatReport, TrainingPath } from "@shared/schema";
+import type { UseCase } from "@shared/schema";
 
 interface UseCaseListProps {
   onGenerateTraining: (trainingPathId: string) => void;
@@ -49,6 +50,7 @@ function getTechnologyLink(technology: string): string {
 }
 
 function getTechnologyIcon(technology: string): JSX.Element {
+  if (!technology || typeof technology !== 'string') return <Database className="w-3 h-3 mr-1" />;
   const techStr = technology.toLowerCase();
   
   if (techStr.includes('kubernetes') || techStr.includes('docker')) {
@@ -71,6 +73,7 @@ function getMitreAttackLink(technique: string): string {
 }
 
 function getVendorIcon(vendor: string): JSX.Element {
+  if (!vendor || typeof vendor !== 'string') return <Shield className="w-3 h-3 mr-1" />;
   const vendorStr = vendor.toLowerCase();
   
   if (vendorStr.includes('unit42') || vendorStr.includes('unit 42')) {
@@ -170,7 +173,7 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
     rawUseCases.forEach((useCase: any) => {
       // Create a normalized key based on CVEs or title
       const cveKey = useCase.cves?.join(',') || '';
-      const titleKey = useCase.title.toLowerCase().trim();
+      const titleKey = useCase.title ? useCase.title.toLowerCase().trim() : '';
       const normalizedKey = cveKey || titleKey;
 
       if (deduplicatedMap.has(normalizedKey)) {
@@ -198,7 +201,7 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
   // No automatic processing - only show manually ingested use cases
 
   const handleGenerateTraining = async (useCase: UseCase) => {
-    if (useCase.validationStatus !== 'approved' && useCase.validationStatus !== 'pending') {
+    if (useCase.validationStatus === 'rejected') {
       toast({
         title: "Validation Required",
         description: "This use case requires validation before training can be generated.",
@@ -234,7 +237,7 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
     setWorkflowModal({ isOpen: true, useCase });
   };
 
-  const handleLabBuildoutComplete = async (trainingPath: TrainingPath) => {
+  const handleLabBuildoutComplete = async (trainingPath: any) => {
     try {
       await saveTrainingPath.mutateAsync(trainingPath);
       onGenerateTraining(trainingPath.id);
@@ -288,11 +291,11 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
         <CardContent className="p-6">
           <div className="flex items-center mb-6">
             <List className="text-cortex-blue text-xl mr-3" />
-            <h2 className="text-xl font-medium text-cortex-dark">Extracted Use Cases</h2>
+            <h2 className="text-xl font-medium text-cortex-dark">Active Use Cases</h2>
           </div>
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cortex-blue mx-auto"></div>
-            <p className="text-gray-500 mt-2">Loading use cases...</p>
+            <p className="text-gray-500 mt-2">Loading active use cases...</p>
           </div>
         </CardContent>
       </Card>
@@ -305,11 +308,11 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
         <CardContent className="p-6">
           <div className="flex items-center mb-6">
             <List className="text-cortex-blue text-xl mr-3" />
-            <h2 className="text-xl font-medium text-cortex-dark">Extracted Use Cases</h2>
+            <h2 className="text-xl font-medium text-cortex-dark">Active Use Cases</h2>
           </div>
           <div className="text-center py-8">
             <List className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg font-medium">No Use Cases Yet</p>
+            <p className="text-gray-500 text-lg font-medium">No Active Use Cases Yet</p>
             <p className="text-gray-400 text-sm mb-4">Use cases appear here after ingesting threats from the feeds</p>
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-left">
               <h4 className="text-blue-800 dark:text-blue-200 font-medium mb-2">How to get started:</h4>
@@ -339,7 +342,7 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <List className="text-cortex-blue text-xl mr-3" />
-            <h2 className="text-xl font-medium text-cortex-dark">Extracted Use Cases</h2>
+            <h2 className="text-xl font-medium text-cortex-dark">Active Use Cases</h2>
           </div>
           <div className="flex items-center space-x-2">
             {validatedCount > 0 && (
@@ -371,34 +374,47 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
                       {useCase.description}
                     </p>
                   </div>
-                  <div className="flex items-center space-x-2 ml-4">
-                    <Badge {...getValidationBadge(useCase.validationStatus)}>
+                  <div className="flex flex-col space-y-2 ml-4">
+                    <Badge {...getValidationBadge(useCase.validationStatus)} className="self-start">
                       {getValidationBadge(useCase.validationStatus).label}
                     </Badge>
                     
                     {/* Security Operations Workflow Button */}
-                    <Button
-                      size="sm"
-                      onClick={() => handleStartSecurityWorkflow(useCase)}
-                      disabled={useCase.validationStatus === 'rejected'}
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                      title="Start Security Operations Workflow"
-                    >
-                      <Workflow className="w-4 h-4 mr-1" />
-                      Workflow
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          onClick={() => handleStartSecurityWorkflow(useCase)}
+                          disabled={useCase.validationStatus === 'rejected'}
+                          className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+                        >
+                          <Workflow className="w-4 h-4 mr-1" />
+                          SOC Investigation Workflow
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Complete SOC investigation workflow: analysis → detection → response → reporting</p>
+                      </TooltipContent>
+                    </Tooltip>
                     
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={useCase.validationStatus === 'rejected'}
-                          className="border-green-500 text-green-700 hover:bg-green-50"
-                          title="Lab Environment Setup"
-                        >
-                          <Server className="w-4 h-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={useCase.validationStatus === 'rejected'}
+                              className="border-green-500 text-green-700 hover:bg-green-50 w-full"
+                            >
+                              <Server className="w-4 h-4 mr-1" />
+                              Lab Setup
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>4-phase lab setup: Infrastructure → XSIAM Integration → Attack Simulation → Analyst Workflow</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </DialogTrigger>
                       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
@@ -443,29 +459,39 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
                         )}
                       </DialogContent>
                     </Dialog>
-                    <Button
-                      size="sm"
-                      onClick={() => handleGenerateTraining(useCase)}
-                      disabled={useCase.validationStatus === 'rejected' || saveTrainingPath.isPending}
-                      className="bg-cortex-blue hover:bg-blue-700"
-                    >
-                      {saveTrainingPath.isPending ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      ) : (
-                        <Play className="w-4 h-4" />
-                      )}
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          onClick={() => handleGenerateTraining(useCase)}
+                          disabled={useCase.validationStatus === 'rejected' || saveTrainingPath.isPending}
+                          className="bg-cortex-blue hover:bg-blue-700 w-full"
+                        >
+                          {saveTrainingPath.isPending ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          ) : (
+                            <>
+                              <Play className="w-4 h-4 mr-1" />
+                              Training
+                            </>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Generate step-by-step training path for this threat scenario</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
                 
                 <div className="flex items-center text-xs text-gray-500 space-x-4">
                   <span className="flex items-center">
                     <i className={getCategoryIcon(useCase.category) + " mr-1"}></i>
-                    {useCase.category.charAt(0).toUpperCase() + useCase.category.slice(1)}
+                    {useCase.category ? useCase.category.charAt(0).toUpperCase() + useCase.category.slice(1) : 'Unknown'}
                   </span>
                   <span className="flex items-center">
                     <i className={getSeverityIcon(useCase.severity) + " mr-1"}></i>
-                    {useCase.severity.charAt(0).toUpperCase() + useCase.severity.slice(1)} Severity
+                    {useCase.severity ? useCase.severity.charAt(0).toUpperCase() + useCase.severity.slice(1) : 'Unknown'} Severity
                   </span>
                   <span className="flex items-center">
                     <Clock className="w-3 h-3 mr-1" />
@@ -535,6 +561,54 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
                     </div>
                   )}
                   
+                  {/* Indicators */}
+                  {Array.isArray(useCase.indicators) && useCase.indicators.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      <span className="text-xs text-gray-500 mr-2">Indicators:</span>
+                      {useCase.indicators.slice(0, 3).map((indicator: string, index: number) => (
+                        <Badge key={index} variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                          <Database className="w-3 h-3 mr-1" />
+                          {indicator}
+                        </Badge>
+                      ))}
+                      {useCase.indicators.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{useCase.indicators.length - 3} more indicators
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Attack Vectors */}
+                  {Array.isArray(useCase.attackVectors) && useCase.attackVectors.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      <span className="text-xs text-gray-500 mr-2">Attack Vectors:</span>
+                      {useCase.attackVectors.slice(0, 3).map((vector: string, index: number) => (
+                        <Badge key={index} variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          {vector}
+                        </Badge>
+                      ))}
+                      {useCase.attackVectors.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{useCase.attackVectors.length - 3} more vectors
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Threat Actors */}
+                  {Array.isArray(useCase.threatActors) && useCase.threatActors.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      <span className="text-xs text-gray-500 mr-2">Threat Actors:</span>
+                      {useCase.threatActors.map((actor: string, index: number) => (
+                        <Badge key={index} variant="outline" className="text-xs bg-gray-50 text-gray-700 border-gray-200">
+                          {actor}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  
                   {/* Extracted Techniques */}
                   {Array.isArray(useCase.extractedTechniques) && useCase.extractedTechniques.length > 0 && (
                     <div className="flex flex-wrap gap-1">
@@ -571,7 +645,7 @@ export default function UseCaseList({ onGenerateTraining }: UseCaseListProps) {
     {/* Security Operations Workflow Dialog */}
     {workflowModal.isOpen && workflowModal.useCase && (
       <Dialog open={workflowModal.isOpen} onOpenChange={(open) => !open && setWorkflowModal({ isOpen: false, useCase: null })}>
-        <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
           <SecurityOpsWorkflow 
             useCase={workflowModal.useCase} 
             onClose={() => setWorkflowModal({ isOpen: false, useCase: null })} 

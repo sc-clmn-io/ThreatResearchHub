@@ -207,6 +207,35 @@ export const ContentRequirementsSchema = z.object({
 
 export type ContentRequirements = z.infer<typeof ContentRequirementsSchema>;
 
+// UseCase interface for DoR-based POV content generation
+export interface UseCase {
+  id: string;
+  title: string;
+  description: string;
+  category: 'endpoint' | 'network' | 'cloud' | 'identity';
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  threatReportId: string;
+  estimatedDuration: string;
+  mitreMapping: string[];
+  indicators: string[];
+  extractedTechniques: string[];
+  extractedMitigations: string[];
+  validated: boolean;
+  validationStatus: 'needs_review' | 'approved' | 'rejected';
+  metadata: {
+    customerInfo?: any;
+    technicalRequirements?: any;
+    successCriteria?: any;
+    timeline?: any;
+    stakeholders?: any;
+    entryDate?: string;
+    povObjectives?: string[];
+    source: 'threat_feed' | 'manual_entry' | 'pdf_upload' | 'url_scrape';
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Shared Template interface for template sharing functionality
 export interface SharedTemplate {
   id: string;
@@ -226,8 +255,6 @@ export interface SharedTemplate {
   updatedAt: string;
 }
 
-// Type exports for existing schemas
-export type XsiamContent = typeof xsiamContent.$inferSelect;
-export type InsertXsiamContent = typeof xsiamContent.$inferInsert;
-export type ContentCollection = typeof contentCollections.$inferSelect;
-export type InsertContentCollection = typeof contentCollections.$inferInsert;
+// Additional type exports for compatibility
+export type XsiamContent = XSIAMContent;
+export type InsertXsiamContent = InsertXSIAMContent;

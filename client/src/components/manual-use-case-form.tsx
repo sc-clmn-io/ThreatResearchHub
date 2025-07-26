@@ -197,7 +197,7 @@ export function ManualUseCaseForm({ onSubmit, onCancel }: ManualUseCaseFormProps
       category: data.category,
       severity: data.priority,
       threatReportId: '',
-      estimatedDuration: calculateEstimatedDuration(data),
+      estimatedDuration: String(calculateEstimatedDuration(data)),
       mitreMapping: extractMitreMapping(data.description),
       indicators: extractIndicators(data.description),
       extractedTechniques: data.customerInfo.currentTools,
@@ -211,7 +211,7 @@ export function ManualUseCaseForm({ onSubmit, onCancel }: ManualUseCaseFormProps
         timeline: data.timeline,
         stakeholders: data.stakeholders,
         entryDate: new Date().toISOString(),
-        pocObjectives: generatePOCObjectives(data),
+        povObjectives: generatePOVObjectives(data),
         source: 'manual_entry'
       },
       createdAt: new Date(),
@@ -220,8 +220,8 @@ export function ManualUseCaseForm({ onSubmit, onCancel }: ManualUseCaseFormProps
 
     onSubmit(useCase);
     toast({
-      title: "Use Case Created",
-      description: `Manual use case "${data.title}" has been created for POC development.`
+      title: "DoR Use Case Created",
+      description: `Customer DoR use case "${data.title}" created - ready for comprehensive POV content generation including data sources, correlation rules, alert layouts, playbooks, and dashboards.`
     });
   };
 
@@ -231,10 +231,10 @@ export function ManualUseCaseForm({ onSubmit, onCancel }: ManualUseCaseFormProps
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Manual Use Case Entry for POC Development
+            Customer Design of Record (DoR) Entry
           </CardTitle>
           <CardDescription>
-            Enter customer-specific details to create targeted training scenarios that address real POC requirements and success criteria.
+            Enter customer-specific requirements to generate comprehensive POV content: 5 use cases each with data source integrations, XSIAM correlation rules, alert layouts with analyst decision support, automation playbooks, and operational dashboards.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -561,14 +561,17 @@ function extractIndicators(description: string): string[] {
   return Array.from(new Set(indicators));
 }
 
-function generatePOCObjectives(data: ManualUseCaseForm): string[] {
+function generatePOVObjectives(data: ManualUseCaseForm): string[] {
   return [
-    `Demonstrate ${data.successCriteria.detectionAccuracy}% detection accuracy for ${data.title}`,
-    `Achieve response time target of ${data.successCriteria.responseTime}`,
+    `Generate 5 comprehensive POV use cases for ${data.title}`,
+    `Create data source integrations for: ${data.customerInfo.primaryDataSources.join(', ')}`,
+    `Develop XSIAM correlation rules with ${data.successCriteria.detectionAccuracy}% accuracy`,
+    `Build alert layouts with analyst decision support and action buttons (isolate endpoint, reset user credentials, etc.)`,
+    `Create automation playbooks for ${data.successCriteria.responseTime} response time`,
+    `Design operational dashboards for real-time monitoring`,
+    `Integrate with customer tools: ${data.customerInfo.currentTools.join(', ')}`,
+    `Address pain points: ${data.customerInfo.painPoints.join(', ')}`,
     `Maintain false positive rate below ${data.successCriteria.falsePositiveRate}%`,
-    `Integrate with existing tools: ${data.customerInfo.currentTools.join(', ')}`,
-    `Address key pain points: ${data.customerInfo.painPoints.join(', ')}`,
-    `Validate solution with ${data.stakeholders.length} key stakeholders`,
     `Demonstrate ROI through ${data.successCriteria.businessImpact}`
   ];
 }

@@ -1,0 +1,10 @@
+{
+  "name": "APT29 Response Playbook",
+  "tasks": [
+    "Isolate affected endpoint",
+    "Collect forensic evidence",
+    "Analyze PowerShell logs",
+    "Check for lateral movement",
+    "Generate incident report"
+  ]
+}

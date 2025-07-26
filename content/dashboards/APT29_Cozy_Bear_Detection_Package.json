@@ -1,0 +1,8 @@
+{
+  "dashboard_name": "APT29 Monitoring Dashboard",
+  "widgets": [
+    "Threat Activity",
+    "IOC Matches",
+    "Response Metrics"
+  ]
+}

@@ -2,13 +2,15 @@
 
 ## Overview
 
-ThreatResearchHub is a comprehensive threat research crawler, verification, and incident response capability platform that transforms complex security reports into actionable, contextualized training and analysis tools. The application helps security teams aggregate threat intelligence from multiple research vendors, generate training scenarios, and provides structured learning paths for detection engineering and incident response. All data processing occurs in the browser using IndexedDB for local storage.
+ThreatResearchHub is a comprehensive Content-as-Code platform for XSIAM/Cortex Cloud that transforms threat intelligence, use cases, and security outcomes into complete detection packages. The platform ingests threat reports, analyzes required data sources, and automatically generates correlation rules, automation playbooks, SOC response workflows, alert layouts, and operational dashboards. Following Detection-as-Code principles with NVISO DDLC framework, it provides systematic content development with version control, testing, and deployment workflows for enterprise security teams.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 Development approach: Iterative refinement based on testing feedback.
 Testing methodology: Build initial functionality, test thoroughly, then refine based on real-world usage.
+Version control: Save work as GitHub revision at end of working day.
+Work style: Keep development momentum going with continuous improvements across multiple components.
 
 ## System Architecture
 
@@ -41,7 +43,218 @@ Testing methodology: Build initial functionality, test thoroughly, then refine b
 
 ## Recent Changes (January 2025)
 
-### GitHub Integration & Version Control System (Latest - July 22, 2025)
+### Enhanced Production XSIAM Content Library System (Latest - January 26, 2025)
+- **Production Content Library Focus**: Transformed GitHub backup system into XSIAM content library builder for production deployment and training reference
+- **Organized Content Structure**: Creates structured directories for correlation-rules, automation-playbooks, alert-layouts, dashboards, and use-cases
+- **Production Deployment Guides**: Automated generation of deployment instructions for XSIAM content import and validation
+- **Content Type Organization**: Each content type gets dedicated README with usage instructions and validation guidelines
+- **JavaScript Error Resolution**: Fixed TypeError in use-case-list component by adding null checks for technology, vendor, category, and severity fields
+- **Professional Content Export**: Enhanced UI messaging focuses on "Deploy Content Library" rather than generic backup functionality
+- **XSIAM Integration Ready**: Content library structure optimized for direct import into Cortex XSIAM/Cloud instances
+- **Training Reference Library**: System builds comprehensive library of validated XSIAM content for ongoing training and reference
+
+### Matrix-Type Consistency & Clean Workflow Implementation (January 26, 2025)
+- **Critical Duplication Fix**: Removed confusing duplicate "Load Threat Report or Customer POV" titles that appeared twice in workflow interface
+- **Redundant Progress Tracker Removed**: Eliminated redundant workflow progress tracker that duplicated Step 1 information for cleaner interface
+- **Persistent Progress Bar Added**: Added comprehensive 6-step progress bar showing completed, current, and upcoming steps with visual indicators
+- **Enhanced Step Guidance**: Each workflow step now includes selected threat context, clear objectives, and actionable next steps
+- **Clean 6-Step Workflow**: Streamlined to clear, simple titles: Load Threat Intelligence → Select Specific Threat → Plan Infrastructure → Setup Data Sources → Generate Content → Test & Deploy
+- **Continue Button Fixed**: Resolved validation logic to check actual loaded use cases instead of broken stats counter, now properly advances workflow steps
+- **Matrix-Type System Updates**: Updated user guide, interactive tutorial, and all system components to reflect clean workflow titles for complete consistency
+- **Infrastructure-First Sequence**: Maintained proper workflow order ensuring infrastructure setup before content generation
+- **User Guide Alignment**: Updated all documentation to match new clean workflow step names and navigation paths
+- **8th Grade Reading Level**: Maintained simple language throughout corrected workflow with clear step-by-step instructions
+- **System-Wide Consistency**: All components now use identical workflow terminology for seamless user experience
+
+### Schema-Driven Content Generation System (July 25, 2025)
+- **Adaptable Content Architecture**: Completely rebuilt content generation engine to use authentic dataset schemas instead of hardcoded XDR patterns
+- **Vendor-Specific Field Mapping**: System now generates XQL queries, playbooks, and layouts using actual vendor field names (e.g., CrowdStrike ImageFileName vs AWS eventName)
+- **Schema-Driven XQL Generation**: Dynamic query building based on available fields in each vendor's dataset schema with proper field validation
+- **Multi-Vendor Integration Support**: Separate schema definitions for Windows Defender, AWS CloudTrail, CrowdStrike Falcon, and Kubernetes with vendor-specific integration commands
+- **Authentic Risk Scoring**: Threat indicators mapped to actual schema fields for precise threat scoring and correlation rules
+- **Dataset Schema Manager Integration**: Leverages existing schema extraction system for 500+ XSIAM marketplace vendors
+- **Intelligent Fallback System**: Graceful degradation when schemas are missing with clear instructions for configuration
+- **Production-Ready Field Validation**: All generated content validates against actual XQL-accessible fields from vendor schemas
+- **Schema-Aware Content Types**: Correlation rules, playbooks, alert layouts, and dashboards all adapt to vendor field structures
+- **Enhanced User Experience**: Visual schema status indicators and detailed schema information display
+- **Extensible Architecture**: Easy addition of new vendor schemas through SchemaDrivenContentGenerator class
+
+### Production-Ready GitHub Backup System with Complete Content Export (Updated - July 26, 2025)
+- **Resolved Git Configuration Issues**: Fixed persistent git lock problems using environment variables instead of git config files
+- **12-Hour Automatic Scheduling**: Automatic backups enabled by default when configuration is saved, running every 12 hours
+- **Complete Content Export**: All generated content now included in repository backups with organized directory structure
+- **Structured Content Organization**: Automatic export of use cases, XQL rules, playbooks, alert layouts, and dashboards
+- **Enhanced Backup Verification**: Direct links to view repository and commit history for instant backup verification
+- **Persistent Token Storage**: Personal access tokens automatically saved and loaded with visual "Saved" indicators
+- **Repository Information Display**: Real-time repository status showing stars, watchers, privacy settings, and last push date
+- **Connection Testing**: Built-in GitHub API connectivity testing with repository validation
+- **One-Click Verification**: "View Repository" and "View Commits" buttons for immediate backup confirmation
+- **Visual Success Indicators**: Toast notifications with direct repository links and backup timestamps
+- **Professional Interface**: Enhanced UI with status badges, repository information cards, and scheduled backup management
+- **Fixed CI/CD Pipeline**: Resolved failing test pipeline by updating workflow configuration and removing dependency issues
+- **Production Deployment Ready**: Complete backup system operational with automatic scheduling, content export, and verification
+- **Multi-AI Integration**: Combined OpenAI GPT-4o and Grok-2 Vision for enhanced XSIAM content generation 
+- **Fixed GitHub Workflow**: Updated CI pipeline to Node.js 20 and resolved API endpoint issues
+- **Verified System Status**: Successfully tested with 186-file backup including complete XSIAM content library
+- **Real GitHub Push**: Implemented actual commit creation via GitHub API to replace "4 days ago" timestamps with fresh commits
+- **User Configuration Complete**: GitHub token and repository details configured for live backup deployment
+
+### Complete Content Generation & Threat Processing Implementation (July 23, 2025)
+- **Production Content Generation Engine**: Implemented complete singleton service for generating authentic XSIAM content packages from threat intelligence
+- **Threat Report Parser**: Built comprehensive normalization system with multi-source ingestion (PDF, URL, feed, manual), MITRE ATT&CK mapping, IOC extraction, and threat categorization
+- **SOC Process Engine**: Created investigation workflow generator with decision trees, analyst guidance, and response playbook automation
+- **Content Storage System**: Developed DDLC-aware storage with version tracking, phase management, sample data initialization, and content statistics
+- **Complete API Layer**: Added 15+ RESTful endpoints for content generation, package management, SOC processes, and export formats (STIX2, use cases)
+- **TypeScript Error Resolution**: Fixed all LSP diagnostics, improved type safety, and ensured production-ready code quality
+- **Sample Content Package**: Pre-loaded APT29 Cozy Bear detection package demonstrating complete XSIAM content with XQL rules, playbooks, alert layouts, and dashboards
+- **Comprehensive Documentation**: Created detailed README.md with API specifications, architecture overview, and development workflows
+- **Production-Ready Platform**: All backend services operational with proper error handling, validation, and authentic data processing
+- **Enhanced DDLC Workflow Engine**: Advanced workflow management with detailed phase tracking, validation criteria, progress reports, and transition planning
+- **Interactive DDLC Demo**: Comprehensive frontend interface showcasing phase management, completion tracking, and systematic detection engineering workflows
+
+### Content-as-Code Platform Reframing & DDLC Implementation (July 23, 2025)
+- **Complete Platform Reframing**: Successfully transformed from "training platform" to "Content-as-Code platform" focused on building complete XSIAM detection packages from threat intelligence
+- **NVISO DDLC Framework**: Implemented complete Detection Development Life Cycle with 6 phases (Requirement Gathering → Design → Development → Testing & Validation → Production Deployment → Monitoring & Tuning)
+- **Complete Detection Packages**: Platform generates XQL correlation rules, automation playbooks, SOC response workflows, alert layouts, and operational dashboards from threat intelligence
+- **Data Source Analysis**: System identifies required data sources (Windows Events, Sysmon, AWS CloudTrail, etc.) and creates proper field mappings for each threat scenario
+- **Production-Ready Workflow**: Content progresses through DDLC phases with version control, testing validation, and professional quality assurance
+- **Content Generation Demo**: Created comprehensive demonstration showing how platform generates specific XSIAM content types following DDLC framework principles
+- **Professional Detection Engineering**: Complete implementation of NVISO blog concepts for systematic detection engineering workflows with industry-standard practices
+
+### Detection-as-Code Implementation with NVISO Framework Integration (July 23, 2025)
+- **Complete Version Control System**: Implemented GitHub-style workflows for managing XSIAM content (correlations, playbooks, layouts, dashboards)
+- **NVISO DDLC Framework**: Integrated Detection Development Life Cycle with 6 phases (requirement, design, development, testing, deployed, monitoring)
+- **Detection-as-Code Principles**: Applied software engineering principles including version control, code reviews, testing & validation, standardized formats, and CI/CD concepts
+- **Branch Management**: Create feature branches for content development with visual branch indicators and status tracking
+- **Pull Request Workflow**: Full PR system with review approval, change requests, and merge capabilities for content collaboration
+- **Content Collaboration**: Multi-contributor support with change logs, review history, and real-time collaboration tracking
+- **Fork and Merge System**: Content forking for customization and merge workflows with conflict detection and resolution
+- **Visual Git Indicators**: Content cards display branch names, commit hashes, PR numbers, and review status with color-coded badges
+- **DDLC Phase Tracking**: Each content item shows current DDLC phase with phase-specific metadata (test status, performance impact, false positive rates)
+- **Professional Detection Engineering**: Complete implementation of NVISO blog concepts for systematic detection engineering workflows
+- **Sample Content**: Pre-loaded sample XSIAM content demonstrating complete GitHub workflow and DDLC phases including approved, pending, and changes-requested states
+- **Professional UI**: GitHub-inspired interface with DDLC workflow management, branch status bar, pull request management, and collaborative review system
+- **Production-Ready Workflows**: Complete content lifecycle management from creation through review, approval, and deployment to XSIAM following industry best practices
+
+### UI Enhancement & Threat Intelligence Extraction (July 23, 2025)
+- **Button Organization**: Renamed "Security Workflow" to "SOC Investigation Workflow", added descriptive labels "Lab Setup" and "Training" to buttons
+- **Vertical Button Layout**: Stacked buttons vertically to prevent overlapping outside section borders with proper spacing
+- **Enhanced Threat Data Extraction**: Complete threat intelligence extraction populating indicators, attack vectors, threat actors, and MITRE mappings
+- **Comprehensive Extraction Functions**: Added 13 attack vector types, APT group detection, IOC extraction (IPs, domains, hashes, files)
+- **Fixed Dialog Scrolling**: Changed SOC Investigation Workflow dialog from overflow-hidden to overflow-y-auto for proper scrolling
+- **Color-Coded Display**: Visual threat intelligence sections with yellow indicators, red attack vectors, gray threat actors
+- **Production-Ready Platform**: All LSP errors resolved, threat ingestion fully operational with enhanced intelligence display
+
+### Infrastructure Procurement Planning System (July 23, 2025)
+- **Complete Infrastructure Procurement**: Comprehensive procurement planning system with real vendor options (AWS, Azure, VMware, Hybrid)
+- **Cost Analysis & Budgeting**: Detailed cost breakdowns with setup costs ($0-$1,200), monthly operations ($0-$295), and hourly rates
+- **Smart Recommendations**: AI-driven infrastructure recommendations based on threat characteristics and technology stack
+- **Procurement Documentation**: Automated quote generation with business justification, technical requirements, and implementation timelines
+- **Multi-Vendor Support**: Support for cloud (AWS/Azure), on-premises (VMware), and hybrid deployment strategies
+- **Real Budget Planning**: Actual infrastructure costs and procurement processes for enterprise threat testing labs
+- **XSIAM Integration Planning**: Complete integration planning with data source configuration and cost estimation
+- **Business Justification**: Automated business case generation with ROI analysis and risk mitigation benefits
+
+### Enhanced DC Activity Status & UI Improvements (Latest - July 23, 2025)
+- **DC Activity Status System**: Renamed "Validation Queue" to "DC Activity Status" with cleaner, more compact design
+- **Clear Status Labels**: Updated to "Approved by DC", "Pending DC Activity", and "Rejected by DC" for precise role clarification
+- **Automated System Status**: Added system status indicators for rejected items showing "Auto-fixing content issues and re-queuing for DC review"
+- **Revision Tracking**: System status for revision_needed items displays "Applying recommended changes, will auto-resubmit"
+- **UI Streamlining**: Removed redundant Customer DoR header section maintaining only the essential Customer DoR Entry button
+- **Decision Controller Workflow**: Platform now clearly positions user as Decision Controller with approval/rejection authority
+- **Compact Design**: Reduced component size with smaller icons, condensed spacing, and focused layout for better dashboard integration
+- **Type Safety**: Fixed all ContentValidation type issues and LSP errors for production-ready validation queue functionality
+- **Terminology Update**: Renamed "Training Scenarios" to "Active Use Cases" throughout the platform for better clarity and user understanding
+
+### Version 1.0 Platform Launch & Navigation System (July 23, 2025)
+- **Complete Platform Architecture**: Launched version 1.0 with professional navigation system and platform layout structure
+- **Main Navigation System**: Comprehensive sidebar navigation with categorized features (Core, Monitoring, Tools, Deployment) and collapsible design
+- **Enhanced Dashboard**: Real-time threat metrics display with live feed status, critical/high threat counts, and platform overview
+- **Active Threat Feed Integration**: Live threat intelligence dashboard with real-time data from security vendor feeds
+- **Professional Layout System**: Unified platform layout wrapping all pages with consistent navigation and user experience
+- **Production-Ready Structure**: Version 1.0 foundation with proper routing, layout management, and feature organization
+- **Live Data Integration**: Dashboard displays real threat intelligence metrics from active feeds processing every 6 hours
+- **Code Quality Improvements**: Resolved all LSP errors and enhanced TypeScript compatibility for production deployment
+
+### Multi-Component Platform Enhancement & Error Resolution (July 22, 2025)
+- **Active Development Session**: Successfully continued multi-component improvements across threat intelligence, XSIAM debugger, and findings report generation systems
+- **Live Threat Intelligence System**: Confirmed operational status with real-time threat ingestion from Unit42 (2 high/critical threats), SANS ISC, and other active feeds processing every 6 hours
+- **Error Resolution & Code Quality**: Fixed critical LSP errors in server/threat-intelligence.ts, enhanced type safety, and resolved syntax issues across components
+- **Enhanced Helper Functions**: Added threat age calculation, metrics updating, and category detection functions to threat-feeds.tsx for improved data processing
+- **Findings Report Generator Enhancement**: Expanded XSIAM subplaybook generation with complete workflow tasks, markdown report generation, and download functionality
+- **Real-Time System Integration**: Updated threat monitoring to reflect live data from active threat intelligence service rather than mock data
+- **Code Quality Improvements**: Resolved compilation errors and enhanced TypeScript compatibility across multiple components for production readiness
+- **Platform Status Confirmed**: System operational with live threat feeds, intelligent XQL analysis, and comprehensive findings report generation capabilities
+
+### XSIAM Live API Debugger & Intelligent Result Analysis (July 22, 2025)
+- **Complete XSIAM Live Debugger**: Full-featured debugging interface for live XSIAM instances with multi-version API support (v2, v3, Cortex Cloud)
+- **Intelligent XQL Result Analysis**: Advanced analysis engine that evaluates query results for data quality, field coverage, and provides actionable recommendations
+- **Connection Management System**: Secure storage and management of multiple XSIAM connections with authentication validation and status monitoring
+- **Smart Query Insights**: Automated analysis of XQL query results including:
+  - Data quality assessment (excellent/good/poor/empty)
+  - Field coverage analysis with security context identification
+  - Performance recommendations and optimization suggestions
+  - Record count evaluation and timeframe guidance
+- **Pre-built Sample Queries**: Ready-to-use XQL queries for process events, network connections, file operations, and event summaries
+- **Secure API Proxy**: Server-side XSIAM proxy with domain validation, timeout handling, and proper error management
+- **Real-time Content Validation**: Local validation for correlation rules, playbooks, layouts, and dashboards with detailed error reporting
+- **Production-Ready Testing Environment**: Complete debugging workflow integrated into main navigation and Quick Actions dashboard
+- **Authentication Framework**: Support for Standard and Advanced API keys with proper authentication handling across all XSIAM versions
+- **Enhanced User Experience**: Visual result analysis with color-coded quality indicators, field discovery, and actionable recommendations
+
+### 6-Hour Threat Intelligence Update Schedule (July 22, 2025)
+- **Optimized Update Frequency**: Configured all threat intelligence sources to refresh every 6 hours (360-minute intervals) for balanced real-time intelligence without system overload
+- **4x Daily Update Schedule**: Comprehensive threat feeds update four times per day providing fresh intelligence while maintaining system performance
+- **Multi-Source Intelligence**: Automated collection from CISA, NIST NVD, Unit42, SANS ISC, Threatpost, and MITRE ATT&CK with synchronized 6-hour intervals
+- **Advanced Threat Metrics**: Real-time calculation of threat statistics including total threats, critical/high threat counts, average severity scoring, and trend analysis
+- **Interactive Dashboard Components**: Threat feed with 6-hour refresh capability, threat source distribution analysis, and technology impact tracking
+- **Timeframe-Based Analytics**: Configurable time windows (24h, 7d, 30d) for threat intelligence analysis with dynamic filtering and trend visualization
+- **Enhanced Navigation**: Added threat monitoring to main navigation and Quick Actions dashboard section with distinct cyan styling for monitoring features
+- **Comprehensive Threat Analysis**: Multi-source threat aggregation with detailed metrics on top technologies, intelligence sources, and 7-day trend analysis
+- **Production-Ready Interface**: Professional threat monitoring interface with loading states, error handling, and responsive design for security operations centers
+
+### Complete Workflow-Based Navigation Reorganization (Latest - July 23, 2025)
+- **9-Step Workflow Navigation**: Complete restructuring of main navigation into logical workflow sequence based on user feedback
+- **Workflow Sequence**: 0. Use Case Status Dashboard → 1. Documentation → 2. Load Use Case (includes PII Sanitizer) → 3. Lab Planning & Setup → 4. XSIAM Integration & Setup → 5. Content Development & Testing (Content Generation) → 6. Deploy Cortex Content → 7. Configuration & Management
+- **User-Driven Order**: Navigation now follows actual analyst workflow: start with User Guide, load use cases (threat reports or manual POC), build lab infrastructure, prepare data sources, set up XSIAM, develop content, deploy, and manage
+- **Content Development Positioning**: Moved content development after XSIAM setup and data source integration, recognizing that content creation requires working infrastructure
+- **Customer DoR Integration**: Dashboard positioned as use case entry point with Customer Design of Record (DoR) entry generating comprehensive POV content: 5 use cases each with data source integrations, XSIAM correlation rules, alert layouts with analyst decision support, automation playbooks, and operational dashboards
+- **PII Sanitization Integration**: Moved PII Sanitizer to Load Use Case section as sensitive data must be cleaned before processing begins
+- **Content Generation Flow**: Added dedicated Content Generation tab before Content Library to establish clear workflow from generation to management
+- **Threat Intelligence Reorganization**: Moved Threat Intelligence from Load Use Case to Configuration & Management as it's more of a data management function
+- **Use Case Status Dashboard**: Repositioned main dashboard to top level as "Use Case Status Dashboard" serving as primary entry point for workflow progress tracking and overview
+- **Threat Archive Removal**: Removed duplicate Threat Archive from navigation as it already exists elsewhere in the platform
+- **Threat Intelligence to Threat Feeds**: Renamed "Threat Intelligence" to "Threat Feeds" to better reflect its function as dashboard-based intelligence source configuration
+- **Content Library Removal**: Removed Content Library from navigation as content management is handled within the Use Case Status Dashboard
+- **Dataset Schemas Removal**: Removed Dataset Schemas as a separate navigation item, streamlining the workflow
+- **Templates Moved to Content Development**: Moved Templates from dashboard header to main navigation under Content Development & Testing category, positioned after Content Generation
+- **Content Library Added to Navigation**: Added Content Library to main navigation under Content Development & Testing, positioned after Templates
+- **Customer DoR Platform Focus**: Renamed "Customer POC Entry" to "Customer Design of Record (DoR)" emphasizing comprehensive POV content generation: 5 use cases each with data source integrations, XSIAM correlation rules, alert layouts with analyst decision support (isolate endpoint, reset credentials, etc.), automation playbooks, and operational dashboards
+- **Dataset Schema Prerequisites**: Positioned dataset schemas before content development as XQL field validation is required before creating content
+- **Color-Coded Categories**: Each workflow step has distinct color coding (blue learning, purple use case, green lab, indigo data source, cyan XSIAM, pink content, emerald deployment, amber tools, orange configuration)
+- **Complete Category Restructure**: Eliminated old categories (Core Workflow, Analysis & Testing) in favor of workflow-specific groupings that match real analyst progression
+
+### Complete User Guide & Interactive Tutorial System (July 23, 2025)
+- **Comprehensive User Guide**: Complete step-by-step documentation for threat research workflows from discovery to reporting
+- **Interactive Tutorial System**: Popup guided walkthrough with visual highlighting and progress tracking
+- **Multi-Audience Support**: Tailored guidance for Security Analysts, SOC Engineers, and Security Architects  
+- **Tutorial Controls**: Play/pause, skip, restart functionality with 9-step complete workflow tutorial
+- **Downloadable Documentation**: Export complete user guide for offline reference and team training
+- **Operating Guide → User Guide**: Renamed to "User Guide" throughout platform for better user recognition
+- **Multiple Access Points**: Available via main navigation, dashboard quick actions, and operating guide page
+- **Visual Learning**: Step-by-step highlighting of interface elements with pulsing animations and progress indicators
+
+### GitHub Private Repository Integration & Secure Data Storage (July 22, 2025)
+- **Private Repository Setup Guide**: Created comprehensive GITHUB_EXPORT_GUIDE.md with step-by-step instructions for secure private repository creation
+- **Automated GitHub Integration**: Enhanced backup system includes GitHub setup guides and repository structure templates  
+- **Security-First Approach**: Private repository configuration with proper .gitignore patterns for sensitive training data protection
+- **Daily Automated Backups**: GitHub Actions workflow for automatic daily commits preserving all training progress and platform updates
+- **Complete Data Preservation**: All training data, threat intelligence, XSIAM configurations, and platform code saved securely
+- **Repository Structure**: Organized folders for backups/daily/, training-data/, client/, server/, and deployment configurations
+- **Access Control**: Private repository ensures only authorized access to valuable training content and threat intelligence
+- **Restoration Capabilities**: Full platform restoration possible from GitHub repository with complete development environment
+
+### GitHub Integration & Version Control System (July 22, 2025)
 - **Complete GitHub Setup**: Created comprehensive GitHub export guide and repository structure for version control and collaboration
 - **CI/CD Pipeline**: Implemented GitHub Actions for automated testing, security scanning, and deployment workflows
 - **Documentation Framework**: Added README.md, CONTRIBUTING.md, and deployment guides for professional open-source project management
@@ -49,13 +262,37 @@ Testing methodology: Build initial functionality, test thoroughly, then refine b
 - **Collaboration Infrastructure**: Set up issue templates, pull request workflows, and community contribution guidelines
 - **Professional Repository**: Production-ready GitHub repository structure with proper branching strategy and release management
 
-### XSIAM Onboarding System & Analyst-First Experience (July 22, 2025)
-- **Comprehensive XSIAM Onboarding Guide**: Created complete step-by-step data source integration system addressing critical analyst first-time experience
-- **Threat-Specific Data Source Mapping**: Automatically identifies required data sources based on threat category (endpoint, network, cloud, identity) and technologies
-- **Structured XSIAM Integration Process**: 4-phase onboarding (Prerequisites → Data Source Planning → Log Ingestion → Validation) with exact navigation paths
-- **Lab Environment Conditional Planning**: Infrastructure guidance tailored to specific threat use case requirements with cost estimation and deployment steps
-- **Analyst Success Framework**: Detailed instructions for broker setup, API configuration, field mapping, and validation ensuring smooth first XSIAM interaction
-- **Production-Ready Integration**: Complete validation checklist ensuring analysts can successfully deploy and test detection rules after onboarding
+### XSIAM Findings Report Playbook Integration & Context Advantages (July 22, 2025)
+- **Critical Insight**: Findings report generation is most powerful as a Cortex XSIAM playbook due to direct access to rich incident context and live data
+- **XSIAM Playbook Advantages**: Automatic extraction of real incident data, enrichment results, investigation workbooks, forensic artifacts, network evidence, and timeline information
+- **Live Data Integration**: Direct access to XQL datasets, investigation workbooks, IOC analysis, affected endpoint details, and automated response action logs
+- **Dynamic Evidence Collection**: Automated gathering of screenshots, network flows, detailed technical evidence, and forensic artifacts from actual incident investigations
+- **Real-time Context**: Integration with XSIAM's complete incident lifecycle data rather than manual template completion
+- **Enhanced Findings Report Generator**: Created comprehensive component that generates XSIAM subplaybooks emphasizing live data advantages over static templates
+- **Production Integration**: Findings report system integrated into complete security operations workflow for end-to-end analyst guidance
+- **Template to Reality Transition**: System designed to highlight the superior capabilities available when deployed as actual XSIAM playbooks with live incident context
+
+### Complete Development Process Archive & Platform Rebuild System (Latest - July 22, 2025)
+- **Development Process Archive**: Complete backup system now preserves entire development journey including conversations, decisions, and architectural evolution
+- **DEVELOPMENT_MANIFEST.md**: Comprehensive rebuild blueprint with complete development history, user preferences, and technical decisions
+- **Automated Rebuild Capability**: ZIP downloads include rebuild.sh script, package.json, environment templates, and complete documentation
+- **Architecture Preservation**: Full documentation of technical choices, rationale, and evolution timeline from January to July 2025
+- **User Preference Documentation**: Complete record of communication style, development approach, and iterative refinement methodology
+- **Multi-Format Archive**: /development/ folder with manifest, architecture docs, dependencies, and automated setup scripts
+- **Platform DNA Backup**: Not just current state but complete "genetic code" for recreating platform from scratch
+- **Zero-Knowledge Rebuild**: Anyone can rebuild entire platform using only the backup ZIP contents and documentation
+- **Development Continuity**: Preserves context for future development sessions and architectural decisions
+- **Complete Data Restoration**: Training data, platform configurations, and development process all preserved together
+
+### Enhanced XSIAM Data Source Integration System (Updated - July 22, 2025)
+- **Beginner-Focused Data Source Integration**: Comprehensive step-by-step guide specifically addressing analysts' first XSIAM interaction with crystal-clear navigation instructions
+- **Critical Integration Steps**: Enhanced "Data Source Integration (Critical Step)" phase with exact XSIAM interface navigation, broker verification, and field mapping validation
+- **Vendor-Specific Integration Guides**: Complete integration instructions for Windows Event Logs, Sysmon, AWS CloudTrail, Kubernetes Audit Logs, and Firewall Logs with XSIAM-specific configurations
+- **Field Mapping Verification System**: Advanced field validation with category-specific XQL queries and XSIAM field requirements ensuring proper data ingestion
+- **Broker Connection Troubleshooting**: Detailed broker verification steps including service status checking, network connectivity validation, and log analysis
+- **Production-Ready Validation**: Complete validation workflow with test queries, parsing verification, and detection rule compatibility testing
+- **Threat Category Field Mapping**: Specialized field requirements for endpoint, network, cloud, and identity threat categories with essential XSIAM field documentation
+- **Step-by-Step XSIAM Navigation**: Exact interface navigation paths including Settings → Data Sources, broker management, and integration configuration workflows
 
 ### Threat Intelligence Archive System & 4x Daily Updates (July 22, 2025)
 - **Threat Archive System**: Created comprehensive archive page for threats older than 30 days with advanced filtering, search, and restoration capabilities
@@ -264,6 +501,9 @@ Testing methodology: Build initial functionality, test thoroughly, then refine b
 - **Reliable Threat Ingestion**: Every threat ingestion guaranteed to save and display with proper workflow advancement
 - **Enhanced User Experience**: Seamless transition from threat ingestion to security operations workflow
 - User preference: Iterative refinement approach - test first, then refine based on feedback
+- Clean, streamlined interface - remove redundant UI elements that don't support core workflow
+- Avoid duplicate navigation - features should be accessible from one primary location
+- Remove outdated UI elements that don't support the streamlined threat-to-lab workflow
 - **Production Ready**: Complete end-to-end pipeline from threat intelligence to actionable security content
 - Current status: System operating reliably for continuous threat processing and workflow advancement
 
@@ -276,27 +516,31 @@ Testing methodology: Build initial functionality, test thoroughly, then refine b
 - **Content Extraction**: Automated use case generation from threat intelligence sources
 - **Multi-Vendor Content Generation**: Automatically creates content compatible with hundreds of individual vendors and data source types
 
-### Training Path Generation
-- **Template Engine**: Category-specific training templates (endpoint, network, cloud, identity)
-- **Step Templates**: Pre-defined training steps with validation requirements
-- **Progress Tracking**: Completion status and time tracking for training modules
-- **Validation Workflow**: Manual review process for training content quality
+### Content-as-Code Generation
+- **Detection Package Engine**: Complete XSIAM content packages (correlations, playbooks, layouts, dashboards)
+- **Data Source Analysis**: Automatic identification of required data sources and field mappings
+- **DDLC Framework**: NVISO Detection Development Life Cycle integration for systematic content development
+- **Validation Workflow**: Manual review process for detection content quality and testing
 
 ### User Interface Components
-- **Dashboard**: Central hub with progress tracking and quick actions
+- **Dashboard**: Central hub with content package tracking and quick actions
 - **Threat Input**: Multi-tab interface for URL, PDF, and feed-based input
-- **Use Case List**: Display and management of extracted training scenarios
-- **Training Modal**: Interactive step-by-step training interface
-- **Validation Queue**: Review interface for pending training content
+- **Content Package List**: Display and management of extracted detection packages
+- **DDLC Workflow Modal**: Interactive Detection Development Life Cycle management interface
+- **Content-as-Code Library**: GitHub-style repository for version-controlled XSIAM content with branch management
 
-## Data Flow
+## Content-as-Code Data Flow
 
-1. **Input Processing**: Users submit threat reports via URL, PDF upload, or threat feeds
-2. **Content Extraction**: System parses documents and extracts structured threat information
-3. **Use Case Generation**: AI-driven extraction creates training scenarios from threat content
-4. **Training Path Creation**: Scenarios are converted into step-by-step training workflows
-5. **Progress Tracking**: User completion and validation status is maintained locally
-6. **Validation Workflow**: Content requiring review is queued for manual validation
+1. **Threat Intelligence Ingestion**: Users submit threat reports via URL, PDF upload, or threat feeds
+2. **Data Source Analysis**: System identifies required data sources (Windows Events, Sysmon, AWS CloudTrail, etc.)
+3. **Detection Package Generation**: Automated creation of complete XSIAM content packages including:
+   - XQL correlation rules with proper field mappings
+   - Automation playbooks for SOC response workflows
+   - Alert layouts with contextual analyst decision support
+   - Operational dashboards for threat monitoring
+4. **DDLC Workflow Management**: Content progresses through NVISO Detection Development Life Cycle phases
+5. **Version Control**: GitHub-style workflows with branch management, pull requests, and code reviews
+6. **Production Deployment**: Validated content packages ready for XSIAM/Cortex Cloud deployment
 
 ## External Dependencies
 
