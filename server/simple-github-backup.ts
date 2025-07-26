@@ -138,6 +138,40 @@ async function collectProjectFiles(): Promise<string[]> {
   console.log(`🗂️ Content files in backup: ${contentFiles.length}`);
   contentFiles.forEach(f => console.log(`   📄 ${f}`));
   
+  // Verify all content files are included
+  try {
+    const actualContentFiles: string[] = [];
+    function getContentFiles(dir: string, basePath = 'content') {
+      const items = fs.readdirSync(`${process.cwd()}/${dir}`);
+      for (const item of items) {
+        const fullPath = path.join(process.cwd(), dir, item);
+        const relativePath = path.join(basePath, item);
+        if (fs.statSync(fullPath).isDirectory()) {
+          getContentFiles(path.join(dir, item), relativePath);
+        } else {
+          actualContentFiles.push(relativePath);
+        }
+      }
+    }
+    
+    if (fs.existsSync(path.join(process.cwd(), 'content'))) {
+      getContentFiles('content');
+      console.log(`🔍 Actual content files on disk: ${actualContentFiles.length}`);
+      actualContentFiles.forEach(f => console.log(`   🗃️ ${f}`));
+      
+      const missingFiles = actualContentFiles.filter(f => !files.includes(f));
+      if (missingFiles.length > 0) {
+        console.log(`⚠️ Missing content files: ${missingFiles.length}`);
+        missingFiles.forEach(f => {
+          console.log(`   ❌ ${f}`);
+          files.push(f); // Add missing files
+        });
+      }
+    }
+  } catch (error) {
+    console.warn('Error verifying content files:', error);
+  }
+  
   return files;
 }
 
@@ -263,7 +297,8 @@ async function uploadToGitHub(config: GitHubBackupConfig, content: Record<string
       });
       
       if (!blobResponse.ok) {
-        console.warn(`Failed to create blob for ${filePath}`);
+        const errorText = await blobResponse.text();
+        console.warn(`Failed to create blob for ${filePath}: ${blobResponse.status} - ${errorText}`);
         continue;
       }
       
@@ -276,6 +311,11 @@ async function uploadToGitHub(config: GitHubBackupConfig, content: Record<string
     }
     
     console.log(`📦 Created ${fileBlobs.length} file blobs`);
+    
+    // Debug: Show which content files were successfully processed
+    const contentBlobs = fileBlobs.filter(blob => blob.path.startsWith('content/'));
+    console.log(`🗂️ Content blobs created: ${contentBlobs.length}`);
+    contentBlobs.forEach(blob => console.log(`   ✅ ${blob.path}`));
     
     // Create a tree with all files
     const treeResponse = await fetch(`https://api.github.com/repos/${username}/${repository}/git/trees`, {

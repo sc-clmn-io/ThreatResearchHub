@@ -1,0 +1,517 @@
+---
+# Proxmox Security Lab Configuration Playbook
+# Configures VMs deployed on Proxmox for security testing
+
+- name: Configure Proxmox Security Lab VMs
+  hosts: all
+  become: yes
+  vars:
+    lab_user: "labuser"
+    lab_directory: "/opt/security-lab"
+    docker_compose_version: "2.20.0"
+    
+  tasks:
+    - name: Update package cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install essential packages
+      package:
+        name:
+          - curl
+          - wget
+          - git
+          - vim
+          - htop
+          - unzip
+          - jq
+          - python3
+          - python3-pip
+          - build-essential
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Create lab user
+      user:
+        name: "{{ lab_user }}"
+        groups: sudo,docker
+        shell: /bin/bash
+        create_home: yes
+        append: yes
+
+    - name: Create lab directory
+      file:
+        path: "{{ lab_directory }}"
+        state: directory
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0755'
+
+    - name: Install Docker
+      block:
+        - name: Add Docker GPG key
+          apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+        - name: Add Docker repository
+          apt_repository:
+            repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+            state: present
+
+        - name: Install Docker packages
+          package:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: present
+
+        - name: Start and enable Docker
+          systemd:
+            name: docker
+            state: started
+            enabled: yes
+
+        - name: Add lab user to docker group
+          user:
+            name: "{{ lab_user }}"
+            groups: docker
+            append: yes
+
+    - name: Install Docker Compose (standalone)
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Install Node.js (via NodeSource)
+      block:
+        - name: Add NodeSource GPG key
+          apt_key:
+            url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+            state: present
+
+        - name: Add NodeSource repository
+          apt_repository:
+            repo: "deb https://deb.nodesource.com/node_18.x {{ ansible_distribution_release }} main"
+            state: present
+
+        - name: Install Node.js
+          package:
+            name: nodejs
+            state: present
+
+    - name: Install security tools
+      package:
+        name:
+          - nmap
+          - netcat
+          - tcpdump
+          - wireshark-common
+          - masscan
+          - gobuster
+          - nikto
+          - sqlmap
+          - hydra
+          - john
+          - hashcat
+          - aircrack-ng
+        state: present
+
+    - name: Install Python security packages
+      pip:
+        name:
+          - requests
+          - beautifulsoup4
+          - scapy
+          - impacket
+          - pwntools
+          - volatility3
+          - yara-python
+        state: present
+
+    - name: Create security lab Docker Compose file
+      copy:
+        dest: "{{ lab_directory }}/docker-compose.yml"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        content: |
+          version: '3.8'
+          
+          services:
+            # Main Node.js Security Lab
+            nodejs-lab:
+              image: node:18-ubuntu
+              container_name: nodejs-security-lab
+              ports:
+                - "3000:3000"
+                - "9229:9229"  # Debug port
+              volumes:
+                - ./app:/app
+                - ./logs:/var/log/app
+              working_dir: /app
+              command: bash -c "npm install && npm run dev"
+              environment:
+                - NODE_ENV=development
+                - DEBUG=*
+              networks:
+                - lab-network
+              restart: unless-stopped
+
+            # OWASP ZAP
+            zap:
+              image: owasp/zap2docker-stable
+              container_name: security-zap
+              ports:
+                - "8080:8080"
+                - "8090:8090"
+              volumes:
+                - zap-data:/zap/wrk
+              command: zap-webswing.sh
+              networks:
+                - lab-network
+              restart: unless-stopped
+
+            # PostgreSQL Database
+            postgres:
+              image: postgres:15
+              container_name: security-postgres
+              ports:
+                - "5432:5432"
+              environment:
+                - POSTGRES_DB=security_lab
+                - POSTGRES_USER=labuser
+                - POSTGRES_PASSWORD=SecurityLab123!
+              volumes:
+                - postgres-data:/var/lib/postgresql/data
+                - ./sql:/docker-entrypoint-initdb.d
+              networks:
+                - lab-network
+              restart: unless-stopped
+
+            # Redis Cache
+            redis:
+              image: redis:alpine
+              container_name: security-redis
+              ports:
+                - "6379:6379"
+              volumes:
+                - redis-data:/data
+              command: redis-server --appendonly yes
+              networks:
+                - lab-network
+              restart: unless-stopped
+
+            # Nginx Reverse Proxy
+            nginx:
+              image: nginx:alpine
+              container_name: security-nginx
+              ports:
+                - "80:80"
+                - "443:443"
+              volumes:
+                - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+                - ./nginx/ssl:/etc/nginx/ssl
+                - nginx-logs:/var/log/nginx
+              networks:
+                - lab-network
+              restart: unless-stopped
+
+            # Prometheus Monitoring
+            prometheus:
+              image: prom/prometheus:latest
+              container_name: security-prometheus
+              ports:
+                - "9090:9090"
+              volumes:
+                - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+                - prometheus-data:/prometheus
+              command:
+                - '--config.file=/etc/prometheus/prometheus.yml'
+                - '--storage.tsdb.path=/prometheus'
+                - '--web.console.libraries=/etc/prometheus/console_libraries'
+                - '--web.console.templates=/etc/prometheus/consoles'
+              networks:
+                - lab-network
+              restart: unless-stopped
+
+            # Grafana Dashboard
+            grafana:
+              image: grafana/grafana:latest
+              container_name: security-grafana
+              ports:
+                - "3001:3000"
+              environment:
+                - GF_SECURITY_ADMIN_PASSWORD=admin123
+              volumes:
+                - grafana-data:/var/lib/grafana
+                - ./grafana/provisioning:/etc/grafana/provisioning
+              networks:
+                - lab-network
+              restart: unless-stopped
+
+            # ELK Stack - Elasticsearch
+            elasticsearch:
+              image: elasticsearch:8.8.0
+              container_name: security-elasticsearch
+              ports:
+                - "9200:9200"
+                - "9300:9300"
+              environment:
+                - discovery.type=single-node
+                - xpack.security.enabled=false
+                - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+              volumes:
+                - elasticsearch-data:/usr/share/elasticsearch/data
+              networks:
+                - lab-network
+              restart: unless-stopped
+
+            # ELK Stack - Kibana
+            kibana:
+              image: kibana:8.8.0
+              container_name: security-kibana
+              ports:
+                - "5601:5601"
+              environment:
+                - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+              depends_on:
+                - elasticsearch
+              networks:
+                - lab-network
+              restart: unless-stopped
+
+            # Metasploit Framework
+            metasploit:
+              image: metasploitframework/metasploit-framework
+              container_name: security-metasploit
+              stdin_open: true
+              tty: true
+              volumes:
+                - metasploit-data:/home/msf/.msf4
+                - ./exploits:/tmp/exploits
+              networks:
+                - lab-network
+              restart: unless-stopped
+
+          volumes:
+            postgres-data:
+            redis-data:
+            zap-data:
+            nginx-logs:
+            prometheus-data:
+            grafana-data:
+            elasticsearch-data:
+            metasploit-data:
+
+          networks:
+            lab-network:
+              driver: bridge
+              ipam:
+                config:
+                  - subnet: 172.20.0.0/16
+
+    - name: Create lab startup script
+      copy:
+        dest: "{{ lab_directory }}/start-lab.sh"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Security Lab Startup Script
+          
+          echo "🚀 Starting Security Lab..."
+          
+          # Navigate to lab directory
+          cd "{{ lab_directory }}"
+          
+          # Pull latest images
+          echo "📦 Pulling latest Docker images..."
+          docker-compose pull
+          
+          # Start services
+          echo "🔧 Starting lab services..."
+          docker-compose up -d
+          
+          # Wait for services to be ready
+          echo "⏳ Waiting for services to start..."
+          sleep 30
+          
+          # Health checks
+          echo "🏥 Running health checks..."
+          
+          services=("nginx:80" "nodejs-lab:3000" "zap:8080" "postgres:5432" "redis:6379" "prometheus:9090" "grafana:3001" "elasticsearch:9200" "kibana:5601")
+          
+          for service in "${services[@]}"; do
+            name="${service%:*}"
+            port="${service#*:}"
+            
+            if docker-compose ps | grep -q "$name.*Up"; then
+              echo "✅ $name is running"
+            else
+              echo "❌ $name is not running"
+            fi
+          done
+          
+          echo ""
+          echo "🎉 Security Lab startup complete!"
+          echo ""
+          echo "🌐 Access URLs:"
+          echo "   • Lab Dashboard:     http://$(hostname -I | awk '{print $1}'):80"
+          echo "   • Node.js Lab:       http://$(hostname -I | awk '{print $1}'):3000"
+          echo "   • OWASP ZAP:         http://$(hostname -I | awk '{print $1}'):8080"
+          echo "   • Grafana:           http://$(hostname -I | awk '{print $1}'):3001 (admin/admin123)"
+          echo "   • Prometheus:        http://$(hostname -I | awk '{print $1}'):9090"
+          echo "   • Kibana:            http://$(hostname -I | awk '{print $1}'):5601"
+          echo ""
+
+    - name: Create lab management aliases
+      lineinfile:
+        path: "/home/{{ lab_user }}/.bashrc"
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - "# Security Lab Aliases"
+        - "alias lab-start='cd {{ lab_directory }} && ./start-lab.sh'"
+        - "alias lab-stop='cd {{ lab_directory }} && docker-compose down'"
+        - "alias lab-restart='cd {{ lab_directory }} && docker-compose restart'"
+        - "alias lab-logs='cd {{ lab_directory }} && docker-compose logs -f'"
+        - "alias lab-status='cd {{ lab_directory }} && docker-compose ps'"
+
+    - name: Configure firewall (ufw)
+      block:
+        - name: Install ufw
+          package:
+            name: ufw
+            state: present
+
+        - name: Enable ufw
+          ufw:
+            state: enabled
+            policy: deny
+            direction: incoming
+
+        - name: Allow SSH
+          ufw:
+            rule: allow
+            port: '22'
+            proto: tcp
+
+        - name: Allow lab services
+          ufw:
+            rule: allow
+            port: "{{ item }}"
+            proto: tcp
+          loop:
+            - '80'      # Nginx
+            - '443'     # HTTPS
+            - '3000'    # Node.js Lab
+            - '3001'    # Grafana
+            - '5432'    # PostgreSQL
+            - '5601'    # Kibana
+            - '6379'    # Redis
+            - '8080'    # OWASP ZAP
+            - '9090'    # Prometheus
+            - '9200'    # Elasticsearch
+
+# XSIAM-specific configuration
+- name: Configure XSIAM Server
+  hosts: xsiam_server
+  become: yes
+  vars:
+    xsiam_directory: "/opt/xsiam"
+    
+  tasks:
+    - name: Create XSIAM directory
+      file:
+        path: "{{ xsiam_directory }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Install additional XSIAM requirements
+      package:
+        name:
+          - openjdk-11-jdk
+          - maven
+          - gradle
+        state: present
+
+    - name: Configure additional swap for XSIAM
+      block:
+        - name: Create swap file
+          command: fallocate -l 4G /swapfile
+          args:
+            creates: /swapfile
+
+        - name: Set swap file permissions
+          file:
+            path: /swapfile
+            mode: '0600'
+
+        - name: Make swap
+          command: mkswap /swapfile
+          args:
+            creates: /swapfile
+
+        - name: Enable swap
+          command: swapon /swapfile
+
+        - name: Add swap to fstab
+          lineinfile:
+            path: /etc/fstab
+            line: '/swapfile none swap sw 0 0'
+            state: present
+
+    - name: Create XSIAM placeholder configuration
+      copy:
+        dest: "{{ xsiam_directory }}/README.md"
+        owner: ubuntu
+        group: ubuntu
+        content: |
+          # XSIAM Server Configuration
+          
+          This server has been configured with enhanced resources for XSIAM deployment:
+          
+          - **CPU**: 8 cores
+          - **Memory**: 16GB RAM + 4GB swap
+          - **Storage**: 100GB system disk + 200GB data disk
+          - **Java**: OpenJDK 11
+          - **Build Tools**: Maven, Gradle
+          
+          ## Next Steps
+          
+          1. Mount and format the data disk:
+             ```bash
+             sudo mkfs.ext4 /dev/sdb
+             sudo mkdir -p /data
+             sudo mount /dev/sdb /data
+             echo '/dev/sdb /data ext4 defaults 0 2' | sudo tee -a /etc/fstab
+             ```
+          
+          2. Install XSIAM software according to Palo Alto documentation
+          
+          3. Configure data sources and integrations
+          
+          ## Monitoring
+          
+          System monitoring is available via:
+          - Prometheus: http://[vm-ip]:9090
+          - Grafana: http://[vm-ip]:3001
+          
+          ## Security
+          
+          - Firewall configured with necessary ports
+          - SSH key authentication enabled
+          - Regular security updates applied

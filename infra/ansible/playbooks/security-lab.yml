@@ -1,0 +1,575 @@
+---
+# Security Lab Ansible Playbook
+# Deploys complete security testing environment across multiple hosts
+
+- name: Deploy Security Lab Environment
+  hosts: security_lab
+  become: yes
+  vars:
+    lab_name: "security-lab"
+    lab_user: "labuser"
+    lab_directory: "/opt/security-lab"
+    docker_compose_version: "2.20.0"
+    node_version: "18"
+    
+  tasks:
+    - name: Update package cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+
+    - name: Install essential packages
+      package:
+        name:
+          - curl
+          - wget
+          - git
+          - vim
+          - build-essential
+          - software-properties-common
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - jq
+          - unzip
+          - htop
+          - nmap
+          - wireshark-common
+          - tcpdump
+          - netcat
+          - auditd
+          - rsyslog
+          - fail2ban
+          - python3
+          - python3-pip
+        state: present
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker
+      package:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Add NodeSource repository key
+      apt_key:
+        url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add NodeSource repository
+      apt_repository:
+        repo: "deb https://deb.nodesource.com/node_{{ node_version }}.x {{ ansible_distribution_release }} main"
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Node.js
+      package:
+        name: nodejs
+        state: present
+
+    - name: Install npm security tools globally
+      npm:
+        name: "{{ item }}"
+        global: yes
+        state: present
+      loop:
+        - snyk
+        - audit-ci
+        - retire
+        - semgrep
+        - "@cyclonedx/cli"
+
+    - name: Install Python security tools
+      pip:
+        name:
+          - bandit
+          - safety
+          - semgrep
+          - checkov
+          - pip-audit
+        state: present
+
+    - name: Create lab user
+      user:
+        name: "{{ lab_user }}"
+        groups: docker
+        append: yes
+        shell: /bin/bash
+        create_home: yes
+        state: present
+
+    - name: Create lab directory structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0755'
+      loop:
+        - "{{ lab_directory }}"
+        - "{{ lab_directory }}/workspace"
+        - "{{ lab_directory }}/logs"
+        - "{{ lab_directory }}/scripts"
+        - "{{ lab_directory }}/configs"
+        - "{{ lab_directory }}/tools"
+        - "{{ lab_directory }}/scans"
+
+    - name: Download and install AWS CLI
+      unarchive:
+        src: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: /tmp
+        remote_src: yes
+        creates: /tmp/aws
+
+    - name: Install AWS CLI
+      command: /tmp/aws/install
+      args:
+        creates: /usr/local/bin/aws
+
+    - name: Configure audit rules
+      copy:
+        dest: /etc/audit/rules.d/security-lab.rules
+        content: |
+          # Security Lab Audit Rules
+          -w /etc/passwd -p wa -k identity
+          -w /etc/group -p wa -k identity
+          -w /etc/shadow -p wa -k identity
+          -w /etc/sudoers -p wa -k identity
+          -w /bin/su -p x -k privilege-escalation
+          -w /usr/bin/sudo -p x -k privilege-escalation
+          -w /sbin/insmod -p x -k modules
+          -w /sbin/rmmod -p x -k modules
+          -w /sbin/modprobe -p x -k modules
+          -w /var/log/wtmp -p wa -k session
+          -w /var/log/btmp -p wa -k session
+          -w /var/run/utmp -p wa -k session
+          -w /etc/ssh/sshd_config -k sshd
+        mode: '0640'
+      notify: restart auditd
+
+    - name: Configure fail2ban
+      copy:
+        dest: /etc/fail2ban/jail.local
+        content: |
+          [DEFAULT]
+          ignoreip = 127.0.0.1/8 ::1
+          bantime = 3600
+          findtime = 600
+          maxretry = 3
+
+          [sshd]
+          enabled = true
+          port = ssh
+          logpath = /var/log/auth.log
+          maxretry = 3
+        mode: '0644'
+      notify: restart fail2ban
+
+    - name: Create Docker Compose configuration
+      copy:
+        dest: "{{ lab_directory }}/docker-compose.yml"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0644'
+        content: |
+          version: '3.8'
+          
+          services:
+            # Node.js Security Testing Environment
+            nodejs-lab:
+              image: node:{{ node_version }}-ubuntu
+              container_name: nodejs-security-lab
+              ports:
+                - "3000:3000"
+                - "9229:9229"
+              volumes:
+                - ./workspace:/workspace
+                - ./logs:/var/log/lab
+              working_dir: /workspace
+              environment:
+                - NODE_ENV=development
+                - LAB_MODE=security-testing
+              command: tail -f /dev/null
+              networks:
+                - lab-network
+
+            # OWASP ZAP Security Scanner
+            zap:
+              image: owasp/zap2docker-stable
+              container_name: security-zap
+              ports:
+                - "8080:8080"
+              volumes:
+                - ./scans:/zap/wrk
+              command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true
+              networks:
+                - lab-network
+
+            # PostgreSQL database
+            postgres:
+              image: postgres:15
+              container_name: lab-postgres
+              ports:
+                - "5432:5432"
+              environment:
+                POSTGRES_DB: security_lab
+                POSTGRES_USER: "{{ lab_user }}"
+                POSTGRES_PASSWORD: SecurityLab123!
+              volumes:
+                - postgres_data:/var/lib/postgresql/data
+              networks:
+                - lab-network
+
+            # Redis for caching
+            redis:
+              image: redis:alpine
+              container_name: lab-redis
+              ports:
+                - "6379:6379"
+              command: redis-server --appendonly yes
+              volumes:
+                - redis_data:/data
+              networks:
+                - lab-network
+
+            # Nginx reverse proxy
+            nginx:
+              image: nginx:alpine
+              container_name: lab-nginx
+              ports:
+                - "80:80"
+                - "443:443"
+              volumes:
+                - ./configs/nginx.conf:/etc/nginx/nginx.conf
+                - ./workspace:/var/www/html
+              depends_on:
+                - nodejs-lab
+              networks:
+                - lab-network
+
+            # Monitoring with Prometheus
+            prometheus:
+              image: prom/prometheus:latest
+              container_name: lab-prometheus
+              ports:
+                - "9090:9090"
+              volumes:
+                - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+              networks:
+                - lab-network
+
+            # Grafana for visualization
+            grafana:
+              image: grafana/grafana:latest
+              container_name: lab-grafana
+              ports:
+                - "3001:3000"
+              environment:
+                - GF_SECURITY_ADMIN_PASSWORD=admin123
+              volumes:
+                - grafana_data:/var/lib/grafana
+              networks:
+                - lab-network
+
+          volumes:
+            postgres_data:
+            redis_data:
+            grafana_data:
+
+          networks:
+            lab-network:
+              driver: bridge
+
+    - name: Create Nginx configuration
+      copy:
+        dest: "{{ lab_directory }}/configs/nginx.conf"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0644'
+        content: |
+          events {
+              worker_connections 1024;
+          }
+
+          http {
+              upstream nodejs_app {
+                  server nodejs-lab:3000;
+              }
+
+              server {
+                  listen 80;
+                  server_name localhost;
+
+                  location / {
+                      proxy_pass http://nodejs_app;
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                  }
+
+                  location /health {
+                      return 200 "healthy\n";
+                      add_header Content-Type text/plain;
+                  }
+              }
+          }
+
+    - name: Create Prometheus configuration
+      copy:
+        dest: "{{ lab_directory }}/configs/prometheus.yml"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0644'
+        content: |
+          global:
+            scrape_interval: 15s
+
+          scrape_configs:
+            - job_name: 'prometheus'
+              static_configs:
+                - targets: ['localhost:9090']
+
+            - job_name: 'nodejs-lab'
+              static_configs:
+                - targets: ['nodejs-lab:3000']
+
+            - job_name: 'zap-scanner'
+              static_configs:
+                - targets: ['security-zap:8080']
+
+    - name: Create lab startup script
+      copy:
+        dest: "{{ lab_directory }}/scripts/start-lab.sh"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          echo "🚀 Starting {{ lab_name }} Environment..."
+          
+          cd {{ lab_directory }}
+          
+          # Start Docker services
+          docker-compose up -d
+          
+          echo "📊 Lab Services Status:"
+          docker-compose ps
+          
+          echo ""
+          echo "🌐 Access Points:"
+          echo "   • Lab Application:    http://$(curl -s ifconfig.me):80"
+          echo "   • OWASP ZAP:         http://$(curl -s ifconfig.me):8080"
+          echo "   • Prometheus:        http://$(curl -s ifconfig.me):9090"
+          echo "   • Grafana:           http://$(curl -s ifconfig.me):3001"
+          
+          echo ""
+          echo "✅ {{ lab_name }} Ready!"
+
+    - name: Create vulnerability scanning script
+      copy:
+        dest: "{{ lab_directory }}/scripts/scan-vulnerabilities.sh"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          echo "🔍 Running Security Vulnerability Scan..."
+          
+          # Create results directory
+          RESULTS_DIR="{{ lab_directory }}/scans/$(date +%Y%m%d_%H%M%S)"
+          mkdir -p "$RESULTS_DIR"
+          
+          # System information
+          uname -a > "$RESULTS_DIR/system-info.txt"
+          lsb_release -a >> "$RESULTS_DIR/system-info.txt"
+          
+          # Network scan
+          nmap -sT -O localhost > "$RESULTS_DIR/port-scan.txt"
+          
+          # Python security scan
+          if [ -d "{{ lab_directory }}/workspace" ]; then
+            bandit -r {{ lab_directory }}/workspace -f json -o "$RESULTS_DIR/bandit-results.json" 2>/dev/null || echo "No Python files found"
+          fi
+          
+          # Node.js security scan
+          cd {{ lab_directory }}/workspace
+          npm audit --json > "$RESULTS_DIR/npm-audit.json" 2>/dev/null || echo "No package.json found"
+          
+          # Docker security scan
+          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}" > "$RESULTS_DIR/docker-images.txt"
+          
+          echo "✅ Security scan completed. Results in: $RESULTS_DIR"
+
+    - name: Create system monitoring script
+      copy:
+        dest: "{{ lab_directory }}/scripts/monitor-system.sh"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          echo "📊 {{ lab_name }} System Monitor"
+          echo "=========================="
+          
+          echo ""
+          echo "🖥️  System Information:"
+          echo "   • Hostname: $(hostname)"
+          echo "   • Uptime: $(uptime -p)"
+          echo "   • Load Average: $(uptime | awk -F'load average:' '{print $2}')"
+          echo "   • Memory Usage: $(free -h | awk 'NR==2{printf "%s/%s (%.2f%%)\n", $3,$2,$3*100/$2 }')"
+          
+          echo ""
+          echo "🐳 Docker Status:"
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+          
+          echo ""
+          echo "🔍 Recent Security Events:"
+          tail -5 /var/log/auth.log
+          
+          # Log to file
+          echo "$(date): System monitoring completed" >> {{ lab_directory }}/logs/monitoring.log
+
+    - name: Set up monitoring cron job
+      cron:
+        name: "Security Lab Monitoring"
+        minute: "*/5"
+        job: "{{ lab_directory }}/scripts/monitor-system.sh"
+        user: root
+
+    - name: Create systemd service for lab
+      copy:
+        dest: /etc/systemd/system/security-lab.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description={{ lab_name }} Environment
+          Requires=docker.service
+          After=docker.service
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          ExecStart={{ lab_directory }}/scripts/start-lab.sh
+          ExecStop=/usr/local/bin/docker-compose -f {{ lab_directory }}/docker-compose.yml down
+          WorkingDirectory={{ lab_directory }}
+          User=root
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: reload systemd
+
+    - name: Create README
+      copy:
+        dest: "{{ lab_directory }}/README.md"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0644'
+        content: |
+          # {{ lab_name }} Environment
+
+          Deployed with Ansible configuration management.
+
+          ## 🚀 Getting Started
+
+          ```bash
+          # Start the lab environment
+          sudo {{ lab_directory }}/scripts/start-lab.sh
+
+          # Monitor system
+          sudo {{ lab_directory }}/scripts/monitor-system.sh
+
+          # Run vulnerability scan
+          sudo {{ lab_directory }}/scripts/scan-vulnerabilities.sh
+          ```
+
+          ## 🌐 Access Points
+
+          - Lab Application: http://[server-ip]:80
+          - OWASP ZAP: http://[server-ip]:8080
+          - Prometheus: http://[server-ip]:9090
+          - Grafana: http://[server-ip]:3001 (admin/admin123)
+
+          ## 🛠️ Management
+
+          ```bash
+          # Check service status
+          systemctl status security-lab
+
+          # View Docker services
+          cd {{ lab_directory }}
+          docker-compose ps
+
+          # View logs
+          docker-compose logs -f [service]
+          ```
+
+          Environment configured and managed by Ansible.
+
+    - name: Set up MOTD
+      copy:
+        dest: /etc/motd
+        mode: '0644'
+        content: |
+
+          ██████████████████████████████████████████████████████████████████████████████
+          █                                                                            █
+          █  🔒 {{ lab_name | upper }} ENVIRONMENT                                     █
+          █                                                                            █
+          █  📍 Lab Directory: {{ lab_directory }}                                     █
+          █  🚀 Start Lab:     sudo {{ lab_directory }}/scripts/start-lab.sh         █
+          █  📊 Monitor:       sudo {{ lab_directory }}/scripts/monitor-system.sh    █  
+          █  🔍 Scan:          sudo {{ lab_directory }}/scripts/scan-vulnerabilities.sh  █
+          █                                                                            █
+          █  🤖 Deployed with Ansible                                                  █
+          █                                                                            █
+          ██████████████████████████████████████████████████████████████████████████████
+
+  handlers:
+    - name: restart auditd
+      systemd:
+        name: auditd
+        state: restarted
+
+    - name: restart fail2ban
+      systemd:
+        name: fail2ban
+        state: restarted
+
+    - name: reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: start security-lab
+      systemd:
+        name: security-lab
+        state: started
+        enabled: yes

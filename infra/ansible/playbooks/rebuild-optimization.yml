@@ -1,0 +1,450 @@
+---
+# Ansible Playbook for Rebuild Optimization
+# Specifically designed for environments requiring frequent rebuilds
+
+- name: Optimize Security Lab for Frequent Rebuilds
+  hosts: security_lab
+  become: yes
+  vars:
+    rebuild_cache_dir: "/opt/rebuild-cache"
+    lab_directory: "/opt/security-lab"
+    optimize_for_rebuilds: true
+    
+  tasks:
+    - name: Create rebuild optimization directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - "{{ rebuild_cache_dir }}"
+        - "{{ rebuild_cache_dir }}/docker-images"
+        - "{{ rebuild_cache_dir }}/packages"
+        - "{{ rebuild_cache_dir }}/configs"
+        - "{{ rebuild_cache_dir }}/backups"
+
+    - name: Install rebuild optimization tools
+      package:
+        name:
+          - rsync
+          - pigz          # Parallel gzip for faster compression
+          - pv            # Progress viewer
+          - parallel      # GNU parallel for concurrent operations
+          - jq            # JSON processing
+          - yq            # YAML processing
+        state: present
+
+    - name: Create Docker image cache script
+      copy:
+        dest: "{{ rebuild_cache_dir }}/cache-docker-images.sh"
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Cache Docker images for faster rebuilds
+          echo "📦 Caching Docker images for faster rebuilds..."
+          
+          CACHE_DIR="{{ rebuild_cache_dir }}/docker-images"
+          
+          # List of common images to pre-cache
+          IMAGES=(
+            "node:18-ubuntu"
+            "owasp/zap2docker-stable"
+            "postgres:15"
+            "redis:alpine"
+            "nginx:alpine"
+            "prom/prometheus:latest"
+            "grafana/grafana:latest"
+            "elasticsearch:8.8.0"
+            "kibana:8.8.0"
+            "ubuntu:22.04"
+            "alpine:latest"
+          )
+          
+          for image in "${IMAGES[@]}"; do
+            echo "Caching image: $image"
+            if ! docker image inspect "$image" >/dev/null 2>&1; then
+              docker pull "$image"
+            fi
+            
+            # Save image to cache
+            image_file=$(echo "$image" | tr '/:' '_')
+            if [ ! -f "$CACHE_DIR/${image_file}.tar.gz" ]; then
+              docker save "$image" | pigz > "$CACHE_DIR/${image_file}.tar.gz"
+              echo "Cached: $image -> ${image_file}.tar.gz"
+            fi
+          done
+          
+          echo "✅ Docker image caching complete"
+
+    - name: Create package cache script
+      copy:
+        dest: "{{ rebuild_cache_dir }}/cache-packages.sh"
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Cache packages for offline rebuilds
+          echo "📦 Caching system packages..."
+          
+          CACHE_DIR="{{ rebuild_cache_dir }}/packages"
+          
+          # Update package cache
+          apt-get update
+          
+          # Download packages without installing
+          apt-get download -d "$CACHE_DIR" \
+            curl wget git vim build-essential \
+            software-properties-common apt-transport-https \
+            ca-certificates gnupg lsb-release jq unzip \
+            htop nmap wireshark-common tcpdump netcat \
+            auditd rsyslog fail2ban python3 python3-pip \
+            nodejs npm docker-ce docker-ce-cli containerd.io
+          
+          # Cache npm packages
+          mkdir -p "$CACHE_DIR/npm"
+          cd "$CACHE_DIR/npm"
+          npm pack snyk audit-ci retire semgrep @cyclonedx/cli
+          
+          # Cache Python packages
+          mkdir -p "$CACHE_DIR/python"
+          pip3 download -d "$CACHE_DIR/python" \
+            bandit safety semgrep checkov pip-audit
+          
+          echo "✅ Package caching complete"
+
+    - name: Create fast rebuild script
+      copy:
+        dest: "{{ lab_directory }}/scripts/fast-rebuild.sh"
+        owner: labuser
+        group: labuser
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Fast rebuild optimized for frequent deployments
+          
+          set -e
+          START_TIME=$(date +%s)
+          
+          echo "🚀 Starting fast rebuild process..."
+          
+          # Check what's running
+          RUNNING_CONTAINERS=$(docker ps --format "{{.Names}}" | grep -E "(lab|security)" || true)
+          
+          # Parallel service restart
+          restart_service() {
+            local service=$1
+            echo "Restarting $service"
+            docker-compose restart "$service" >/dev/null 2>&1 || true
+          }
+          
+          export -f restart_service
+          
+          # Restart services in parallel
+          if [ -n "$RUNNING_CONTAINERS" ]; then
+            echo "$RUNNING_CONTAINERS" | parallel restart_service
+          fi
+          
+          # Health check with timeout
+          timeout 60s bash -c '
+            until curl -s http://localhost:80/health >/dev/null 2>&1; do
+              sleep 2
+            done
+          ' || echo "⚠️ Health check timeout - services may still be starting"
+          
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          
+          echo "✅ Fast rebuild completed in ${DURATION} seconds"
+
+    - name: Create incremental update script
+      copy:
+        dest: "{{ lab_directory }}/scripts/incremental-update.sh"
+        owner: labuser
+        group: labuser
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Incremental update - only rebuild what changed
+          
+          CONFIG_HASH_FILE="{{ lab_directory }}/.config-hash"
+          CURRENT_HASH=$(find {{ lab_directory }}/configs -type f -exec md5sum {} \; 2>/dev/null | md5sum | cut -d' ' -f1)
+          
+          if [ -f "$CONFIG_HASH_FILE" ]; then
+            PREVIOUS_HASH=$(cat "$CONFIG_HASH_FILE")
+          else
+            PREVIOUS_HASH=""
+          fi
+          
+          if [ "$CURRENT_HASH" != "$PREVIOUS_HASH" ]; then
+            echo "🔄 Configuration changed - performing incremental update..."
+            
+            # Only pull updated images
+            docker-compose pull --ignore-pull-failures
+            
+            # Recreate only changed services
+            docker-compose up -d --remove-orphans
+            
+            # Update hash
+            echo "$CURRENT_HASH" > "$CONFIG_HASH_FILE"
+            
+            echo "✅ Incremental update completed"
+          else
+            echo "✅ No changes detected - skipping update"
+          fi
+
+    - name: Create rollback script
+      copy:
+        dest: "{{ lab_directory }}/scripts/rollback.sh"
+        owner: labuser
+        group: labuser
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Rollback to previous working state
+          
+          BACKUP_DIR="{{ rebuild_cache_dir }}/backups"
+          
+          if [ ! -d "$BACKUP_DIR" ]; then
+            echo "❌ No backups found"
+            exit 1
+          fi
+          
+          # List available backups
+          echo "📋 Available backups:"
+          ls -lt "$BACKUP_DIR" | head -10
+          
+          echo -n "Enter backup timestamp to restore (YYYYMMDD_HHMMSS): "
+          read -r backup_timestamp
+          
+          BACKUP_PATH="$BACKUP_DIR/backup-$backup_timestamp"
+          
+          if [ ! -d "$BACKUP_PATH" ]; then
+            echo "❌ Backup not found: $BACKUP_PATH"
+            exit 1
+          fi
+          
+          echo "🔄 Rolling back to $backup_timestamp..."
+          
+          # Stop current services
+          docker-compose down >/dev/null 2>&1 || true
+          
+          # Restore volumes
+          cd "$BACKUP_PATH"
+          for volume_backup in *.tar.gz; do
+            if [ -f "$volume_backup" ]; then
+              volume_name=$(basename "$volume_backup" .tar.gz)
+              echo "Restoring volume: $volume_name"
+              
+              # Create volume if it doesn't exist
+              docker volume create "$volume_name" >/dev/null 2>&1 || true
+              
+              # Restore data
+              docker run --rm \
+                -v "$volume_name:/restore" \
+                -v "$BACKUP_PATH:/backup" \
+                alpine sh -c "cd /restore && tar xzf /backup/$volume_backup"
+            fi
+          done
+          
+          # Restart services
+          cd {{ lab_directory }}
+          docker-compose up -d
+          
+          echo "✅ Rollback completed"
+
+    - name: Create backup automation script
+      copy:
+        dest: "{{ lab_directory }}/scripts/auto-backup.sh"
+        owner: labuser
+        group: labuser
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Automated backup before rebuilds
+          
+          BACKUP_DIR="{{ rebuild_cache_dir }}/backups"
+          BACKUP_NAME="backup-$(date +%Y%m%d_%H%M%S)"
+          BACKUP_PATH="$BACKUP_DIR/$BACKUP_NAME"
+          
+          mkdir -p "$BACKUP_PATH"
+          
+          echo "💾 Creating automated backup: $BACKUP_NAME"
+          
+          # Backup Docker volumes in parallel
+          backup_volume() {
+            local volume=$1
+            echo "Backing up volume: $volume"
+            docker run --rm \
+              -v "$volume:/source:ro" \
+              -v "$BACKUP_PATH:/backup" \
+              alpine tar czf "/backup/${volume}.tar.gz" -C /source . 2>/dev/null || true
+          }
+          
+          export -f backup_volume
+          export BACKUP_PATH
+          
+          # Get lab-related volumes and backup in parallel
+          docker volume ls -q | grep -E "(lab|security)" | parallel backup_volume
+          
+          # Backup configurations
+          if [ -d "{{ lab_directory }}/configs" ]; then
+            tar czf "$BACKUP_PATH/configs.tar.gz" -C {{ lab_directory }} configs
+          fi
+          
+          # Keep only last 10 backups
+          ls -t "$BACKUP_DIR" | tail -n +11 | xargs -r -I {} rm -rf "$BACKUP_DIR/{}"
+          
+          echo "✅ Backup completed: $BACKUP_PATH"
+
+    - name: Create rebuild monitoring script
+      copy:
+        dest: "{{ lab_directory }}/scripts/monitor-rebuilds.sh"
+        owner: labuser
+        group: labuser
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Monitor rebuild performance and generate reports
+          
+          STATS_FILE="{{ lab_directory }}/logs/rebuild-stats.json"
+          
+          # Initialize stats file if it doesn't exist
+          if [ ! -f "$STATS_FILE" ]; then
+            echo '{"rebuilds": [], "total_rebuilds": 0, "average_time": 0}' > "$STATS_FILE"
+          fi
+          
+          case "${1:-status}" in
+            "start")
+              echo "$(date +%s)" > /tmp/rebuild-start-time
+              echo "🚀 Rebuild monitoring started"
+              ;;
+            "end")
+              if [ -f /tmp/rebuild-start-time ]; then
+                START_TIME=$(cat /tmp/rebuild-start-time)
+                END_TIME=$(date +%s)
+                DURATION=$((END_TIME - START_TIME))
+                
+                # Update stats
+                jq --arg timestamp "$(date -Iseconds)" \
+                   --arg duration "$DURATION" \
+                   '.rebuilds += [{"timestamp": $timestamp, "duration": ($duration | tonumber)}] |
+                    .total_rebuilds += 1 |
+                    .average_time = (.rebuilds | map(.duration) | add / length)' \
+                   "$STATS_FILE" > /tmp/stats.json && mv /tmp/stats.json "$STATS_FILE"
+                
+                rm -f /tmp/rebuild-start-time
+                echo "✅ Rebuild completed in ${DURATION} seconds"
+              fi
+              ;;
+            "status")
+              echo "📊 Rebuild Statistics:"
+              jq -r '.total_rebuilds as $total | .average_time as $avg | 
+                     "Total rebuilds: \($total)" + "\n" +
+                     "Average time: \($avg | floor) seconds"' "$STATS_FILE"
+              
+              echo ""
+              echo "📈 Recent rebuilds:"
+              jq -r '.rebuilds[-5:] | .[] | 
+                     .timestamp + " - " + (.duration | tostring) + "s"' "$STATS_FILE" | \
+                     sed 's/T/ /' | cut -d+ -f1
+              ;;
+            "report")
+              echo "📊 Detailed Rebuild Report" > rebuild-report.txt
+              echo "=========================" >> rebuild-report.txt
+              echo "" >> rebuild-report.txt
+              jq -r '"Total rebuilds: " + (.total_rebuilds | tostring),
+                     "Average time: " + (.average_time | floor | tostring) + " seconds",
+                     "Fastest rebuild: " + (.rebuilds | map(.duration) | min | tostring) + " seconds",
+                     "Slowest rebuild: " + (.rebuilds | map(.duration) | max | tostring) + " seconds"' \
+                     "$STATS_FILE" >> rebuild-report.txt
+              
+              echo "" >> rebuild-report.txt
+              echo "Recent rebuild history:" >> rebuild-report.txt
+              jq -r '.rebuilds[-10:] | .[] | 
+                     .timestamp + " - " + (.duration | tostring) + "s"' "$STATS_FILE" >> rebuild-report.txt
+              
+              echo "📄 Report saved to: rebuild-report.txt"
+              ;;
+          esac
+
+    - name: Setup rebuild optimization cron jobs
+      cron:
+        name: "{{ item.name }}"
+        minute: "{{ item.minute }}"
+        hour: "{{ item.hour | default('*') }}"
+        job: "{{ item.job }}"
+        user: "{{ item.user | default('root') }}"
+      loop:
+        - name: "Cache Docker images daily"
+          minute: "0"
+          hour: "2"
+          job: "{{ rebuild_cache_dir }}/cache-docker-images.sh"
+        
+        - name: "Update package cache weekly"
+          minute: "30"
+          hour: "3"
+          job: "{{ rebuild_cache_dir }}/cache-packages.sh"
+        
+        - name: "Auto backup before major rebuilds"
+          minute: "*/30"
+          job: "{{ lab_directory }}/scripts/auto-backup.sh"
+          user: "labuser"
+
+    - name: Create rebuild optimization systemd service
+      copy:
+        dest: /etc/systemd/system/rebuild-optimizer.service
+        content: |
+          [Unit]
+          Description=Security Lab Rebuild Optimizer
+          After=docker.service
+          
+          [Service]
+          Type=oneshot
+          ExecStart={{ rebuild_cache_dir }}/cache-docker-images.sh
+          User=root
+          
+          [Install]
+          WantedBy=multi-user.target
+      notify: reload systemd
+
+    - name: Enable rebuild optimizer service
+      systemd:
+        name: rebuild-optimizer
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Create rebuild optimization configuration
+      copy:
+        dest: "{{ lab_directory }}/rebuild-config.yml"
+        owner: labuser
+        group: labuser
+        content: |
+          # Rebuild Optimization Configuration
+          optimization:
+            enabled: true
+            cache_docker_images: true
+            parallel_operations: true
+            incremental_updates: true
+            automatic_backups: true
+            
+          performance:
+            max_parallel_jobs: 4
+            backup_compression: "pigz"
+            cache_retention_days: 30
+            
+          monitoring:
+            track_rebuild_times: true
+            generate_reports: true
+            alert_slow_rebuilds: true
+            slow_rebuild_threshold: 300  # seconds
+            
+          rollback:
+            enabled: true
+            max_rollback_points: 10
+            auto_rollback_on_failure: false
+
+  handlers:
+    - name: reload systemd
+      systemd:
+        daemon_reload: yes

@@ -1,0 +1,162 @@
+---
+# Global variables for Security Lab Ansible deployment
+
+# Lab configuration
+lab_name: "security-lab"
+lab_user: "labuser"
+lab_directory: "/opt/security-lab"
+lab_environment: "development"
+
+# Software versions
+docker_compose_version: "2.20.0"
+node_version: "18"
+python_version: "3.11"
+
+# Security configuration
+security:
+  fail2ban:
+    enabled: true
+    bantime: 3600
+    findtime: 600
+    maxretry: 3
+  
+  auditd:
+    enabled: true
+    log_format: "RAW"
+    
+  firewall:
+    enabled: false  # Set to true for production
+    allowed_ports:
+      - 22    # SSH
+      - 80    # HTTP
+      - 443   # HTTPS
+      - 3000  # Node.js app
+      - 8080  # OWASP ZAP
+      - 9090  # Prometheus
+      - 3001  # Grafana
+
+# Lab services configuration
+lab_services:
+  nodejs_lab:
+    enabled: true
+    port: 3000
+    debug_port: 9229
+    
+  owasp_zap:
+    enabled: true
+    port: 8080
+    
+  postgresql:
+    enabled: true
+    port: 5432
+    database: "security_lab"
+    username: "{{ lab_user }}"
+    password: "SecurityLab123!"
+    
+  redis:
+    enabled: true
+    port: 6379
+    
+  nginx:
+    enabled: true
+    port: 80
+    ssl_port: 443
+    
+  prometheus:
+    enabled: true
+    port: 9090
+    scrape_interval: "15s"
+    
+  grafana:
+    enabled: true
+    port: 3001
+    admin_password: "admin123"
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  interval: 300  # 5 minutes
+  log_retention_days: 30
+  metrics_retention: "7d"
+
+# Network configuration
+network:
+  lab_subnet: "172.20.0.0/16"
+  dns_servers:
+    - "8.8.8.8"
+    - "8.8.4.4"
+
+# Tool versions and packages
+security_tools:
+  npm_packages:
+    - snyk
+    - audit-ci
+    - retire
+    - semgrep
+    - "@cyclonedx/cli"
+    
+  python_packages:
+    - bandit
+    - safety
+    - semgrep
+    - checkov
+    - pip-audit
+    
+  system_packages:
+    - nmap
+    - wireshark-common
+    - tcpdump
+    - netcat
+    - curl
+    - wget
+    - git
+    - vim
+    - htop
+    - jq
+    - unzip
+
+# Cloud provider configurations
+cloud_providers:
+  aws:
+    region: "us-east-1"
+    instance_type: "t3.large"
+    
+  azure:
+    location: "East US"
+    vm_size: "Standard_B2s"
+    
+  gcp:
+    zone: "us-central1-a"
+    machine_type: "n1-standard-2"
+
+# Environment-specific overrides
+environments:
+  development:
+    security:
+      firewall:
+        enabled: false
+    lab_services:
+      postgresql:
+        password: "dev123"
+        
+  staging:
+    security:
+      firewall:
+        enabled: true
+    monitoring:
+      metrics_retention: "14d"
+      
+  production:
+    security:
+      firewall:
+        enabled: true
+      fail2ban:
+        bantime: 86400  # 24 hours
+        maxretry: 2
+    monitoring:
+      metrics_retention: "30d"
+    lab_services:
+      postgresql:
+        password: "{{ vault_postgresql_password }}"
+      grafana:
+        admin_password: "{{ vault_grafana_password }}"

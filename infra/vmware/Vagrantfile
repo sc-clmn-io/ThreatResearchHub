@@ -1,0 +1,213 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  # Ubuntu Security Lab VM
+  config.vm.define "ubuntu-lab" do |ubuntu|
+    ubuntu.vm.box = "ubuntu/jammy64"
+    ubuntu.vm.hostname = "ubuntu-security-lab"
+    
+    # Network configuration
+    ubuntu.vm.network "forwarded_port", guest: 80, host: 8080
+    ubuntu.vm.network "forwarded_port", guest: 3000, host: 3000
+    ubuntu.vm.network "forwarded_port", guest: 8080, host: 8081
+    ubuntu.vm.network "forwarded_port", guest: 5601, host: 5601
+    ubuntu.vm.network "private_network", ip: "192.168.56.10"
+    
+    # VM resources
+    ubuntu.vm.provider "virtualbox" do |vb|
+      vb.name = "SecurityLab-Ubuntu"
+      vb.memory = "4096"
+      vb.cpus = 2
+      vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+    end
+    
+    # Shared folders
+    ubuntu.vm.synced_folder "./shared", "/vagrant_shared", create: true
+    
+    # Provisioning script
+    ubuntu.vm.provision "shell", inline: <<-SHELL
+      # Update system
+      apt-get update && apt-get upgrade -y
+      
+      # Install Docker
+      curl -fsSL https://get.docker.com -o get-docker.sh
+      sh get-docker.sh
+      usermod -aG docker vagrant
+      
+      # Install Docker Compose
+      curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      chmod +x /usr/local/bin/docker-compose
+      
+      # Install Node.js
+      curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+      apt-get install -y nodejs build-essential
+      
+      # Install security tools
+      apt-get install -y git curl wget vim nmap wireshark-common tcpdump netcat auditd
+      
+      # Install npm security tools
+      npm install -g snyk audit-ci retire semgrep
+      
+      # Install Python security tools
+      apt-get install -y python3 python3-pip
+      pip3 install bandit safety checkov
+      
+      # Create lab directory
+      mkdir -p /opt/security-lab/{workspace,logs,configs,scripts}
+      chown -R vagrant:vagrant /opt/security-lab
+      
+      # Copy lab files if they exist
+      if [ -d "/vagrant_shared/lab-configs" ]; then
+        cp -r /vagrant_shared/lab-configs/* /opt/security-lab/
+      fi
+      
+      echo "✅ Ubuntu Security Lab VM setup complete!"
+    SHELL
+    
+    # Copy Docker Compose configuration
+    ubuntu.vm.provision "file", source: "../docker/docker-compose.yml", destination: "/home/vagrant/docker-compose.yml"
+  end
+
+  # Windows Security Lab VM (requires Windows box)
+  config.vm.define "windows-lab" do |windows|
+    windows.vm.box = "gusztavvargadr/windows-10"
+    windows.vm.hostname = "windows-security-lab"
+    
+    # Network configuration
+    windows.vm.network "forwarded_port", guest: 3389, host: 3389
+    windows.vm.network "forwarded_port", guest: 5985, host: 5985
+    windows.vm.network "private_network", ip: "192.168.56.11"
+    
+    # VM resources
+    windows.vm.provider "virtualbox" do |vb|
+      vb.name = "SecurityLab-Windows"
+      vb.memory = "6144"
+      vb.cpus = 2
+      vb.gui = true
+    end
+    
+    # Windows-specific configuration
+    windows.vm.communicator = "winrm"
+    windows.winrm.username = "vagrant"
+    windows.winrm.password = "vagrant"
+    
+    # Provisioning with PowerShell
+    windows.vm.provision "shell", inline: <<-SHELL
+      Write-Host "Setting up Windows Security Lab..." -ForegroundColor Green
+      
+      # Install Chocolatey
+      Set-ExecutionPolicy Bypass -Scope Process -Force
+      [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+      iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+      
+      # Install essential tools
+      choco install -y git nodejs python3 vscode firefox sysinternals wireshark
+      choco install -y docker-desktop sysmon procexp procmon autoruns
+      
+      # Create lab directory
+      New-Item -ItemType Directory -Path "C:\\SecurityLab" -Force
+      New-Item -ItemType Directory -Path "C:\\SecurityLab\\Workspace" -Force
+      New-Item -ItemType Directory -Path "C:\\SecurityLab\\Logs" -Force
+      New-Item -ItemType Directory -Path "C:\\SecurityLab\\Scripts" -Force
+      
+      # Configure Sysmon (basic configuration)
+      $sysmonConfig = @"
+<Sysmon schemaversion="4.40">
+  <EventFiltering>
+    <ProcessCreate onmatch="include">
+      <Image condition="contains">powershell</Image>
+      <Image condition="contains">cmd</Image>
+    </ProcessCreate>
+  </EventFiltering>
+</Sysmon>
+"@
+      $sysmonConfig | Out-File -FilePath "C:\\SecurityLab\\sysmon-config.xml" -Encoding UTF8
+      sysmon -accepteula -i "C:\\SecurityLab\\sysmon-config.xml"
+      
+      Write-Host "✅ Windows Security Lab VM setup complete!" -ForegroundColor Green
+    SHELL
+  end
+
+  # Kali Linux VM for penetration testing
+  config.vm.define "kali-lab" do |kali|
+    kali.vm.box = "kalilinux/rolling"
+    kali.vm.hostname = "kali-security-lab"
+    
+    # Network configuration
+    kali.vm.network "forwarded_port", guest: 22, host: 2222
+    kali.vm.network "private_network", ip: "192.168.56.12"
+    
+    # VM resources
+    kali.vm.provider "virtualbox" do |vb|
+      vb.name = "SecurityLab-Kali"
+      vb.memory = "3072"
+      vb.cpus = 2
+      vb.gui = true
+    end
+    
+    # Provisioning
+    kali.vm.provision "shell", inline: <<-SHELL
+      # Update Kali
+      apt-get update && apt-get upgrade -y
+      
+      # Install additional security tools
+      apt-get install -y curl wget git vim
+      apt-get install -y burpsuite zaproxy nikto sqlmap
+      apt-get install -y metasploit-framework armitage
+      
+      # Install Docker for containerized tools
+      curl -fsSL https://get.docker.com -o get-docker.sh
+      sh get-docker.sh
+      usermod -aG docker vagrant
+      
+      # Create workspace
+      mkdir -p /home/vagrant/security-workspace
+      chown -R vagrant:vagrant /home/vagrant/security-workspace
+      
+      echo "✅ Kali Linux Security Lab VM setup complete!"
+    SHELL
+  end
+
+  # Network simulation VM (for network security testing)
+  config.vm.define "network-sim" do |netsim|
+    netsim.vm.box = "ubuntu/jammy64"
+    netsim.vm.hostname = "network-simulator"
+    
+    # Multiple network interfaces for complex scenarios
+    netsim.vm.network "private_network", ip: "192.168.56.20", virtualbox__intnet: "lab-internal"
+    netsim.vm.network "private_network", ip: "10.0.0.20", virtualbox__intnet: "lab-dmz"
+    
+    # VM resources
+    netsim.vm.provider "virtualbox" do |vb|
+      vb.name = "SecurityLab-NetworkSim"
+      vb.memory = "2048"
+      vb.cpus = 1
+    end
+    
+    # Network simulation setup
+    netsim.vm.provision "shell", inline: <<-SHELL
+      # Install network tools
+      apt-get update && apt-get install -y
+      apt-get install -y bridge-utils net-tools iptables-persistent
+      apt-get install -y openvpn strongswan openssh-server
+      apt-get install -y apache2 nginx mysql-server
+      apt-get install -y tcpdump wireshark-common nmap
+      
+      # Configure services for testing
+      systemctl enable ssh
+      systemctl start ssh
+      
+      # Create vulnerable web services
+      systemctl enable apache2
+      systemctl start apache2
+      
+      # Set up firewall rules for testing
+      iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+      iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+      iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+      
+      echo "✅ Network Simulation VM setup complete!"
+    SHELL
+  end
+end

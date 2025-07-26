@@ -1,0 +1,9 @@
+{
+  "layout_name": "APT29 Investigation Layout",
+  "sections": [
+    "Threat Overview",
+    "IOC Analysis",
+    "Timeline",
+    "Response Actions"
+  ]
+}

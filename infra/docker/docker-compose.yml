@@ -1,0 +1,220 @@
+version: '3.8'
+
+services:
+  # Security Lab Control Center
+  lab-control:
+    image: nginx:alpine
+    container_name: security-lab-control
+    ports:
+      - "8080:80"
+    volumes:
+      - ./control-panel:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - nodejs-lab
+      - windows-lab
+      - monitoring
+    networks:
+      - lab-network
+
+  # Node.js Security Testing Environment
+  nodejs-lab:
+    image: node:18-ubuntu
+    container_name: nodejs-security-lab
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Debug port
+    volumes:
+      - ./workspace:/workspace
+      - ./logs:/var/log/lab
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /workspace
+    environment:
+      - NODE_ENV=development
+      - LAB_MODE=security-testing
+      - AUDIT_LOGS=/var/log/lab/audit.log
+    command: |
+      bash -c "
+        apt-get update && 
+        apt-get install -y build-essential curl git auditd rsyslog docker.io &&
+        npm config set audit-level moderate &&
+        npm config set fund false &&
+        npm install -g nodemon pm2 audit-ci snyk &&
+        useradd -m -s /bin/bash labuser &&
+        chown -R labuser:labuser /workspace &&
+        echo 'Node.js Security Lab Ready!' &&
+        tail -f /dev/null
+      "
+    networks:
+      - lab-network
+
+  # Windows Container Lab (if Docker Desktop supports Windows containers)
+  windows-lab:
+    image: mcr.microsoft.com/windows/servercore:ltsc2019
+    container_name: windows-security-lab
+    ports:
+      - "3389:3389"
+      - "5985:5985"  # WinRM
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=SecureLab123!
+    volumes:
+      - type: bind
+        source: ./windows-workspace
+        target: C:\workspace
+    networks:
+      - lab-network
+
+  # Jenkins CI/CD Pipeline
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: security-jenkins
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./jenkins-jobs:/var/jenkins_home/jobs
+    user: root
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Djenkins.CLI.disabled=false
+      - JENKINS_OPTS=--httpPort=8080 --httpsPort=-1
+    command: |
+      bash -c "
+        apt-get update && 
+        apt-get install -y docker.io nodejs npm python3 python3-pip &&
+        npm install -g snyk audit-ci retire semgrep &&
+        pip3 install bandit safety &&
+        /usr/local/bin/jenkins.sh
+      "
+    networks:
+      - lab-network
+
+  # Private npm Registry
+  npm-registry:
+    image: verdaccio/verdaccio:latest
+    container_name: npm-registry
+    ports:
+      - "4873:4873"
+    volumes:
+      - verdaccio_storage:/verdaccio/storage
+      - ./verdaccio-config.yaml:/verdaccio/conf/config.yaml
+    environment:
+      - VERDACCIO_USER_NAME=admin
+      - VERDACCIO_USER_PWD=admin123
+    networks:
+      - lab-network
+
+  # ELK Stack for Log Analysis
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: lab-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - lab-network
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.8.0
+    container_name: lab-logstash
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    volumes:
+      - ./logstash/config:/usr/share/logstash/config
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logs:/var/log/lab
+    depends_on:
+      - elasticsearch
+    networks:
+      - lab-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.0
+    container_name: lab-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - lab-network
+
+  # Security Monitoring
+  monitoring:
+    image: prom/prometheus:latest
+    container_name: security-monitoring
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - lab-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: security-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - monitoring
+    networks:
+      - lab-network
+
+  # Network Security Scanner
+  nmap-scanner:
+    image: instrumentisto/nmap:latest
+    container_name: network-scanner
+    volumes:
+      - ./scan-results:/scan-results
+    networks:
+      - lab-network
+    command: tail -f /dev/null
+
+  # Vulnerability Scanner
+  trivy-scanner:
+    image: aquasec/trivy:latest
+    container_name: vulnerability-scanner
+    volumes:
+      - ./workspace:/workspace
+      - ./scan-results:/scan-results
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - lab-network
+    command: tail -f /dev/null
+
+volumes:
+  jenkins_home:
+  verdaccio_storage:
+  elasticsearch_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  lab-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
