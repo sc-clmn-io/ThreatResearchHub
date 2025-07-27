@@ -146,13 +146,13 @@ export default function Dashboard() {
     },
     6: {
       title: "Testing, Deployment & Operational Readiness",
-      instruction: "Execute comprehensive testing protocol and deployment validation:",
+      instruction: "Execute comprehensive testing protocol and deployment validation using production-ready XSIAM content:",
       options: [
-        "Validate XQL correlation rules against live threat simulation with confirmed detection accuracy", 
-        "Test alert layouts, decision workflows, and playbook execution with production incident data",
-        "Complete operational testing with pass/fail validation and immediate remediation protocols"
+        "Copy generated XQL correlation rules, alert layouts, and playbooks directly to XSIAM environment", 
+        "Execute live testing with step-by-step upload instructions and validation checklist",
+        "Verify operational readiness with copy-to-clipboard functionality and deployment verification"
       ],
-      verification: "All content validates successfully with confirmed threat detection, workflow execution, and operational readiness"
+      verification: "All content validates successfully in XSIAM with confirmed threat detection, workflow execution, and operational readiness"
     }
   };
 
@@ -167,7 +167,8 @@ export default function Dashboard() {
       href: currentStep === 1 ? '/' : 
             currentStep === 2 ? '/content-generation' :
             currentStep === 3 ? '/lab-build-planner' :
-            currentStep === 4 ? '/xsiam-debugger' : '/github-export'
+            currentStep === 4 ? '/xsiam-debugger' :
+            currentStep === 5 ? '/content-generation' : '/xsiam-testing'
     }
   ];
 

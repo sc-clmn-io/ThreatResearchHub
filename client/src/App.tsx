@@ -26,6 +26,7 @@ import ThreatInputPage from "@/pages/threat-input";
 import ThreatMonitoringPage from "@/pages/threat-monitoring";
 import FindingsReportPage from "@/pages/findings-report";
 import XSIAMDebuggerPage from "@/pages/xsiam-debugger";
+import XSIAMTestingPage from "@/pages/xsiam-testing.tsx";
 import XSIAMDeployment from "@/pages/xsiam-deployment";
 import GitHubExportPage from "@/pages/github-export";
 import ContentRecommendationsPage from "@/pages/content-recommendations";
@@ -60,6 +61,7 @@ function Router() {
         <Route path="/threat-monitoring" component={ThreatMonitoringPage} />
 
         <Route path="/xsiam-debugger" component={XSIAMDebuggerPage} />
+        <Route path="/xsiam-testing" component={XSIAMTestingPage} />
         <Route path="/xsiam-deployment" component={XSIAMDeployment} />
         <Route path="/github-export" component={GitHubExportPage} />
         <Route path="/content-recommendations" component={ContentRecommendationsPage} />

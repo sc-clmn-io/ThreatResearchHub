@@ -92,6 +92,181 @@ export class XSIAMApiClient {
   }
 
   /**
+   * Upload XQL correlation rule to XSIAM
+   */
+  async uploadXQLRule(rule: any): Promise<XSIAMApiResponse> {
+    try {
+      const endpoint = this.getEndpoint('correlationRules');
+      const response = await this.client.post(endpoint, {
+        name: rule.rule_name,
+        query: rule.xql_query,
+        severity: rule.severity,
+        enabled: rule.enabled,
+        description: rule.description
+      });
+
+      return {
+        success: true,
+        data: response.data,
+        statusCode: response.status
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        statusCode: error.response?.status
+      };
+    }
+  }
+
+  /**
+   * Upload automation playbook to XSIAM
+   */
+  async uploadPlaybook(playbook: any): Promise<XSIAMApiResponse> {
+    try {
+      const endpoint = this.getEndpoint('playbooks');
+      const playbookData = typeof playbook === 'string' ? JSON.parse(playbook) : playbook;
+      
+      const response = await this.client.post(endpoint, {
+        name: playbookData.name,
+        tasks: playbookData.tasks,
+        description: `Automated response playbook for ${playbookData.name}`
+      });
+
+      return {
+        success: true,
+        data: response.data,
+        statusCode: response.status
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        statusCode: error.response?.status
+      };
+    }
+  }
+
+  /**
+   * Upload alert layout to XSIAM
+   */
+  async uploadAlertLayout(layout: any): Promise<XSIAMApiResponse> {
+    try {
+      const endpoint = this.getEndpoint('alertLayouts');
+      const response = await this.client.post(endpoint, {
+        name: layout.layout_name,
+        sections: layout.sections,
+        type: 'incident'
+      });
+
+      return {
+        success: true,
+        data: response.data,
+        statusCode: response.status
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        statusCode: error.response?.status
+      };
+    }
+  }
+
+  /**
+   * Upload dashboard to XSIAM
+   */
+  async uploadDashboard(dashboard: any): Promise<XSIAMApiResponse> {
+    try {
+      const endpoint = this.getEndpoint('dashboards');
+      const response = await this.client.post(endpoint, {
+        name: dashboard.dashboard_name,
+        widgets: dashboard.widgets,
+        type: 'operational'
+      });
+
+      return {
+        success: true,
+        data: response.data,
+        statusCode: response.status
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        statusCode: error.response?.status
+      };
+    }
+  }
+
+  /**
+   * Upload complete content package to XSIAM
+   */
+  async uploadContentPackage(contentPackage: any): Promise<XSIAMApiResponse> {
+    const results = {
+      xqlRule: null as XSIAMApiResponse | null,
+      playbook: null as XSIAMApiResponse | null,
+      alertLayout: null as XSIAMApiResponse | null,
+      dashboard: null as XSIAMApiResponse | null,
+      errors: [] as string[]
+    };
+
+    try {
+      // Upload XQL Rule
+      if (contentPackage.xqlRules) {
+        results.xqlRule = await this.uploadXQLRule(contentPackage.xqlRules);
+        if (!results.xqlRule.success) {
+          results.errors.push(`XQL Rule: ${results.xqlRule.error}`);
+        }
+      }
+
+      // Upload Playbook
+      if (contentPackage.playbook) {
+        results.playbook = await this.uploadPlaybook(contentPackage.playbook);
+        if (!results.playbook.success) {
+          results.errors.push(`Playbook: ${results.playbook.error}`);
+        }
+      }
+
+      // Upload Alert Layout
+      if (contentPackage.alertLayout) {
+        results.alertLayout = await this.uploadAlertLayout(contentPackage.alertLayout);
+        if (!results.alertLayout.success) {
+          results.errors.push(`Alert Layout: ${results.alertLayout.error}`);
+        }
+      }
+
+      // Upload Dashboard
+      if (contentPackage.dashboard) {
+        results.dashboard = await this.uploadDashboard(contentPackage.dashboard);
+        if (!results.dashboard.success) {
+          results.errors.push(`Dashboard: ${results.dashboard.error}`);
+        }
+      }
+
+      const successCount = [results.xqlRule, results.playbook, results.alertLayout, results.dashboard]
+        .filter(r => r?.success).length;
+
+      return {
+        success: results.errors.length === 0,
+        data: {
+          uploaded: successCount,
+          total: 4,
+          results,
+          packageName: contentPackage.metadata?.name || 'Unknown Package'
+        },
+        error: results.errors.length > 0 ? results.errors.join('; ') : undefined
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+        data: results
+      };
+    }
+  }
+
+  /**
    * Extract content pack details
    */
   async extractContentPackDetails(packId: string): Promise<XSIAMApiResponse> {
@@ -272,6 +447,8 @@ export class XSIAMApiClient {
         integrations: '/settings/integrations',
         playbooks: '/automation/playbooks',
         correlationRules: '/detection/correlation-rules',
+        alertLayouts: '/incident/layouts',
+        dashboards: '/dashboards',
         dataSources: '/settings/data-sources',
         onboardingWizard: '/onboarding/wizard'
       },
@@ -282,6 +459,8 @@ export class XSIAMApiClient {
         integrations: '/api/v1/integrations',
         playbooks: '/api/v1/automation/playbooks',
         correlationRules: '/api/v1/analytics/correlation-rules',
+        alertLayouts: '/api/v1/incident/layouts',
+        dashboards: '/api/v1/dashboards',
         dataSources: '/api/v1/data-sources',
         onboardingWizard: '/api/v1/onboarding/wizard'
       },
@@ -292,6 +471,8 @@ export class XSIAMApiClient {
         integrations: '/cortex/api/integrations',
         playbooks: '/cortex/api/automation/playbooks',
         correlationRules: '/cortex/api/analytics/rules',
+        alertLayouts: '/cortex/api/incident/layouts',
+        dashboards: '/cortex/api/dashboards',
         dataSources: '/cortex/api/data-sources',
         onboardingWizard: '/cortex/api/onboarding'
       }

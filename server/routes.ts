@@ -561,6 +561,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: "healthy", timestamp: new Date().toISOString() });
   });
 
+  // Content packages endpoint for XSIAM testing
+  app.get("/api/content/packages", async (req, res) => {
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      // Read all content from the content directory
+      const contentDir = path.join(process.cwd(), 'content');
+      const packages = [];
+      
+      try {
+        // Read use cases
+        const useCasesDir = path.join(contentDir, 'use-cases');
+        const useCaseFiles = await fs.readdir(useCasesDir);
+        
+        for (const file of useCaseFiles) {
+          if (file.endsWith('.json')) {
+            const filePath = path.join(useCasesDir, file);
+            const content = await fs.readFile(filePath, 'utf-8');
+            const packageData = JSON.parse(content);
+            
+            // Also load related XQL rules, playbooks, layouts
+            const baseName = file.replace('.json', '');
+            
+            try {
+              const xqlRulesPath = path.join(contentDir, 'xql-rules', `${baseName}.json`);
+              const xqlContent = await fs.readFile(xqlRulesPath, 'utf-8');
+              packageData.xqlRules = JSON.parse(xqlContent);
+            } catch (e) {
+              // Optional file
+            }
+            
+            try {
+              const playbooksPath = path.join(contentDir, 'playbooks', `${baseName}.yml`);
+              const playbookContent = await fs.readFile(playbooksPath, 'utf-8');
+              packageData.playbook = playbookContent;
+            } catch (e) {
+              // Optional file
+            }
+            
+            try {
+              const layoutsPath = path.join(contentDir, 'layouts', `${baseName}.json`);
+              const layoutContent = await fs.readFile(layoutsPath, 'utf-8');
+              packageData.alertLayout = JSON.parse(layoutContent);
+            } catch (e) {
+              // Optional file
+            }
+            
+            packages.push(packageData);
+          }
+        }
+        
+      } catch (e) {
+        console.error('Error reading content directory:', e);
+      }
+      
+      res.json(packages);
+    } catch (error) {
+      console.error('Error fetching content packages:', error);
+      res.status(500).json({ error: 'Failed to fetch content packages' });
+    }
+  });
+
   // Get pre-ingested threats from ThreatResearchHub intelligence system
   app.get('/api/threats', async (req, res) => {
     try {
@@ -734,12 +797,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Content Package Management API Routes
   app.get("/api/content/packages", async (req, res) => {
     try {
+      // First try to get from content storage system
       const { category, severity, ddlc_phase } = req.query;
-      const packages = await contentStorage.listPackages({
-        category: category as string,
-        severity: severity as string,
-        ddlc_phase: ddlc_phase as string
-      });
+      let packages = [];
+      
+      try {
+        packages = await contentStorage.listPackages({
+          category: category as string,
+          severity: severity as string,
+          ddlc_phase: ddlc_phase as string
+        });
+      } catch (storageError) {
+        console.log("Content storage not available, serving from files...");
+      }
+
+      // If no packages from storage, serve the APT29 package from files
+      if (packages.length === 0) {
+        const fs = await import('fs');
+        const path = await import('path');
+        
+        try {
+          // Read the APT29 content package
+          const useCasePath = path.join(process.cwd(), 'content/use-cases/APT29_Cozy_Bear_Detection_Package.json');
+          const xqlRulePath = path.join(process.cwd(), 'content/xql-rules/APT29_Cozy_Bear_Detection_Package.json');
+          const playbookPath = path.join(process.cwd(), 'content/playbooks/APT29_Cozy_Bear_Detection_Package.yml');
+          const layoutPath = path.join(process.cwd(), 'content/layouts/APT29_Cozy_Bear_Detection_Package.json');
+          const dashboardPath = path.join(process.cwd(), 'content/dashboards/APT29_Cozy_Bear_Detection_Package.json');
+
+          const apt29Package = {
+            id: 'apt29-cozy-bear',
+            title: 'APT29 Cozy Bear Detection Package',
+            description: 'Complete detection package for APT29 (Cozy Bear) threat group activities',
+            category: 'endpoint',
+            severity: 'high',
+            ddlc_phase: 'deployed',
+            metadata: {
+              name: 'APT29 Cozy Bear Detection Package',
+              threat_actor: 'APT29',
+              mitre_techniques: ['T1055', 'T1027', 'T1082'],
+              data_sources: ['windows_events', 'sysmon', 'xdr_data']
+            }
+          };
+
+          // Add file contents if they exist
+          if (fs.existsSync(useCasePath)) {
+            apt29Package.useCase = JSON.parse(fs.readFileSync(useCasePath, 'utf8'));
+          }
+          if (fs.existsSync(xqlRulePath)) {
+            apt29Package.xqlRules = JSON.parse(fs.readFileSync(xqlRulePath, 'utf8'));
+          }
+          if (fs.existsSync(playbookPath)) {
+            apt29Package.playbook = fs.readFileSync(playbookPath, 'utf8');
+          }
+          if (fs.existsSync(layoutPath)) {
+            apt29Package.alertLayout = JSON.parse(fs.readFileSync(layoutPath, 'utf8'));
+          }
+          if (fs.existsSync(dashboardPath)) {
+            apt29Package.dashboard = JSON.parse(fs.readFileSync(dashboardPath, 'utf8'));
+          }
+
+          packages = [apt29Package];
+        } catch (fileError) {
+          console.error("Error reading content files:", fileError);
+        }
+      }
+
       res.json(packages);
     } catch (error) {
       console.error("Error listing content packages:", error);
@@ -749,10 +871,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/content/packages/:id", async (req, res) => {
     try {
-      const pkg = await contentStorage.getPackage(req.params.id);
+      let pkg = null;
+      
+      // First try to get from content storage
+      try {
+        pkg = await contentStorage.getPackage(req.params.id);
+      } catch (storageError) {
+        console.log("Content storage not available, serving from files...");
+      }
+
+      // If not found in storage and looking for APT29, serve from files
+      if (!pkg && req.params.id === 'apt29-cozy-bear') {
+        const fs = await import('fs');
+        const path = await import('path');
+        
+        try {
+          const useCasePath = path.join(process.cwd(), 'content/use-cases/APT29_Cozy_Bear_Detection_Package.json');
+          const xqlRulePath = path.join(process.cwd(), 'content/xql-rules/APT29_Cozy_Bear_Detection_Package.json');
+          const playbookPath = path.join(process.cwd(), 'content/playbooks/APT29_Cozy_Bear_Detection_Package.yml');
+          const layoutPath = path.join(process.cwd(), 'content/layouts/APT29_Cozy_Bear_Detection_Package.json');
+          const dashboardPath = path.join(process.cwd(), 'content/dashboards/APT29_Cozy_Bear_Detection_Package.json');
+
+          pkg = {
+            id: 'apt29-cozy-bear',
+            title: 'APT29 Cozy Bear Detection Package',
+            description: 'Complete detection package for APT29 (Cozy Bear) threat group activities',
+            category: 'endpoint',
+            severity: 'high',
+            ddlc_phase: 'deployed',
+            metadata: {
+              name: 'APT29 Cozy Bear Detection Package',
+              threat_actor: 'APT29',
+              mitre_techniques: ['T1055', 'T1027', 'T1082'],
+              data_sources: ['windows_events', 'sysmon', 'xdr_data']
+            }
+          };
+
+          // Add file contents
+          if (fs.existsSync(useCasePath)) {
+            pkg.useCase = JSON.parse(fs.readFileSync(useCasePath, 'utf8'));
+          }
+          if (fs.existsSync(xqlRulePath)) {
+            pkg.xqlRules = JSON.parse(fs.readFileSync(xqlRulePath, 'utf8'));
+          }
+          if (fs.existsSync(playbookPath)) {
+            pkg.playbook = fs.readFileSync(playbookPath, 'utf8');
+          }
+          if (fs.existsSync(layoutPath)) {
+            pkg.alertLayout = JSON.parse(fs.readFileSync(layoutPath, 'utf8'));
+          }
+          if (fs.existsSync(dashboardPath)) {
+            pkg.dashboard = JSON.parse(fs.readFileSync(dashboardPath, 'utf8'));
+          }
+        } catch (fileError) {
+          console.error("Error reading APT29 content files:", fileError);
+        }
+      }
+
       if (!pkg) {
         return res.status(404).json({ error: "Content package not found" });
       }
+      
       res.json(pkg);
     } catch (error) {
       console.error("Error getting content package:", error);
@@ -1115,6 +1294,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: error.message || 'Failed to test XSIAM connection' 
+      });
+    }
+  });
+
+  // XSIAM Content Upload API endpoints
+  app.post("/api/xsiam/upload-content", async (req, res) => {
+    try {
+      const { instance, contentPackage } = req.body;
+      const client = createXSIAMClient(instance);
+      const result = await client.uploadContentPackage(contentPackage);
+      res.json(result);
+    } catch (error: any) {
+      console.error('XSIAM content upload error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to upload content to XSIAM' 
+      });
+    }
+  });
+
+  app.post("/api/xsiam/upload-xql-rule", async (req, res) => {
+    try {
+      const { instance, rule } = req.body;
+      const client = createXSIAMClient(instance);
+      const result = await client.uploadXQLRule(rule);
+      res.json(result);
+    } catch (error: any) {
+      console.error('XSIAM XQL rule upload error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to upload XQL rule to XSIAM' 
+      });
+    }
+  });
+
+  app.post("/api/xsiam/upload-playbook", async (req, res) => {
+    try {
+      const { instance, playbook } = req.body;
+      const client = createXSIAMClient(instance);
+      const result = await client.uploadPlaybook(playbook);
+      res.json(result);
+    } catch (error: any) {
+      console.error('XSIAM playbook upload error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to upload playbook to XSIAM' 
       });
     }
   });
