@@ -32,6 +32,8 @@ interface LabBuildPlan {
   threatReportId: string;
   threatName: string;
   description: string;
+  environmentType: string;
+  accessControlRequirements: Record<string, string[]>;
   totalDuration: string;
   totalCost: {
     setup: number;
@@ -180,7 +182,7 @@ export function LabBuildPlanner() {
         steps = [
           {
             id: 'step-1',
-            title: 'Deploy Development Environment (8th Grade Instructions)',
+            title: 'Deploy Development Environment (Professional Instructions)',
             description: 'Set up computer for testing malicious packages safely',
             instructions: [
               '1. Download Ubuntu 22.04 from ubuntu.com (free operating system)',
@@ -243,7 +245,7 @@ docker exec -it nodejs-lab bash`
           },
           {
             id: 'step-2',
-            title: 'Set Up Testing Pipeline (8th Grade Instructions)',
+            title: 'Set Up Testing Pipeline (Professional Instructions)',
             description: 'Create automated system to check packages for problems',
             instructions: [
               '1. Install Docker Desktop from docker.com (free software)',
@@ -319,7 +321,7 @@ docker exec security-jenkins cat /var/jenkins_home/secrets/initialAdminPassword`
           },
           {
             id: 'step-3',
-            title: 'Connect to XSIAM (8th Grade Instructions)', 
+            title: 'Connect to XSIAM (Professional Instructions)', 
             description: 'Send security logs to your XSIAM system',
             instructions: [
               '1. Log into your XSIAM system using web browser',
@@ -460,7 +462,7 @@ sudo journalctl -u xsiam-broker -f`
         steps = [
           {
             id: 'cloud-step-1',
-            title: 'Deploy AWS Cloud Lab (8th Grade Instructions)',
+            title: 'Deploy AWS Cloud Lab (Professional Instructions)',
             description: 'Set up Amazon Web Services for cloud security testing',
             instructions: [
               '1. Go to aws.amazon.com and click "Create AWS Account"',
@@ -591,7 +593,7 @@ ssh -i ~/.ssh/id_rsa ubuntu@YOUR-SERVER-IP
         steps = [
           {
             id: 'endpoint-step-1',
-            title: 'Deploy Windows Lab (8th Grade Instructions)',
+            title: 'Deploy Windows Lab (Professional Instructions)',
             description: 'Set up Windows computers for security testing',
             instructions: [
               '1. Download VirtualBox from virtualbox.org (free software)',
@@ -705,6 +707,21 @@ docker run -d --name windows-lab \\
         threatReportId: selectedUseCase?.id || 'unknown',
         threatName: selectedUseCase?.title || data.title,
         description: selectedUseCase?.description || data.content,
+        environmentType: isNodeJsSupplyChain ? 'endpoint' : 'cloud',
+        accessControlRequirements: {
+          privilegedAccess: [
+            'Administrative credentials for deployment platform',
+            'Just-In-Time (JIT) access for privileged operations'
+          ],
+          rbac: [
+            'Least-privilege principle implementation',
+            'Role separation between attackers and defenders'
+          ],
+          authentication: [
+            'Multi-factor authentication configuration',
+            'Single Sign-On (SSO) integration testing'
+          ]
+        },
         totalDuration: isNodeJsSupplyChain ? '4-5 hours' : '2-3 hours',
         totalCost: {
           setup: components.reduce((sum, c) => sum + (c.estimatedCost?.setup || 0), 0),
@@ -840,7 +857,7 @@ docker run -d --name windows-lab \\
           <h5 className="font-medium mb-2">What this step does:</h5>
           <ul className="text-sm text-gray-600 space-y-1">
             <li>• Analyzes your selected threat to identify required infrastructure components</li>
-            <li>• Creates step-by-step deployment instructions (8th grade comprehension level)</li>
+            <li>• Creates step-by-step deployment instructions with clear, professional guidance</li>
             <li>• Maps infrastructure to OSI layers for systematic deployment</li>
             <li>• Provides cost estimates and deployment timelines</li>
           </ul>
@@ -877,7 +894,7 @@ docker run -d --name windows-lab \\
           <CardDescription>{labPlan.description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-blue-600" />
               <div>
@@ -897,6 +914,13 @@ docker run -d --name windows-lab \\
               <div>
                 <div className="text-sm text-gray-600">Components</div>
                 <div className="font-medium">{(labPlan.phases || []).length} systems</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-orange-600" />
+              <div>
+                <div className="text-sm text-gray-600">Environment</div>
+                <div className="font-medium capitalize">{labPlan.environmentType}</div>
               </div>
             </div>
           </div>
@@ -926,13 +950,78 @@ docker run -d --name windows-lab \\
     if (!labPlan) return null;
 
     return (
-      <Tabs defaultValue="infrastructure" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="access-control" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="access-control">Access Control</TabsTrigger>
           <TabsTrigger value="infrastructure">Infrastructure</TabsTrigger>
           <TabsTrigger value="deployment">Deployment</TabsTrigger>
           <TabsTrigger value="ttp-execution">TTP Execution</TabsTrigger>
           <TabsTrigger value="validation">Validation</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="access-control" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                IAM & Access Control Requirements
+              </CardTitle>
+              <CardDescription>
+                Required permissions and access controls for building, deploying, and executing attack simulations in {labPlan.environmentType} environments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {labPlan.accessControlRequirements && (
+                <div className="space-y-6">
+                  {Object.entries(labPlan.accessControlRequirements).map(([category, requirements]) => (
+                    <div key={category} className="border rounded-lg p-4">
+                      <h4 className="font-semibold mb-3 flex items-center gap-2">
+                        <Badge variant="outline" className="capitalize">
+                          {category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                        </Badge>
+                      </h4>
+                      <div className="grid grid-cols-1 gap-2">
+                        {(requirements as string[]).map((requirement, idx) => (
+                          <div key={idx} className="flex items-start gap-2 p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
+                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm leading-relaxed">{requirement}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h5 className="font-medium text-yellow-800 mb-2">Critical Access Requirements</h5>
+                        <p className="text-sm text-yellow-700 mb-3">
+                          These permissions are essential for comprehensive lab buildout where ALL data sources forward logs to Cortex XSIAM for centralized threat detection. 
+                          The lab must simulate authentic environments with complete log aggregation to validate use cases from threat reports and customer scenarios.
+                        </p>
+                        <div className="space-y-2">
+                          <div className="text-sm text-yellow-800">
+                            <strong>Build Phase:</strong> Administrative credentials, Infrastructure-as-Code tools (Terraform/Ansible), and container platform access
+                          </div>
+                          <div className="text-sm text-yellow-800">
+                            <strong>Attack Phase:</strong> Attack simulation frameworks (CALDERA/Atomic Red Team), elevated privileges for malware execution
+                          </div>
+                          <div className="text-sm text-yellow-800">
+                            <strong>Critical Integration:</strong> ALL data sources must forward logs to Cortex XSIAM for comprehensive threat detection and validation of use case scenarios
+                          </div>
+                          <div className="text-sm text-yellow-800">
+                            <strong>Open Source Tools:</strong> Docker, Kubernetes, Metasploit, network simulation, and identity management platforms
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="infrastructure" className="space-y-4">
           <Card>
@@ -1058,54 +1147,70 @@ docker run -d --name windows-lab \\
                                 <div key={idx} className="mb-2">
                                   <div className="flex items-center justify-between mb-1">
                                     <Badge variant="outline">{cmd.platform}</Badge>
-                                    {cmd.platform.includes('One-Click') && (
-                                      <Button 
-                                        size="sm" 
-                                        variant="outline"
-                                        className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
-                                        onClick={() => {
-                                          // Create automation script content based on the threat type
-                                          let scriptContent = '';
-                                          let scriptName = '';
-                                          
-                                          if (cmd.platform.includes('PowerShell')) {
-                                            scriptName = 'deploy-windows-lab.ps1';
-                                            // Load the Windows PowerShell script content
-                                            scriptContent = `# Windows Security Lab One-Click Deployment
-# Run as Administrator: Set-ExecutionPolicy Bypass -Scope Process; .\\${scriptName}
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                                      onClick={() => {
+                                        // Create file content based on the platform type
+                                        let fileContent = '';
+                                        let fileName = '';
+                                        
+                                        if (cmd.platform.includes('PowerShell') || cmd.platform.includes('Windows')) {
+                                          fileName = 'deploy-windows-lab.ps1';
+                                          fileContent = `# Windows Security Lab Deployment Script
+# Run as Administrator: Set-ExecutionPolicy Bypass -Scope Process; .\\${fileName}
 
 ${cmd.code}`;
-                                          } else if (cmd.platform.includes('AWS')) {
-                                            scriptName = 'deploy-aws-lab.sh';
-                                            scriptContent = `#!/bin/bash
-# AWS Security Lab One-Click Deployment
-# Usage: chmod +x ${scriptName} && ./${scriptName}
+                                        } else if (cmd.platform.includes('YAML') || cmd.platform.includes('Docker Compose') || cmd.platform.includes('Kubernetes')) {
+                                          fileName = cmd.platform.includes('Docker') ? 'docker-compose.yml' : 
+                                                   cmd.platform.includes('Kubernetes') ? 'deployment.yaml' : 'config.yml';
+                                          fileContent = `# ${cmd.platform} Configuration
+# Usage: Apply this configuration to your environment
 
 ${cmd.code}`;
-                                          } else {
-                                            scriptName = 'deploy-nodejs-lab.sh';
-                                            scriptContent = `#!/bin/bash
-# Node.js Security Lab One-Click Deployment  
-# Usage: chmod +x ${scriptName} && ./${scriptName}
+                                        } else if (cmd.platform.includes('Terraform') || cmd.platform.includes('AWS') || cmd.platform.includes('Cloud')) {
+                                          fileName = cmd.platform.includes('Terraform') ? 'main.tf' : 'deploy-cloud-lab.sh';
+                                          fileContent = cmd.platform.includes('Terraform') ? 
+                                            `# Terraform Infrastructure Configuration
+# Usage: terraform init && terraform plan && terraform apply
+
+${cmd.code}` :
+                                            `#!/bin/bash
+# Cloud Security Lab Deployment Script
+# Usage: chmod +x ${fileName} && ./${fileName}
 
 ${cmd.code}`;
-                                          }
-                                          
-                                          const blob = new Blob([scriptContent], { type: 'text/plain' });
-                                          const url = URL.createObjectURL(blob);
-                                          const a = document.createElement('a');
-                                          a.href = url;
-                                          a.download = scriptName;
-                                          document.body.appendChild(a);
-                                          a.click();
-                                          document.body.removeChild(a);
-                                          URL.revokeObjectURL(url);
-                                        }}
-                                      >
-                                        <Download className="h-3 w-3 mr-1" />
-                                        Download Script
-                                      </Button>
-                                    )}
+                                        } else if (cmd.platform.includes('Ansible')) {
+                                          fileName = 'playbook.yml';
+                                          fileContent = `# Ansible Playbook Configuration
+# Usage: ansible-playbook -i inventory ${fileName}
+
+${cmd.code}`;
+                                        } else {
+                                          // Default to shell script for other platforms
+                                          fileName = 'deploy-lab.sh';
+                                          fileContent = `#!/bin/bash
+# Security Lab Deployment Script
+# Usage: chmod +x ${fileName} && ./${fileName}
+
+${cmd.code}`;
+                                        }
+                                        
+                                        const blob = new Blob([fileContent], { type: 'text/plain' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = fileName;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                      }}
+                                    >
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Download
+                                    </Button>
                                   </div>
                                   <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs overflow-x-auto">
                                     <code>{cmd.code}</code>

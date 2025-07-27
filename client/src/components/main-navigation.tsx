@@ -13,6 +13,7 @@ import {
   Monitor,
   ChevronLeft,
   ChevronRight,
+  CheckCircle,
   Search,
   Zap,
   Beaker,
@@ -31,56 +32,58 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  category: 'status' | 'learning' | 'usecase' | 'lab' | 'xsiam' | 'content';
+  category: 'stage1' | 'stage2' | 'stage3' | 'stage4' | 'stage5' | 'stage6' | 'tools';
   description: string;
 }
 
 const navigationItems: NavItem[] = [
-  // STEP 1: Load Threat Report
-  { href: "/", icon: Home, label: "1. Load Threat Report", category: 'status', description: "Start here: Load threat report from URL, PDF, or threat feeds to begin the workflow" },
-  { href: "/threat-monitoring", icon: Activity, label: "🔗 TBH Threat Feeds", category: 'status', description: "View threat intelligence automatically ingested into ThreatResearchHub platform" },
-  { href: "/pii-sanitizer", icon: Search, label: "PII Sanitizer", category: 'status', description: "Clean sensitive information from customer data before processing" },
+  // STAGE 1: Load Threat Intelligence
+  { href: "/", icon: Home, label: "1. Load Threat Intelligence", category: 'stage1', description: "Start here: Load threat report from URL, PDF, or threat feeds to begin the workflow" },
+  { href: "/threat-monitoring", icon: Activity, label: "1a. TBH Threat Feeds", category: 'stage1', description: "View threat intelligence automatically ingested into ThreatResearchHub platform" },
+  { href: "/pii-sanitizer", icon: Search, label: "1b. Homographic Sanitizer", category: 'stage1', description: "Transform sensitive information using homographic characters while preserving structure" },
   
-  // STEP 2: Select Specific Use Case (Dashboard handles this)
-  // STEP 3: Plan Lab Infrastructure First
-  { href: "/lab-build-planner", icon: Monitor, label: "3. Plan Infrastructure", category: 'usecase', description: "Design lab infrastructure for your selected threat scenario" },
-  { href: "/lab-environment", icon: Beaker, label: "Lab Setup Guide", category: 'usecase', description: "Step-by-step lab deployment with infrastructure and cost planning" },
+  // STAGE 2: Threat Selection
+  { href: "/", icon: CheckCircle, label: "2. Threat Selection", category: 'stage2', description: "Choose specific threat from loaded intelligence to create security outcome" },
   
-  // STEP 4: Setup Data Sources & XSIAM
-  { href: "/xsiam-debugger", icon: Database, label: "4. Setup Data Sources", category: 'lab', description: "Configure XSIAM data ingestion and validate log parsing" },
-  { href: "/xsiam-deployment", icon: Server, label: "XSIAM Integration", category: 'lab', description: "Connect XSIAM to data sources and validate field mappings" },
+  // STAGE 3: Plan Lab Infrastructure
+  { href: "/lab-build-planner", icon: Monitor, label: "3. Plan Infrastructure", category: 'stage3', description: "Design lab infrastructure for your selected threat scenario" },
+  { href: "/lab-environment", icon: Beaker, label: "3a. Lab Setup Guide", category: 'stage3', description: "Step-by-step lab deployment with infrastructure and cost planning" },
   
-  // STEP 5: Generate Content (After Infrastructure)
-  { href: "/content-generation", icon: FileText, label: "5. Generate Content", category: 'learning', description: "Create XSIAM content using your live data sources and validated fields" },
+  // STAGE 4: Setup Data Sources & XSIAM
+  { href: "/xsiam-debugger", icon: Database, label: "4. Setup Data Sources", category: 'stage4', description: "Configure XSIAM data ingestion and validate log parsing" },
+  { href: "/xsiam-deployment", icon: Server, label: "4a. XSIAM Integration", category: 'stage4', description: "Connect XSIAM to data sources and validate field mappings" },
   
-  // STEP 6: Test & Deploy
-  { href: "/github-export", icon: Github, label: "6. Test & Deploy", category: 'xsiam', description: "Test detection rules and deploy to production XSIAM" },
+  // STAGE 5: Generate Content
+  { href: "/content-generation", icon: FileText, label: "5. Generate Content", category: 'stage5', description: "Create XSIAM content using your live data sources and validated fields" },
   
-  // ADVANCED FEATURES (Collapsible)
-  { href: "/user-guide", icon: BookOpen, label: "📖 User Guide", category: 'content', description: "Complete documentation and interactive tutorial" },
-  { href: "/ddlc-workflow-demo", icon: RefreshCw, label: "🔄 DDLC Workflow", category: 'content', description: "Detection Development Life Cycle management" },
-  { href: "/templates", icon: Share2, label: "📋 Templates", category: 'content', description: "Community-shared training scenarios" },
-  { href: "/content-library", icon: Database, label: "📚 Content Library", category: 'content', description: "Manage generated XSIAM content" }
+  // STAGE 6: Test & Deploy
+  { href: "/github-export", icon: Github, label: "6. Test & Deploy", category: 'stage6', description: "Test detection rules and deploy to production XSIAM" },
+  
+  // SUPPORTING TOOLS
+  { href: "/user-guide", icon: BookOpen, label: "📖 User Guide", category: 'tools', description: "Complete documentation and interactive tutorial" },
+  { href: "/ddlc-workflow-demo", icon: RefreshCw, label: "🔄 DDLC Workflow", category: 'tools', description: "Detection Development Life Cycle management" },
+  { href: "/templates", icon: Share2, label: "📋 Templates", category: 'tools', description: "Community-shared training scenarios" },
+  { href: "/content-library", icon: Database, label: "📚 Content Library", category: 'tools', description: "Manage generated XSIAM content" }
 ];
 
 const categoryColors = {
-  status: 'text-emerald-700 bg-emerald-50 border-emerald-200',   // Step 1 - Load Threat Report
-  learning: 'text-blue-700 bg-blue-50 border-blue-200',         // Step 2 - Generate Content  
-  usecase: 'text-purple-700 bg-purple-50 border-purple-200',    // Step 3 - Plan Lab Environment
-  lab: 'text-orange-700 bg-orange-50 border-orange-200',        // Step 4 - Deploy & Test XSIAM
-  xsiam: 'text-indigo-700 bg-indigo-50 border-indigo-200',      // Step 5 - Backup to GitHub
-  content: 'text-gray-600 bg-gray-50 border-gray-200'            // Advanced Features - Gray
+  stage1: 'text-emerald-700 bg-emerald-50 border-emerald-200',   // Stage 1 - Load Threat Intelligence
+  stage2: 'text-blue-700 bg-blue-50 border-blue-200',           // Stage 2 - Select Specific Threat
+  stage3: 'text-purple-700 bg-purple-50 border-purple-200',     // Stage 3 - Plan Infrastructure
+  stage4: 'text-orange-700 bg-orange-50 border-orange-200',     // Stage 4 - Setup Data Sources & XSIAM
+  stage5: 'text-indigo-700 bg-indigo-50 border-indigo-200',     // Stage 5 - Generate Content
+  stage6: 'text-red-700 bg-red-50 border-red-200',             // Stage 6 - Test & Deploy
+  tools: 'text-gray-600 bg-gray-50 border-gray-200'            // Supporting Tools - Gray
 };
 
 const categoryLabels = {
-  status: 'Status & Overview',
-  learning: 'Documentation',
-  usecase: 'Load Use Case',
-  lab: 'Lab Planning & Setup',
-  xsiam: 'XSIAM Integration & Setup',
-  content: 'Content Development & Testing',
-  deployment: 'Deploy Cortex Content',
-  configuration: 'Configuration & Management'
+  stage1: 'Stage 1: Load Threat Intelligence',
+  stage2: 'Stage 2: Threat Selection',
+  stage3: 'Stage 3: Plan Infrastructure', 
+  stage4: 'Stage 4: Setup Data Sources & XSIAM',
+  stage5: 'Stage 5: Generate Content',
+  stage6: 'Stage 6: Test & Deploy',
+  tools: 'Supporting Tools & Resources'
 };
 
 export default function MainNavigation() {
@@ -98,8 +101,8 @@ export default function MainNavigation() {
     return acc;
   }, {} as Record<string, NavItem[]>);
 
-  // Define category order based on workflow priority
-  const categoryOrder = ['status', 'learning', 'usecase', 'lab', 'xsiam', 'content', 'deployment', 'configuration'];
+  // Define category order based on 6-stage workflow priority
+  const categoryOrder = ['stage1', 'stage2', 'stage3', 'stage4', 'stage5', 'stage6', 'tools'];
   const orderedGroupedItems = Object.entries(groupedItems).sort((a, b) => {
     return categoryOrder.indexOf(a[0]) - categoryOrder.indexOf(b[0]);
   });

@@ -221,7 +221,7 @@ export default function UseCaseDefinitionWizard({ onUseCaseCreated, initialData,
             <div className="bg-blue-50 p-4 rounded-lg">
               <h4 className="font-medium flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
-                Infrastructure Requirements (8th Grade Instructions)
+                Infrastructure Requirements (Professional Instructions)
               </h4>
               <p className="text-sm text-muted-foreground mt-2">
                 List exactly what infrastructure needs to be built or configured, step by step.
@@ -473,7 +473,7 @@ function DataSourceRequirementsForm({ value, onChange, category, threatScenario 
       </div>
 
       <div>
-        <Label>Configuration Steps (8th Grade Level)</Label>
+        <Label>Configuration Steps (Professional Level)</Label>
         <Textarea
           placeholder="Step 1: Enable Windows Event Log auditing&#10;Step 2: Configure Sysmon with standard config&#10;Step 3: Set up log forwarding to XSIAM"
           value={requirements.configuration_steps?.join('\n') || ''}

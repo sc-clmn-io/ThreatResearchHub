@@ -1152,7 +1152,7 @@ Before proceeding, gather this information from your organization:
 • Time zone for log correlation
 • Retention requirements for compliance
 
-💡 TIP: Create a secure document with this information - you'll reference it throughout setup.
+💡 TIP: Create a secure document with this information for reference throughout setup.
           `,
           required: true
         }
@@ -1173,7 +1173,7 @@ Before proceeding, gather this information from your organization:
           instructions: `
 🎯 THREAT-SPECIFIC DATA SOURCES FOR: ${useCase.title}
 
-Based on your threat category (${useCase.category}), you'll need these data sources:
+Based on your threat category (${useCase.category}), the following data sources are required:
 ${dataSourceRequirements.map(source => `• ${source}`).join('\n')}
 
 ${useCase.technologies && useCase.technologies.length > 0 ? `
@@ -1390,7 +1390,7 @@ STEP 4: Volume and Performance Check
 • Parsing errors: Review field mapping configuration
 • Performance issues: Consider data volume and retention settings
 
-💡 BEGINNER TIP: Keep this validation query handy - you'll use it throughout threat hunting and detection rule development.
+💡 BEGINNER TIP: Keep this validation query handy for use throughout threat hunting and detection rule development.
           `,
           required: true
         },

@@ -156,7 +156,7 @@ export default function Dashboard() {
     }
   };
 
-  const currentInstructions = stepInstructions[currentStep];
+  const currentInstructions = stepInstructions[currentStep as keyof typeof stepInstructions];
 
   const workflowSteps = [
     {
@@ -184,14 +184,14 @@ export default function Dashboard() {
             
             <div className="flex items-center space-x-2">
               <span className="text-xs text-gray-500">
-                Progress: {Math.max(0, currentStep - 1)}/6 steps
+                Progress: {Math.max(0, currentStep - 1)}/6 stages
               </span>
               
 
               
               <Button variant="outline" size="sm" onClick={clearAllData} className="text-red-600 hover:bg-red-50">
                 <Trash2 className="h-4 w-4 mr-1" />
-                Start Fresh
+                Start Over
               </Button>
               
               <Link href="/user-guide">
@@ -210,7 +210,7 @@ export default function Dashboard() {
         {/* Persistent Progress Bar */}
         <div className="mb-8">
           <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold mb-4">6-Step Workflow Progress</h3>
+            <h3 className="text-lg font-semibold mb-4">6-Stage Workflow Progress</h3>
             <div className="flex items-center justify-between mb-4">
               {[1, 2, 3, 4, 5, 6].map((step) => (
                 <div key={step} className="flex items-center">
@@ -228,7 +228,7 @@ export default function Dashboard() {
                       'bg-gray-200 text-gray-600'
                     } ${step <= currentStep || step === 1 ? 'hover:scale-105' : 'cursor-not-allowed'}`}
                     disabled={step > currentStep && step !== 1}
-                    title={step <= currentStep || step === 1 ? `Go to Step ${step}` : 'Complete previous steps first'}
+                    title={step <= currentStep || step === 1 ? `Go to Stage ${step}` : 'Complete previous stages first'}
                   >
                     {step < currentStep ? '✓' : step}
                   </button>
@@ -265,17 +265,17 @@ export default function Dashboard() {
             <div className="mt-4 text-xs text-gray-600 text-center">
               <span className="inline-flex items-center">
                 <span className="w-3 h-3 bg-green-500 rounded-full mr-1"></span>
-                Click completed steps (✓) to review or modify previous work
+                Click completed stages (✓) to review or modify previous work
                 <span className="mx-3">•</span>
                 <span className="w-3 h-3 bg-blue-500 rounded-full mr-1"></span>
-                Current step in progress
+                Current stage in progress
                 <span className="mx-3">•</span>
                 <span className="w-3 h-3 bg-gray-200 rounded-full mr-1"></span>
-                Future steps (complete previous steps first)
+                Future stages (complete previous stages first)
               </span>
             </div>
             
-            {/* Step Navigation for Steps 2+ */}
+            {/* Stage Navigation for Stages 2+ */}
             {currentStep > 1 && currentStep < 6 && (
               <div className="mt-6 flex justify-between items-center">
                 <Button 
@@ -288,7 +288,7 @@ export default function Dashboard() {
                   className="px-8"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Previous Step
+                  Previous Stage
                 </Button>
                 
                 <Button 
@@ -335,7 +335,7 @@ export default function Dashboard() {
           
           {/* Show sequence context for clarity */}
           <div className="text-sm text-blue-600 mb-3">
-            Step {currentStep} of 6: {currentStep === 1 ? "Intelligence ingestion and raw report generation" : 
+            Stage {currentStep} of 6: {currentStep === 1 ? "Intelligence ingestion and raw report generation" : 
                                      currentStep === 2 ? "Threat selection and use case definition" :
                                      currentStep === 3 ? "Infrastructure architecture and deployment planning" :
                                      currentStep === 4 ? "Data source integration and XSIAM configuration" :
@@ -345,9 +345,9 @@ export default function Dashboard() {
           <p className="text-blue-700 mb-4 text-lg">{currentInstructions.instruction}</p>
           
           <div className="bg-white rounded-lg p-4 mb-4">
-            <h4 className="font-semibold mb-2">What you'll create:</h4>
+            <h4 className="font-semibold mb-2">Content to be created:</h4>
             <ul className="space-y-1">
-              {currentInstructions.options.map((option, index) => (
+              {currentInstructions.options.map((option: string, index: number) => (
                 <li key={index} className="flex items-center text-gray-700">
                   <span className="text-green-500 mr-2">•</span>
                   {option}
@@ -357,7 +357,7 @@ export default function Dashboard() {
           </div>
           
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <p className="text-green-800 font-medium">✓ How you'll know it's complete:</p>
+            <p className="text-green-800 font-medium">✓ Completion criteria:</p>
             <p className="text-green-700">{currentInstructions.verification}</p>
           </div>
         </div>
@@ -620,7 +620,7 @@ export default function Dashboard() {
               )}
               <p className="text-gray-600 mb-6">Create XQL rules, playbooks, and dashboards using your live data sources and validated field mappings.</p>
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-green-800 mb-2">Content you'll generate:</h4>
+                <h4 className="font-medium text-green-800 mb-2">Generated content:</h4>
                 <ul className="text-green-700 text-sm space-y-1">
                   <li>• XQL correlation rules tested against real data</li>
                   <li>• Automation playbooks validated with actual incidents</li>

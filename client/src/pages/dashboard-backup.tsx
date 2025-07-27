@@ -1004,7 +1004,7 @@ Export Format: Multi-format (JSON + YAML)
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Remove all demo data and training progress to start fresh</p>
+                    <p>Remove all demo data and training progress to start over</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>

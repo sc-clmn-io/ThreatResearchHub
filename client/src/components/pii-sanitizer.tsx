@@ -7,11 +7,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, Eye, EyeOff, Copy, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-interface PIISanitizerProps {
+interface HomographicSanitizerProps {
   onSanitized?: (original: string, sanitized: string) => void;
 }
 
-const PIISanitizer: React.FC<PIISanitizerProps> = ({ onSanitized }) => {
+const HomographicSanitizer: React.FC<HomographicSanitizerProps> = ({ onSanitized }) => {
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -171,8 +171,8 @@ const PIISanitizer: React.FC<PIISanitizerProps> = ({ onSanitized }) => {
     }
 
     toast({
-      title: "PII Sanitization Complete",
-      description: `Detected and sanitized ${result.detected.length} types of sensitive information.`,
+      title: "Homographic Transform Complete",
+      description: `Processed and transformed ${result.detected.length} types of sensitive information.`,
     });
   };
 
@@ -203,10 +203,10 @@ const PIISanitizer: React.FC<PIISanitizerProps> = ({ onSanitized }) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5" />
-          PII Data Sanitizer
+          Homographic Sanitizer
         </CardTitle>
         <CardDescription>
-          Locally sanitize personally identifiable information and confidential data while preserving structure and conventions.
+          Transform sensitive information using homographic characters while preserving visual structure and conventions.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -240,7 +240,7 @@ const PIISanitizer: React.FC<PIISanitizerProps> = ({ onSanitized }) => {
 
         <div className="flex gap-2">
           <Button onClick={handleSanitize} disabled={isProcessing || !input.trim()}>
-            {isProcessing ? 'Sanitizing...' : 'Sanitize PII'}
+            {isProcessing ? 'Processing...' : 'Apply Homographic Transform'}
           </Button>
           <Button variant="outline" onClick={reset}>
             <RotateCcw className="h-4 w-4 mr-2" />
@@ -287,4 +287,4 @@ const PIISanitizer: React.FC<PIISanitizerProps> = ({ onSanitized }) => {
   );
 };
 
-export default PIISanitizer;
+export default HomographicSanitizer;

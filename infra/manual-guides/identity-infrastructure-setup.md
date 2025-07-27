@@ -1,242 +1,242 @@
 # Identity Infrastructure Setup Guide
-*Written at 8th grade reading level for easy understanding*
+*Professional step-by-step guide for infrastructure deployment*
 
-## What You're Building
+## Overview
 
-You're going to set up a test environment to practice finding bad guys who try to break into computer accounts. This will help you learn how to catch identity attacks before they cause damage.
+This guide provides comprehensive instructions for establishing a complete identity infrastructure testing environment. The deployment enables security professionals to analyze identity-based attack vectors and validate detection capabilities in a controlled environment.
 
-## What You Need
+## Prerequisites
 
-### Before You Start
-- A computer with internet connection
-- About 4-6 hours of time
-- Basic computer skills (you can follow step-by-step instructions)
-- A credit card for cloud services (will cost about $50-100 for testing)
+### Required Resources
+- Administrative workstation with internet connectivity
+- Estimated deployment time: 4-6 hours
+- Technical proficiency with cloud platforms and Windows Server administration
+- AWS account with billing configuration (estimated cost: $50-100 for testing period)
 
-### Tools You'll Install
-- AWS account (Amazon's cloud service)
-- Windows Server (a powerful computer operating system)
-- Active Directory (system that manages user accounts)
-- Okta (identity management service)
+### Infrastructure Components
+- AWS Cloud Infrastructure (Amazon Web Services)
+- Windows Server 2022 (Enterprise directory services platform)
+- Active Directory Domain Services (Identity and access management)
+- Okta Identity Platform (Cloud identity management service)
 
-## Step 1: Set Up Your AWS Account (30 minutes)
+## Phase 1: AWS Account Configuration (30 minutes)
 
-### Create Your Account
-1. Go to aws.amazon.com in your web browser
-2. Click the orange "Create an AWS Account" button
-3. Enter your email address and choose a password
-4. Fill out your contact information
-5. Add your credit card information (don't worry, we'll set up billing alerts)
-6. Verify your identity with a phone call or text message
-7. Choose the "Basic Support" plan (it's free)
+### Account Provisioning
+1. Navigate to aws.amazon.com
+2. Select "Create an AWS Account"
+3. Complete account registration with email address and secure password
+4. Provide contact information and billing details
+5. Complete identity verification via phone or SMS
+6. Select "Basic Support" plan
 
-### Set Up Billing Alerts (Important!)
-1. In AWS, go to "Billing & Cost Management"
-2. Click "Billing preferences" 
-3. Check the box for "Receive Billing Alerts"
-4. Set up an alert for $50 (this warns you if costs get too high)
+### Billing Monitoring Configuration
+1. Access "Billing & Cost Management" console
+2. Navigate to "Billing preferences"
+3. Enable "Receive Billing Alerts"
+4. Configure cost alert threshold at $50 for budget management
 
-## Step 2: Create Your Virtual Network (45 minutes)
+## Phase 2: Network Infrastructure Deployment (45 minutes)
 
-Think of this like building the foundation of a house. You need a secure space where your test computers can talk to each other.
+The Virtual Private Cloud (VPC) provides isolated network infrastructure supporting secure communications between laboratory components.
 
-### Create a Virtual Private Cloud (VPC)
-1. In AWS, search for "VPC" and click on it
-2. Click "Create VPC"
-3. Choose "VPC and more" (this creates everything you need)
-4. Name it "identity-threat-lab"
-5. Set IP addresses to "10.0.0.0/16" (this gives you lots of addresses)
-6. Choose 1 Availability Zone
-7. Choose 1 public subnet and 1 private subnet
+### VPC Configuration
+1. Access AWS VPC console
+2. Select "Create VPC"
+3. Choose "VPC and more" for comprehensive deployment
+4. Configure naming: "identity-threat-lab"
+5. Set CIDR block: "10.0.0.0/16" for adequate address space
+6. Configure single Availability Zone deployment
+7. Enable public and private subnet configuration
 8. Enable DNS hostnames and DNS resolution
-9. Click "Create VPC"
+9. Complete VPC creation
 
-### Why This Matters
-- Public subnet = where computers can reach the internet
-- Private subnet = where sensitive computers hide from the internet
-- It's like having a front yard (public) and a backyard (private)
+### Network Segmentation
+- Public subnet: Internet-accessible resources and management interfaces
+- Private subnet: Internal infrastructure components with restricted access
 
-## Step 3: Set Up Your Jump Box Computer (1 hour)
+## Phase 3: Management Infrastructure Deployment (1 hour)
 
-This is like having a secure entrance to your test environment. You'll use this computer to manage everything else.
+The jump box serves as the secure administrative access point for managing all laboratory infrastructure components.
 
-### Create the Jump Box
-1. In AWS, search for "EC2" and click on it
-2. Click "Launch Instance"
-3. Name it "threat-lab-jumpbox"
-4. Choose "Microsoft Windows Server 2022 Base"
-5. Choose "t3.medium" instance type (powerful enough but not too expensive)
-6. Create a new key pair:
-   - Name it "threat-lab-key"
-   - Download the .pem file and save it somewhere safe
-7. Network settings:
-   - Choose your "identity-threat-lab" VPC
-   - Choose the public subnet
-   - Create a new security group called "jumpbox-sg"
-   - Allow RDP (port 3389) from your IP address
-8. Click "Launch Instance"
+### EC2 Instance Configuration
+1. Access AWS EC2 console
+2. Select "Launch Instance"
+3. Configure instance naming: "threat-lab-jumpbox"
+4. Select "Microsoft Windows Server 2022 Base" AMI
+5. Choose "t3.medium" instance type for adequate performance
+6. Key pair configuration:
+   - Create new key pair: "threat-lab-key"
+   - Download and securely store .pem file
+7. Network configuration:
+   - Assign to "identity-threat-lab" VPC
+   - Deploy in public subnet
+   - Create security group: "jumpbox-sg"
+   - Configure RDP access (port 3389) restricted to administrative IP
+8. Complete instance launch
 
-### Connect to Your Jump Box
-1. Wait for the instance to show "Running" status (about 5 minutes)
-2. Select your instance and click "Connect"
-3. Choose "RDP client"
-4. Click "Get password" and upload your .pem file
-5. Copy the password they give you
-6. Download the RDP file
-7. Open the RDP file and enter the password
-8. You're now connected to your Windows Server!
+### Administrative Access Configuration
+1. Monitor instance status until "Running" state (approximately 5 minutes)
+2. Select instance and choose "Connect"
+3. Select "RDP client" connection method
+4. Retrieve administrator password using .pem key file
+5. Download RDP configuration file
+6. Establish remote desktop connection with retrieved credentials
+7. Verify successful administrative access to Windows Server environment
 
-## Step 4: Set Up Active Directory (2 hours)
+## Phase 4: Active Directory Domain Services Deployment (2 hours)
 
-Active Directory is like a phone book for computers. It keeps track of all users and controls who can access what.
+Active Directory provides centralized identity and access management services for the laboratory environment.
 
-### Install Active Directory Services
-1. In your Jump Box, open "Server Manager" (it should open automatically)
-2. Click "Add roles and features"
-3. Click "Next" three times
-4. Check the box for "Active Directory Domain Services"
-5. Click "Add Features" when asked
-6. Click "Next" through all screens
-7. Click "Install" and wait (about 10 minutes)
+### Domain Services Installation
+1. Launch Server Manager (opens automatically upon login)
+2. Select "Add roles and features"
+3. Navigate through installation wizard (select "Next" for default configurations)
+4. Select "Active Directory Domain Services" role
+5. Accept additional feature requirements when prompted
+6. Complete installation wizard
+7. Monitor installation progress (approximately 10 minutes)
 
-### Create Your Domain
-1. After installation, click the yellow warning flag in Server Manager
-2. Click "Promote this server to a domain controller"
-3. Choose "Add a new forest"
-4. Domain name: "threatlab.local"
-5. Set a DSRM password (remember this!)
-6. Click "Next" through all screens (ignore warnings)
-7. Click "Install" and the computer will restart
+### Domain Controller Promotion
+1. Access post-deployment configuration via Server Manager notification flag
+2. Select "Promote this server to a domain controller"
+3. Choose "Add a new forest" for new domain deployment
+4. Configure domain name: "threatlab.local"
+5. Set Directory Services Restore Mode (DSRM) password (document securely)
+6. Accept default configuration through remaining wizard screens
+7. Complete installation and allow system restart
 
-### Create Test Users
-1. After restart, open "Active Directory Users and Computers"
-2. Right-click on "Users" folder
-3. Choose "New" → "User"
-4. Create these test users:
-   - First Name: John, Last Name: Admin, Username: jadmin
-   - First Name: Jane, Last Name: User, Username: juser  
-   - First Name: Bob, Last Name: Service, Username: bservice
-5. Set simple passwords like "Password123!" for testing
-6. For jadmin, right-click and choose "Properties"
-7. Go to "Member Of" tab and add to "Domain Admins" group
+### User Account Provisioning
+1. After system restart, launch "Active Directory Users and Computers"
+2. Right-click "Users" organizational unit
+3. Select "New" → "User"
+4. Create laboratory user accounts:
+   - Administrative Account: John Admin (jadmin)
+   - Standard User Account: Jane User (juser)  
+   - Service Account: Bob Service (bservice)
+5. Configure secure passwords compliant with complexity requirements
+6. Configure administrative privileges:
+   - Access jadmin account properties
+   - Navigate to "Member Of" tab
+   - Add account to "Domain Admins" security group
 
-## Step 5: Set Up Okta Test Environment (1 hour)
+## Phase 5: Okta Identity Platform Integration (1 hour)
 
-Okta helps companies manage user logins. We'll create a test environment to practice with.
+Okta provides cloud-based identity and access management services for modern enterprise environments.
 
-### Create Okta Developer Account
-1. Go to developer.okta.com
-2. Click "Sign up for free"
-3. Enter your email and create an account
-4. Choose "Build a SSO integration" when asked about your use case
-5. You'll get an email with your Okta domain (like dev-123456.okta.com)
+### Developer Account Provisioning
+1. Navigate to developer.okta.com
+2. Complete account registration process
+3. Provide business email address and create secure credentials
+4. Select "Build a SSO integration" as primary use case
+5. Access provisioned Okta domain (format: dev-123456.okta.com)
 
-### Connect Okta to Active Directory
-1. In Okta, go to "Directory" → "Directory Integrations"
-2. Click "Add Directory"
-3. Choose "Active Directory"
-4. Download the Okta AD Agent installer
-5. Run the installer on your Jump Box
-6. Follow the setup wizard and connect to your threatlab.local domain
-7. Import your test users from Active Directory
+### Active Directory Integration
+1. Access Okta administration console
+2. Navigate to "Directory" → "Directory Integrations"
+3. Select "Add Directory"
+4. Choose "Active Directory" integration type
+5. Download Okta AD Agent installation package
+6. Deploy agent on jump box infrastructure
+7. Configure integration with threatlab.local domain
+8. Complete user synchronization from Active Directory
 
-### Set Up SSO Application
-1. In Okta, go to "Applications" → "Applications"
-2. Click "Create App Integration"
-3. Choose "SAML 2.0"
-4. Name it "Threat Lab Test App"
-5. Use basic settings for testing
-6. Assign your test users to the application
+### SSO Application Configuration
+1. Access "Applications" → "Applications" in Okta console
+2. Select "Create App Integration"
+3. Choose "SAML 2.0" protocol
+4. Configure application naming: "Threat Lab Test App"
+5. Apply standard SAML configuration parameters
+6. Assign synchronized user accounts to application
 
-## Step 6: Set Up Monitoring and Logging (1 hour)
+## Phase 6: Security Monitoring and Audit Configuration (1 hour)
 
-This is how you'll see what's happening in your environment. It's like security cameras for your computers.
+Comprehensive logging and monitoring capabilities provide visibility into infrastructure activities and security events.
 
-### Enable AWS CloudTrail
-1. In AWS, search for "CloudTrail"
-2. Click "Create trail"
-3. Name it "threat-lab-trail"
-4. Create a new S3 bucket to store logs
-5. Enable logging for all regions
-6. Turn on "Log file validation"
-7. Click "Create trail"
+### AWS CloudTrail Configuration
+1. Access AWS CloudTrail console
+2. Select "Create trail"
+3. Configure trail naming: "threat-lab-trail"
+4. Provision dedicated S3 bucket for log storage
+5. Enable multi-region logging coverage
+6. Enable log file validation for integrity verification
+7. Complete trail creation and activation
 
-### Set Up Windows Event Logging
-1. On your Jump Box, open "Event Viewer"
-2. Go to "Windows Logs" → "Security"
-3. Right-click and choose "Properties"
-4. Set maximum log size to 100 MB
-5. Choose "Overwrite events as needed"
-6. Enable auditing:
-   - Open "Group Policy Management"
+### Windows Event Auditing Configuration
+1. Launch Event Viewer on jump box
+2. Navigate to "Windows Logs" → "Security"
+3. Access Security log properties
+4. Configure maximum log size: 100 MB
+5. Set log retention policy: "Overwrite events as needed"
+6. Enable comprehensive auditing:
+   - Launch "Group Policy Management"
    - Edit "Default Domain Policy"
-   - Go to Computer Configuration → Policies → Windows Settings → Security Settings → Local Policies → Audit Policy
+   - Navigate to Computer Configuration → Policies → Windows Settings → Security Settings → Local Policies → Audit Policy
    - Enable "Audit account logon events" and "Audit logon events"
 
-### Install XSIAM Broker (if you have XSIAM)
-1. Download the XSIAM Broker from your XSIAM tenant
-2. Install it on your Jump Box
-3. Configure it to collect:
+### XSIAM Broker Deployment (Optional)
+1. Download XSIAM Broker installation package from tenant console
+2. Deploy broker on jump box infrastructure
+3. Configure data collection for:
    - Windows Security Event Logs
-   - DNS logs
-   - Active Directory logs
-4. Test the connection to make sure logs are flowing
+   - DNS audit logs
+   - Active Directory security events
+4. Validate data flow and connectivity to XSIAM platform
 
-## Step 7: Test Your Setup (30 minutes)
+## Phase 7: Infrastructure Validation and Testing (30 minutes)
 
-Let's make sure everything works before we start testing threats.
+Comprehensive testing validates infrastructure deployment and operational readiness.
 
-### Test Active Directory
-1. Try logging in as each test user
-2. Verify that jadmin has admin rights
-3. Check that juser has regular user rights
+### Active Directory Validation
+1. Authenticate using each provisioned user account
+2. Verify jadmin administrative privileges
+3. Confirm juser standard user access controls
 
-### Test Okta Integration
-1. Log into Okta as each user
-2. Try accessing the test application
-3. Verify that user information synced correctly
+### Okta Integration Validation
+1. Authenticate to Okta console using synchronized accounts  
+2. Access configured test application
+3. Verify accurate user attribute synchronization
 
-### Test Monitoring
-1. Check CloudTrail to see AWS API calls
-2. Look at Windows Event Logs for login events
-3. If using XSIAM, verify logs are arriving
+### Monitoring System Validation
+1. Review CloudTrail logs for AWS API activity
+2. Analyze Windows Event Logs for authentication events
+3. Validate XSIAM log ingestion (if configured)
 
-## What You've Built
+## Infrastructure Summary
 
-Congratulations! You now have:
-- A secure test environment in AWS
-- Active Directory with test users
-- Okta identity management
-- Complete logging and monitoring
-- A foundation for testing identity threats
+The completed deployment provides:
+- Isolated AWS cloud infrastructure
+- Enterprise Active Directory services
+- Cloud identity management via Okta
+- Comprehensive security monitoring
+- Foundation for identity threat analysis
 
-## Cost Management
+## Cost Management and Optimization
 
-Your test environment will cost about:
-- $50-75 per month if left running
-- $2-3 per day for testing sessions
-- Always remember to shut down EC2 instances when not testing!
+Infrastructure cost considerations:
+- Monthly operational cost: $50-75 (continuous operation)
+- Daily testing cost: $2-3 (on-demand usage)
+- Resource shutdown recommended when not actively testing
 
-## Next Steps
+## Advanced Configuration Opportunities
 
-Now you're ready to:
-1. Generate threat scenarios using the platform
-2. Create detection rules in XSIAM
-3. Test attacks against your environment
-4. Practice incident response procedures
+The infrastructure enables:
+1. Advanced threat scenario generation and analysis
+2. Custom detection rule development in XSIAM
+3. Controlled attack simulation and validation
+4. Enterprise incident response procedure development
 
-## Need Help?
+## Technical Support Resources
 
-If you get stuck:
-1. Check the AWS documentation
-2. Use the platform's troubleshooting guides
-3. Ask for help in your team's chat channel
-4. Remember: this is for learning, so mistakes are okay!
+For technical assistance:
+1. Reference AWS official documentation
+2. Utilize platform-integrated troubleshooting guides
+3. Engage enterprise support channels
+4. Leverage community knowledge bases
 
-## Safety Reminders
+## Security and Compliance Guidelines
 
-- This is a test environment only
-- Never use real passwords or data
-- Always shut down resources when done testing
-- Monitor your AWS costs regularly
-- Keep your environment isolated from production systems
+- Laboratory environment isolation from production systems
+- Test credentials only - no production data
+- Resource deprovisioning after testing completion
+- Continuous cost monitoring and budget management
+- Strict network segmentation and access control

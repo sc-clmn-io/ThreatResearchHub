@@ -454,7 +454,7 @@ export default function InfrastructureDeploymentGuide({ useCase, onInfrastructur
             <CardHeader>
               <CardTitle>Common Issues & Solutions</CardTitle>
               <CardDescription>
-                8th grade level troubleshooting for infrastructure deployment
+                professional troubleshooting for infrastructure deployment
               </CardDescription>
             </CardHeader>
             <CardContent>
