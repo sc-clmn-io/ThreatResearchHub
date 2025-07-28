@@ -47,7 +47,9 @@ const navigationItems: NavItem[] = [
   
   // STAGE 3: Plan Lab Infrastructure
   { href: "/lab-build-planner", icon: Monitor, label: "3. Plan Infrastructure", category: 'stage3', description: "Design lab infrastructure for your selected threat scenario" },
-  { href: "/lab-environment", icon: Beaker, label: "3a. Lab Setup Guide", category: 'stage3', description: "Step-by-step lab deployment with infrastructure and cost planning" },
+  { href: "/connection-management", icon: Server, label: "3a. Connection Setup", category: 'stage3', description: "Configure connections to Docker, Proxmox, and Azure environments" },
+  { href: "/threat-infrastructure", icon: Activity, label: "3b. Infrastructure Mapping", category: 'stage3', description: "Map threats to required infrastructure for streamlined deployment" },
+  { href: "/lab-environment", icon: Beaker, label: "3c. Lab Setup Guide", category: 'stage3', description: "Step-by-step lab deployment with infrastructure and cost planning" },
   
   // STAGE 4: Setup Data Sources & XSIAM
   { href: "/xsiam-debugger", icon: Database, label: "4. Setup Data Sources", category: 'stage4', description: "Configure XSIAM data ingestion and validate log parsing" },

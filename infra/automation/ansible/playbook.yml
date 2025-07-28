@@ -1,0 +1,628 @@
+---
+# Ansible Playbook for Docker Escape Detection Lab
+# Supports multiple environments: local, cloud, and on-premises
+
+- name: Deploy Docker Escape Detection Lab
+  hosts: all
+  become: yes
+  vars:
+    lab_user: "{{ ansible_user }}"
+    lab_directory: "/home/{{ lab_user }}/docker-escape-lab"
+    docker_compose_version: "2.21.0"
+    xsiam_url: "{{ lookup('env', 'XSIAM_URL') | default('') }}"
+    xsiam_api_key: "{{ lookup('env', 'XSIAM_API_KEY') | default('') }}"
+    
+  tasks:
+    - name: Create lab user if not exists
+      user:
+        name: "{{ lab_user }}"
+        shell: /bin/bash
+        groups: docker
+        append: yes
+      when: ansible_user != "root"
+
+    - name: Update system packages
+      package:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"
+
+    - name: Install required packages
+      package:
+        name:
+          - curl
+          - wget
+          - git
+          - python3
+          - python3-pip
+          - unzip
+          - htop
+        state: present
+
+    - name: Install Docker (Ubuntu/Debian)
+      block:
+        - name: Add Docker GPG key
+          apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+        - name: Add Docker repository
+          apt_repository:
+            repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+            state: present
+
+        - name: Install Docker packages
+          package:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-compose-plugin
+            state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker (CentOS/RHEL)
+      block:
+        - name: Add Docker repository
+          yum_repository:
+            name: docker-ce
+            description: Docker CE Stable
+            baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
+            gpgcheck: yes
+            gpgkey: https://download.docker.com/linux/centos/gpg
+
+        - name: Install Docker packages
+          package:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+            state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add user to docker group
+      user:
+        name: "{{ lab_user }}"
+        groups: docker
+        append: yes
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-{{ ansible_system }}-{{ ansible_architecture }}"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+      when: not ansible_check_mode
+
+    - name: Create lab directory structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0755'
+      loop:
+        - "{{ lab_directory }}"
+        - "{{ lab_directory }}/configs"
+        - "{{ lab_directory }}/configs/falco"
+        - "{{ lab_directory }}/configs/filebeat"
+        - "{{ lab_directory }}/configs/xsiam"
+        - "{{ lab_directory }}/logs"
+        - "{{ lab_directory }}/logs/falco"
+        - "{{ lab_directory }}/logs/filebeat"
+        - "{{ lab_directory }}/logs/response"
+        - "{{ lab_directory }}/scripts"
+        - "{{ lab_directory }}/scripts/response"
+        - "{{ lab_directory }}/scripts/automation"
+        - "{{ lab_directory }}/data"
+
+    - name: Copy Docker Compose configuration
+      copy:
+        content: |
+          version: '3.8'
+          
+          services:
+            # Falco - Runtime Security Monitoring
+            falco:
+              image: falcosecurity/falco-no-driver:latest
+              container_name: docker-escape-falco
+              privileged: true
+              volumes:
+                - /var/run/docker.sock:/host/var/run/docker.sock
+                - /dev:/host/dev
+                - /proc:/host/proc:ro
+                - /boot:/host/boot:ro
+                - /lib/modules:/host/lib/modules:ro
+                - /usr:/host/usr:ro
+                - /etc:/host/etc:ro
+                - ./configs/falco/falco_rules.yaml:/etc/falco/falco_rules_local.yaml
+                - ./logs/falco:/var/log/falco
+              environment:
+                - FALCO_GRPC_ENABLED=true
+                - FALCO_GRPC_BIND_ADDRESS=0.0.0.0:5060
+              ports:
+                - "5060:5060"
+              networks:
+                - monitoring
+              restart: unless-stopped
+          
+            # Elasticsearch for log storage
+            elasticsearch:
+              image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+              container_name: docker-escape-elastic
+              environment:
+                - discovery.type=single-node
+                - xpack.security.enabled=false
+                - "ES_JAVA_OPTS=-Xms2g -Xmx4g"
+              ports:
+                - "9200:9200"
+              volumes:
+                - elastic_data:/usr/share/elasticsearch/data
+              networks:
+                - monitoring
+              restart: unless-stopped
+              healthcheck:
+                test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+                interval: 30s
+                timeout: 10s
+                retries: 5
+          
+            # Kibana for log visualization
+            kibana:
+              image: docker.elastic.co/kibana/kibana:8.11.0
+              container_name: docker-escape-kibana
+              environment:
+                - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+              ports:
+                - "5601:5601"
+              depends_on:
+                elasticsearch:
+                  condition: service_healthy
+              networks:
+                - monitoring
+              restart: unless-stopped
+          
+            # Filebeat for log forwarding
+            filebeat:
+              image: docker.elastic.co/beats/filebeat:8.11.0
+              container_name: docker-escape-filebeat
+              user: root
+              volumes:
+                - ./configs/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+                - ./logs:/var/log/lab:ro
+                - /var/lib/docker/containers:/var/lib/docker/containers:ro
+                - /var/run/docker.sock:/var/run/docker.sock:ro
+              environment:
+                - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+              depends_on:
+                elasticsearch:
+                  condition: service_healthy
+              networks:
+                - monitoring
+              restart: unless-stopped
+          
+            # Vulnerable container for testing
+            vulnerable-container:
+              image: alpine:latest
+              container_name: escape-test-target
+              command: sh -c "while true; do sleep 30; done"
+              volumes:
+                - /:/host-root:ro
+              networks:
+                - monitoring
+              restart: unless-stopped
+          
+            # Attack simulation container
+            attack-simulator:
+              image: alpine:latest
+              container_name: attack-simulator
+              command: sh -c "apk add --no-cache curl nmap && while true; do sleep 60; done"
+              networks:
+                - monitoring
+              restart: unless-stopped
+          
+          volumes:
+            elastic_data:
+          
+          networks:
+            monitoring:
+              driver: bridge
+        dest: "{{ lab_directory }}/docker-compose.yml"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0644'
+
+    - name: Copy Falco detection rules
+      copy:
+        content: |
+          # Container Escape Detection Rules
+          
+          - rule: Container Escape via Privileged Mount
+            desc: Detect container attempting to access host filesystem
+            condition: >
+              spawned_process and
+              container and
+              (proc.name in (sh, bash, dash, ash, zsh) or
+               proc.name in (cat, ls, find, mount, umount)) and
+              (fd.name startswith /host-root or
+               fd.name startswith /host or
+               fd.name contains /proc/1/root or
+               fd.name contains /etc/shadow or
+               fd.name contains /etc/passwd or
+               fd.name contains /root/)
+            output: >
+              Container escape attempt detected (proc=%proc.name pid=%proc.pid 
+              container=%container.name image=%container.image.repository 
+              file=%fd.name command=%proc.cmdline user=%user.name)
+            priority: CRITICAL
+            tags: [container, escape, privilege_escalation, T1611]
+          
+          - rule: Docker Socket Access from Container
+            desc: Detect container accessing Docker socket
+            condition: >
+              spawned_process and
+              container and
+              (fd.name=/var/run/docker.sock or
+               fd.name=/host/var/run/docker.sock or
+               proc.args contains "docker.sock")
+            output: >
+              Container accessing Docker socket (proc=%proc.name pid=%proc.pid 
+              container=%container.name image=%container.image.repository 
+              command=%proc.cmdline)
+            priority: CRITICAL
+            tags: [container, escape, docker, T1609]
+          
+          - rule: Container Privilege Escalation
+            desc: Detect privilege escalation inside container
+            condition: >
+              spawned_process and
+              container and
+              (proc.name in (sudo, su, newgrp) or
+               (proc.args contains "--privileged" or
+                proc.args contains "CAP_SYS_ADMIN" or
+                proc.args contains "CAP_DAC_OVERRIDE"))
+            output: >
+              Container privilege escalation attempt (proc=%proc.name pid=%proc.pid 
+              container=%container.name command=%proc.cmdline)
+            priority: HIGH
+            tags: [container, privilege_escalation, T1548]
+          
+          - rule: Sensitive File Access from Container
+            desc: Detect container accessing sensitive host files
+            condition: >
+              open_read and
+              container and
+              (fd.name in (/etc/shadow, /etc/passwd, /etc/sudoers, /etc/hosts) or
+               fd.name startswith /root/ or
+               fd.name startswith /home/ or
+               fd.name contains ssh_host or
+               fd.name contains ".ssh/" or
+               fd.name contains "id_rsa")
+            output: >
+              Container accessing sensitive file (file=%fd.name proc=%proc.name 
+              pid=%proc.pid container=%container.name)
+            priority: HIGH
+            tags: [container, file_access, sensitive, T1005]
+        dest: "{{ lab_directory }}/configs/falco/falco_rules.yaml"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0644'
+
+    - name: Copy Filebeat configuration
+      copy:
+        content: |
+          filebeat.inputs:
+          - type: log
+            enabled: true
+            paths:
+              - /var/log/lab/falco/*.log
+            fields:
+              log_type: falco_security
+              environment: lab
+              deployment: docker-escape-detection
+              host: "{{ ansible_hostname }}"
+            fields_under_root: true
+            multiline.pattern: '^\{'
+            multiline.negate: true
+            multiline.match: after
+            json.keys_under_root: true
+            json.add_error_key: true
+          
+          - type: docker
+            enabled: true
+            containers.ids:
+              - "*"
+            containers.stream: "all"
+            containers.path: "/var/lib/docker/containers"
+          
+          processors:
+          - add_host_metadata:
+              when.not.contains.tags: forwarded
+          - add_docker_metadata: ~
+          - timestamp:
+              field: time
+              layouts:
+                - '2006-01-02T15:04:05.000000000Z'
+                - '2006-01-02T15:04:05Z'
+              test:
+                - '2025-01-27T20:30:45.123456789Z'
+          
+          output.elasticsearch:
+            hosts: ["elasticsearch:9200"]
+            index: "docker-escape-lab-%{+yyyy.MM.dd}"
+          
+          setup.template.name: "docker-escape-lab"
+          setup.template.pattern: "docker-escape-lab-*"
+          setup.template.settings:
+            index.number_of_shards: 1
+            index.number_of_replicas: 0
+          
+          setup.kibana:
+            host: "kibana:5601"
+          
+          logging.level: info
+          logging.to_files: true
+          logging.files:
+            path: /var/log/lab/filebeat
+            name: filebeat.log
+            keepfiles: 7
+            permissions: 0644
+        dest: "{{ lab_directory }}/configs/filebeat/filebeat.yml"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0644'
+
+    - name: Copy automation scripts
+      copy:
+        content: |
+          #!/bin/bash
+          # Container isolation script
+          
+          CONTAINER_ID=$1
+          ALERT_PRIORITY=$2
+          TIMESTAMP=$(date -Iseconds)
+          
+          if [ -z "$CONTAINER_ID" ]; then
+              echo "Usage: $0 <container_id> <priority>"
+              exit 1
+          fi
+          
+          echo "$TIMESTAMP: Isolating container $CONTAINER_ID due to $ALERT_PRIORITY priority alert"
+          
+          # Pause container (keeps it for forensics)
+          docker pause $CONTAINER_ID 2>/dev/null
+          
+          # Disconnect from networks
+          for network in $(docker inspect $CONTAINER_ID --format='{{range $net, $conf := .NetworkSettings.Networks}}{{$net}} {{end}}'); do
+              docker network disconnect $network $CONTAINER_ID 2>/dev/null
+          done
+          
+          # Create forensic snapshot
+          SNAPSHOT_NAME="forensic-snapshot-$(date +%Y%m%d-%H%M%S)-${CONTAINER_ID:0:12}"
+          docker commit $CONTAINER_ID $SNAPSHOT_NAME
+          
+          # Log the action
+          echo "$TIMESTAMP: Container $CONTAINER_ID isolated, snapshot: $SNAPSHOT_NAME" >> {{ lab_directory }}/logs/response/response_actions.log
+          
+          echo "Container $CONTAINER_ID has been isolated and forensic snapshot created: $SNAPSHOT_NAME"
+        dest: "{{ lab_directory }}/scripts/response/isolate_container.sh"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0755'
+
+    - name: Copy attack simulation script
+      copy:
+        content: |
+          #!/bin/bash
+          # Simulate various container escape attacks for testing
+          
+          echo "Starting attack simulation suite..."
+          
+          # Test 1: Host filesystem access
+          echo "Test 1: Simulating host filesystem access..."
+          docker exec escape-test-target sh -c "ls /host-root/etc/ 2>/dev/null || echo 'Host access blocked'"
+          sleep 2
+          
+          # Test 2: Docker socket access
+          echo "Test 2: Simulating Docker socket access..."
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock alpine:latest sh -c "ls -la /var/run/docker.sock 2>/dev/null || echo 'Socket access blocked'"
+          sleep 2
+          
+          # Test 3: Privileged operations
+          echo "Test 3: Simulating privileged operations..."
+          docker exec escape-test-target sh -c "mount 2>/dev/null || echo 'Mount operation blocked'"
+          sleep 2
+          
+          # Test 4: Sensitive file access
+          echo "Test 4: Simulating sensitive file access..."
+          docker exec escape-test-target sh -c "cat /host-root/etc/passwd 2>/dev/null || echo 'Sensitive file access blocked'"
+          sleep 2
+          
+          # Test 5: Process namespace escape
+          echo "Test 5: Simulating process namespace escape..."
+          docker run --rm --pid=host alpine:latest sh -c "ps aux | head -5 || echo 'PID namespace escape blocked'"
+          sleep 2
+          
+          echo "Attack simulation completed. Check Falco logs for detection results."
+        dest: "{{ lab_directory }}/scripts/automation/simulate_attacks.sh"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0755'
+
+    - name: Copy health check script
+      copy:
+        content: |
+          #!/bin/bash
+          # Check health of all lab components
+          
+          echo "=== Docker Escape Detection Lab Health Check ==="
+          echo "Timestamp: $(date)"
+          echo "Host: {{ ansible_hostname }}"
+          echo
+          
+          # Check container status
+          echo "1. Container Status:"
+          cd {{ lab_directory }}
+          docker-compose ps
+          echo
+          
+          # Check Elasticsearch
+          echo "2. Elasticsearch Health:"
+          curl -s http://localhost:9200/_cluster/health | python3 -m json.tool 2>/dev/null || echo "Elasticsearch unavailable"
+          echo
+          
+          # Check Kibana
+          echo "3. Kibana Status:"
+          curl -s -o /dev/null -w "%{http_code}" http://localhost:5601 | grep -q "200" && echo "Kibana: OK" || echo "Kibana: NOT READY"
+          echo
+          
+          # Check Falco logs
+          echo "4. Recent Falco Alerts:"
+          docker logs docker-escape-falco --tail 5 2>/dev/null | grep -E "(CRITICAL|HIGH)" || echo "No recent critical alerts"
+          echo
+          
+          # Check disk usage
+          echo "5. Disk Usage:"
+          df -h {{ lab_directory }} | tail -1
+          echo
+          
+          # Check memory usage
+          echo "6. Memory Usage:"
+          free -h 2>/dev/null || echo "Memory info unavailable"
+          echo
+          
+          echo "Health check completed."
+        dest: "{{ lab_directory }}/scripts/automation/health_check.sh"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0755'
+
+    - name: Set up systemd service for lab
+      copy:
+        content: |
+          [Unit]
+          Description=Docker Escape Detection Lab
+          Requires=docker.service
+          After=docker.service
+          
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          WorkingDirectory={{ lab_directory }}
+          ExecStart=/usr/local/bin/docker-compose up -d
+          ExecStop=/usr/local/bin/docker-compose down
+          TimeoutStartSec=300
+          User={{ lab_user }}
+          Group={{ lab_user }}
+          
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/docker-escape-lab.service
+        mode: '0644'
+
+    - name: Enable lab service
+      systemd:
+        name: docker-escape-lab
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Pull Docker images
+      shell: |
+        cd {{ lab_directory }}
+        docker-compose pull
+      become_user: "{{ lab_user }}"
+
+    - name: Start lab environment
+      shell: |
+        cd {{ lab_directory }}
+        docker-compose up -d
+      become_user: "{{ lab_user }}"
+
+    - name: Wait for services to be ready
+      wait_for:
+        port: "{{ item }}"
+        host: localhost
+        timeout: 300
+      loop:
+        - 9200  # Elasticsearch
+        - 5601  # Kibana
+        - 5060  # Falco
+
+    - name: Run initial tests
+      shell: |
+        cd {{ lab_directory }}
+        sleep 10
+        ./scripts/automation/simulate_attacks.sh
+      become_user: "{{ lab_user }}"
+
+    - name: Generate deployment summary
+      copy:
+        content: |
+          # Docker Escape Detection Lab - Deployment Summary
+          
+          **Deployment Date:** {{ ansible_date_time.iso8601 }}
+          **Lab Directory:** {{ lab_directory }}
+          **Host:** {{ ansible_hostname }} ({{ ansible_default_ipv4.address }})
+          **Deployed by:** Ansible
+          
+          ## Services Deployed
+          
+          - **Falco**: Runtime security monitoring (Port 5060)
+          - **Elasticsearch**: Log storage and search (Port 9200)
+          - **Kibana**: Log visualization dashboard (Port 5601)
+          - **Filebeat**: Log forwarding agent
+          - **Test Containers**: Vulnerable targets for testing
+          
+          ## Access URLs
+          
+          - **Kibana Dashboard**: http://{{ ansible_default_ipv4.address }}:5601
+          - **Elasticsearch API**: http://{{ ansible_default_ipv4.address }}:9200
+          - **Falco gRPC API**: http://{{ ansible_default_ipv4.address }}:5060
+          
+          ## Quick Commands
+          
+          ```bash
+          # Check service status
+          cd {{ lab_directory }}
+          docker-compose ps
+          
+          # View Falco alerts
+          docker logs docker-escape-falco | grep -E "CRITICAL|HIGH"
+          
+          # Run attack simulation
+          ./scripts/automation/simulate_attacks.sh
+          
+          # Health check
+          ./scripts/automation/health_check.sh
+          
+          # Stop lab
+          sudo systemctl stop docker-escape-lab
+          
+          # Start lab
+          sudo systemctl start docker-escape-lab
+          ```
+          
+          ## System Service
+          
+          The lab is installed as a systemd service:
+          - **Status**: `sudo systemctl status docker-escape-lab`
+          - **Start**: `sudo systemctl start docker-escape-lab`
+          - **Stop**: `sudo systemctl stop docker-escape-lab`
+          - **Logs**: `journalctl -u docker-escape-lab`
+          
+          **Lab deployment completed successfully via Ansible!**
+        dest: "{{ lab_directory }}/ansible-deployment-summary.md"
+        owner: "{{ lab_user }}"
+        group: "{{ lab_user }}"
+        mode: '0644'
+
+  handlers:
+    - name: restart docker
+      systemd:
+        name: docker
+        state: restarted

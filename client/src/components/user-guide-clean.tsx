@@ -312,7 +312,34 @@ For full documentation and Docker setup, see the Documentation section in the Us
                     </div>
                   </div>
 
-
+                  <div className="bg-blue-50 p-4 rounded-lg mt-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Target className="h-5 w-5 text-blue-600" />
+                      <span className="font-semibold text-blue-800">Complete Workflow Experience</span>
+                    </div>
+                    <p className="text-sm text-blue-700 mb-4">
+                      This 6-stage process works with any threat scenario - from container escapes to phishing campaigns to cloud misconfigurations. 
+                      The platform adapts its recommendations and content generation based on your specific threat intelligence.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.location.href = '/'}
+                      >
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        Start Your Workflow Now
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActiveSection('documentation')}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        View Documentation
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

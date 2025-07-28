@@ -1,0 +1,192 @@
+{
+  "layout": {
+    "id": "docker-runtime-escape-layout",
+    "name": "Docker Runtime Escape Alert Layout",
+    "description": "Alert layout for Docker container runtime escape detection with analyst decision support",
+    "version": "1.0",
+    "sections": [
+      {
+        "type": "header",
+        "title": "Docker Runtime Escape Detection",
+        "severity": "critical",
+        "icon": "container"
+      },
+      {
+        "type": "summary",
+        "fields": [
+          {
+            "label": "Host System",
+            "value": "${alert.agent_hostname.[0]}",
+            "type": "text"
+          },
+          {
+            "label": "Detection Time",
+            "value": "${alert._time.[0]}",
+            "type": "datetime"
+          },
+          {
+            "label": "User Account",
+            "value": "${alert.actor_effective_username.[0]}",
+            "type": "text"
+          },
+          {
+            "label": "Process",
+            "value": "${alert.action_process_image_name.[0]}",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "details",
+        "title": "Container Escape Details",
+        "fields": [
+          {
+            "label": "Command Line",
+            "value": "${alert.action_process_command_line.[0]}",
+            "type": "code"
+          },
+          {
+            "label": "Process Path",
+            "value": "${alert.action_process_image_path.[0]}",
+            "type": "text"
+          },
+          {
+            "label": "Parent Process",
+            "value": "${alert.causality_actor_process_command_line.[0]}",
+            "type": "code"
+          },
+          {
+            "label": "Local IP",
+            "value": "${alert.action_local_ip.[0]}",
+            "type": "ip"
+          },
+          {
+            "label": "Remote IP",
+            "value": "${alert.action_remote_ip.[0]}",
+            "type": "ip"
+          }
+        ]
+      },
+      {
+        "type": "threat_analysis",
+        "title": "Threat Intelligence",
+        "fields": [
+          {
+            "label": "MITRE ATT&CK",
+            "value": "T1611 - Escape to Host",
+            "type": "mitre_technique"
+          },
+          {
+            "label": "Risk Score",
+            "value": "95/100",
+            "type": "risk_score"
+          },
+          {
+            "label": "Escape Technique",
+            "value": "Container Runtime Manipulation",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "analyst_actions",
+        "title": "Analyst Decision Support",
+        "buttons": [
+          {
+            "id": "isolate_host",
+            "label": "Isolate Host",
+            "action": "xdr-isolate-endpoint",
+            "parameters": {
+              "endpoint_id": "${alert.agent_id.[0]}",
+              "incident_id": "${incident.id}"
+            },
+            "color": "red",
+            "confirm": true,
+            "confirm_message": "This will isolate the container host from the network. Continue?"
+          },
+          {
+            "id": "stop_containers",
+            "label": "Stop All Containers",
+            "action": "execute-command",
+            "parameters": {
+              "command": "docker stop $(docker ps -q)",
+              "system": "${alert.agent_hostname.[0]}"
+            },
+            "color": "orange",
+            "confirm": true,
+            "confirm_message": "This will stop all running containers on the host. Continue?"
+          },
+          {
+            "id": "collect_forensics",
+            "label": "Collect Container Forensics",
+            "action": "execute-command",
+            "parameters": {
+              "command": "docker ps -a && docker logs $(docker ps -aq) && docker inspect $(docker ps -aq)",
+              "system": "${alert.agent_hostname.[0]}"
+            },
+            "color": "blue",
+            "confirm": false
+          },
+          {
+            "id": "create_ticket",
+            "label": "Create Security Ticket",
+            "action": "servicenow-create-ticket",
+            "parameters": {
+              "category": "Security Incident",
+              "priority": "1 - Critical",
+              "short_description": "Docker Runtime Escape - ${alert.agent_hostname.[0]}",
+              "description": "Container escape detected on ${alert.agent_hostname.[0]} at ${alert._time.[0]}"
+            },
+            "color": "purple",
+            "confirm": false
+          },
+          {
+            "id": "false_positive",
+            "label": "Mark False Positive",
+            "action": "close-alert",
+            "parameters": {
+              "reason": "false_positive",
+              "comments": "Legitimate container operation"
+            },
+            "color": "gray",
+            "confirm": true,
+            "confirm_message": "Are you sure this is a false positive? This will close the alert."
+          }
+        ]
+      },
+      {
+        "type": "investigation_queries",
+        "title": "Investigation Queries",
+        "queries": [
+          {
+            "name": "Related Container Activity",
+            "description": "Find other container activities on this host",
+            "xql": "dataset = xdr_data | filter agent_hostname = \"${alert.agent_hostname.[0]}\" and event_type = ENUM.PROCESS and action_process_image_name in (\"docker\", \"containerd\", \"runc\") | fields _time, action_process_command_line, actor_effective_username"
+          },
+          {
+            "name": "Privilege Escalation Check",
+            "description": "Check for privilege escalation attempts",
+            "xql": "dataset = xdr_data | filter agent_hostname = \"${alert.agent_hostname.[0]}\" and (action_process_command_line contains \"sudo\" or action_process_command_line contains \"su -\") | fields _time, action_process_command_line, actor_effective_username"
+          },
+          {
+            "name": "Network Connections",
+            "description": "Review network connections from containers",
+            "xql": "dataset = xdr_data | filter agent_hostname = \"${alert.agent_hostname.[0]}\" and event_type = ENUM.NETWORK | fields _time, action_local_ip, action_remote_ip, action_remote_port, action_network_protocol"
+          }
+        ]
+      }
+    ]
+  },
+  "automation": {
+    "auto_actions": [
+      {
+        "condition": "severity == 'critical'",
+        "action": "send_notification",
+        "parameters": {
+          "recipients": ["security-team@company.com"],
+          "message": "Critical Docker runtime escape detected on ${alert.agent_hostname.[0]}"
+        }
+      }
+    ]
+  }
+}

@@ -85,7 +85,9 @@ export class ThreatIntelligenceService {
       return filteredThreats;
       
     } catch (error) {
-      console.error(`[TI] Error fetching from ${source.name}:`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`[TI] Error fetching from ${source.name}:`, errorMessage);
+      // Return empty array to prevent application crash
       return [];
     }
   }

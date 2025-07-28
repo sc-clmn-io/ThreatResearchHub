@@ -1,0 +1,462 @@
+id: docker-runtime-escape-response
+version: 1
+vcShouldKeepItemLegacyProdMachine: false
+name: Docker Runtime Escape - Incident Response
+starttaskid: "0"
+tasks:
+  "0":
+    id: "0"
+    taskid: start-investigation
+    type: start
+    task:
+      id: start-investigation
+      version: -1
+      name: ""
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "1"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 50
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+
+  "1":
+    id: "1"
+    taskid: isolate-container-host
+    type: regular
+    task:
+      id: isolate-container-host
+      version: -1
+      name: Isolate Container Host
+      type: regular
+      iscommand: true
+      brand: Cortex XDR - IR
+      script: xdr-isolate-endpoint
+    scriptarguments:
+      endpoint_id:
+        simple: alert.agent_id.[0]
+      incident_id:
+        simple: incident.id
+    nexttasks:
+      '#none#':
+      - "2"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 195
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+
+  "2":
+    id: "2"
+    taskid: collect-container-forensics
+    type: regular
+    task:
+      id: collect-container-forensics
+      version: -1
+      name: Collect Container Forensics
+      type: regular
+      iscommand: true
+      brand: RemoteAccess
+      script: execute-command
+    scriptarguments:
+      command:
+        simple: "docker ps -a && docker logs $(docker ps -aq) && docker inspect $(docker ps -aq)"
+      system:
+        simple: alert.agent_hostname.[0]
+    nexttasks:
+      '#none#':
+      - "3"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 370
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+
+  "3":
+    id: "3"
+    taskid: analyze-escape-technique
+    type: condition
+    task:
+      id: analyze-escape-technique
+      version: -1
+      name: Analyze Escape Technique
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      privileged-container:
+      - "4"
+      namespace-manipulation:
+      - "5"
+      filesystem-breakout:
+      - "6"
+      '#default#':
+      - "7"
+    separatecontext: false
+    conditions:
+    - label: privileged-container
+      condition:
+      - - operator: containsString
+          left:
+            value:
+              simple: alert.action_process_command_line.[0]
+            iscontext: true
+          right:
+            value:
+              simple: "--privileged"
+    - label: namespace-manipulation
+      condition:
+      - - operator: containsString
+          left:
+            value:
+              simple: alert.action_process_command_line.[0]
+            iscontext: true
+          right:
+            value:
+              simple: "nsenter"
+    - label: filesystem-breakout
+      condition:
+      - - operator: containsString
+          left:
+            value:
+              simple: alert.action_process_command_line.[0]
+            iscontext: true
+          right:
+            value:
+              simple: "../../../"
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 545
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+
+  "4":
+    id: "4"
+    taskid: handle-privileged-escape
+    type: regular
+    task:
+      id: handle-privileged-escape
+      version: -1
+      name: Handle Privileged Container Escape
+      type: regular
+      iscommand: true
+      brand: RemoteAccess
+      script: execute-command
+    scriptarguments:
+      command:
+        simple: "docker stop $(docker ps -q --filter 'label=privileged') && docker system prune -f"
+      system:
+        simple: alert.agent_hostname.[0]
+    nexttasks:
+      '#none#':
+      - "8"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 162.5,
+          "y": 720
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+
+  "5":
+    id: "5"
+    taskid: handle-namespace-escape
+    type: regular
+    task:
+      id: handle-namespace-escape
+      version: -1
+      name: Handle Namespace Manipulation
+      type: regular
+      iscommand: true
+      brand: RemoteAccess
+      script: execute-command
+    scriptarguments:
+      command:
+        simple: "kill -9 $(pgrep nsenter) && systemctl restart docker"
+      system:
+        simple: alert.agent_hostname.[0]
+    nexttasks:
+      '#none#':
+      - "8"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 720
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+
+  "6":
+    id: "6"
+    taskid: handle-filesystem-escape
+    type: regular
+    task:
+      id: handle-filesystem-escape
+      version: -1
+      name: Handle Filesystem Breakout
+      type: regular
+      iscommand: true
+      brand: RemoteAccess
+      script: execute-command
+    scriptarguments:
+      command:
+        simple: "docker exec $(docker ps -q) find / -name '*../..*' -delete 2>/dev/null"
+      system:
+        simple: alert.agent_hostname.[0]
+    nexttasks:
+      '#none#':
+      - "8"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 737.5,
+          "y": 720
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+
+  "7":
+    id: "7"
+    taskid: general-containment
+    type: regular
+    task:
+      id: general-containment
+      version: -1
+      name: General Container Containment
+      type: regular
+      iscommand: true
+      brand: RemoteAccess
+      script: execute-command
+    scriptarguments:
+      command:
+        simple: "docker stop $(docker ps -q) && docker network disconnect bridge $(docker ps -aq)"
+      system:
+        simple: alert.agent_hostname.[0]
+    nexttasks:
+      '#none#':
+      - "8"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 1025,
+          "y": 720
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+
+  "8":
+    id: "8"
+    taskid: create-security-ticket
+    type: regular
+    task:
+      id: create-security-ticket
+      version: -1
+      name: Create Security Incident Ticket
+      type: regular
+      iscommand: true
+      brand: ServiceNow v2
+      script: servicenow-create-ticket
+    scriptarguments:
+      category:
+        simple: "Security Incident"
+      priority:
+        simple: "1 - Critical"
+      short_description:
+        simple: "Docker Runtime Escape Detected - Host: ${alert.agent_hostname.[0]}"
+      description:
+        simple: "Critical container security incident detected:\n\nHost: ${alert.agent_hostname.[0]}\nUser: ${alert.actor_effective_username.[0]}\nProcess: ${alert.action_process_image_name.[0]}\nCommand: ${alert.action_process_command_line.[0]}\n\nContainer breakout attempt detected with potential host system compromise."
+      caller_id:
+        simple: "SOC Automation"
+    nexttasks:
+      '#none#':
+      - "9"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 895
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+
+  "9":
+    id: "9"
+    taskid: notify-security-team
+    type: regular
+    task:
+      id: notify-security-team
+      version: -1
+      name: Notify Security Team
+      type: regular
+      iscommand: true
+      brand: Mail Sender (New)
+      script: send-mail
+    scriptarguments:
+      to:
+        simple: "security-team@company.com"
+      subject:
+        simple: "CRITICAL: Docker Runtime Escape - ${alert.agent_hostname.[0]}"
+      body:
+        simple: |
+          CRITICAL SECURITY ALERT: Docker Container Runtime Escape Detected
+          
+          Host: ${alert.agent_hostname.[0]}
+          Time: ${alert._time.[0]}
+          User: ${alert.actor_effective_username.[0]}
+          Process: ${alert.action_process_image_name.[0]}
+          
+          Command Line: ${alert.action_process_command_line.[0]}
+          
+          IMMEDIATE ACTIONS TAKEN:
+          - Host isolated from network
+          - Container forensics collected
+          - Malicious containers stopped
+          - Security ticket created
+          
+          NEXT STEPS REQUIRED:
+          1. Review container forensics data
+          2. Analyze host system for compromise indicators
+          3. Update container security policies
+          4. Conduct security review of container configurations
+          
+          This is a critical incident requiring immediate security team response.
+    nexttasks:
+      '#none#':
+      - "10"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 1070
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+
+  "10":
+    id: "10"
+    taskid: close-investigation
+    type: regular
+    task:
+      id: close-investigation
+      version: -1
+      name: Close Investigation
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks: {}
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 1245
+        }
+      }
+    note: |
+      Docker runtime escape investigation completed.
+      
+      Summary of actions:
+      - Host isolated and secured
+      - Container forensics collected
+      - Escape technique identified and mitigated
+      - Security ticket created for tracking
+      - Security team notified for follow-up
+      
+      All immediate containment actions completed successfully.
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+
+view: |-
+  {
+    "linkLabelsPosition": {},
+    "paper": {
+      "dimensions": {
+        "height": 1360,
+        "width": 1243,
+        "x": 50,
+        "y": 50
+      }
+    }
+  }
+inputs: []
+outputs: []
+tests:
+- name: Docker Runtime Escape Test
+  description: Test playbook response to container breakout attempt

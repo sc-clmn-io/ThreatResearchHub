@@ -317,7 +317,18 @@ async function uploadToGitHub(config: GitHubBackupConfig, content: Record<string
     console.log(`🗂️ Content blobs created: ${contentBlobs.length}`);
     contentBlobs.forEach(blob => console.log(`   ✅ ${blob.path}`));
     
-    // Create a tree with all files
+    // Verify all expected content directories are represented
+    const expectedContentDirs = ['dashboards', 'layouts', 'playbooks', 'use-cases', 'xql-rules'];
+    const actualContentDirs = Array.from(new Set(contentBlobs.map(blob => blob.path.split('/')[1])));
+    const missingDirs = expectedContentDirs.filter(dir => !actualContentDirs.includes(dir));
+    
+    if (missingDirs.length > 0) {
+      console.log(`⚠️ Warning: Missing content directories in backup: ${missingDirs.join(', ')}`);
+    } else {
+      console.log(`✅ All expected content directories present: ${actualContentDirs.join(', ')}`);
+    }
+    
+    // Create a tree with all files - FORCE directory structure recreation
     const treeResponse = await fetch(`https://api.github.com/repos/${username}/${repository}/git/trees`, {
       method: 'POST',
       headers: {
@@ -331,7 +342,9 @@ async function uploadToGitHub(config: GitHubBackupConfig, content: Record<string
           mode: blob.mode,
           type: 'blob',
           sha: blob.sha
-        }))
+        })),
+        // Force complete tree rebuild - do not use base_tree to ensure fresh structure
+        // This ensures all directories and files are properly recreated
       })
     });
     

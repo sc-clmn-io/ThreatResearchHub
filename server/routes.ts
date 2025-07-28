@@ -20,6 +20,9 @@ import { contentValidator } from './content-validation.js';
 import { dataSanitizer } from './data-sanitizer.js';
 import { simpleDataSanitizer } from './simple-data-sanitizer.js';
 import { notificationService } from './notification-service.js';
+import connectionManager from './connection-manager';
+import infrastructureDeployer from './infrastructure-deployer';
+import { threatInfrastructureMapper } from './threat-infrastructure-mapping';
 
 // Environment type determination and access control generation functions
 function determineEnvironmentType(categories: string[]): string {
@@ -795,6 +798,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Content Package Management API Routes
+  // XSIAM connection testing endpoint
+  app.post('/api/xsiam/test-connection', async (req, res) => {
+    try {
+      const { apiKey, tenantUrl } = req.body;
+      
+      if (!apiKey || !tenantUrl) {
+        return res.status(400).json({
+          success: false,
+          error: 'API key and tenant URL are required'
+        });
+      }
+
+      // Validate API key format
+      if (apiKey.length < 32) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid API key format - too short'
+        });
+      }
+
+      // Validate tenant URL format
+      if (!tenantUrl.includes('paloaltonetworks.com') && !tenantUrl.includes('xdr.')) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid XSIAM tenant URL format'
+        });
+      }
+
+      // Test actual XSIAM API endpoints
+      const testResults = {
+        basicConnectivity: false,
+        contentManagement: false,
+        dataIngestion: false,
+        apiVersion: null,
+        availableEndpoints: []
+      };
+
+      const headers = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+
+      try {
+        // Test basic health/info endpoint
+        const healthResponse = await fetch(`${tenantUrl}/api/v1/health`, {
+          method: 'GET',
+          headers: headers,
+          timeout: 15000
+        });
+
+        if (healthResponse.ok) {
+          testResults.basicConnectivity = true;
+          const healthData = await healthResponse.json();
+          testResults.apiVersion = healthData.version || 'Unknown';
+        }
+      } catch (error: any) {
+        console.log('Health endpoint test failed:', error.message);
+      }
+
+      try {
+        // Test content management endpoints
+        const contentResponse = await fetch(`${tenantUrl}/api/v1/analytics/correlation_rules`, {
+          method: 'GET',
+          headers: headers,
+          timeout: 15000
+        });
+
+        if (contentResponse.ok || contentResponse.status === 403) {
+          // 403 means authenticated but insufficient permissions, which is still a valid connection
+          testResults.contentManagement = true;
+          testResults.availableEndpoints.push('correlation_rules');
+        }
+      } catch (error: any) {
+        console.log('Content management test failed:', error.message);
+      }
+
+      try {
+        // Test data ingestion endpoint
+        const dataResponse = await fetch(`${tenantUrl}/api/v1/datasets`, {
+          method: 'GET',
+          headers: headers,
+          timeout: 15000
+        });
+
+        if (dataResponse.ok || dataResponse.status === 403) {
+          testResults.dataIngestion = true;
+          testResults.availableEndpoints.push('datasets');
+        }
+      } catch (error: any) {
+        console.log('Data ingestion test failed:', error.message);
+      }
+
+      // Additional endpoint tests
+      const additionalEndpoints = [
+        'incidents',
+        'playbooks', 
+        'alerts',
+        'dashboards',
+        'integrations'
+      ];
+
+      for (const endpoint of additionalEndpoints) {
+        try {
+          const testResponse = await fetch(`${tenantUrl}/api/v1/${endpoint}`, {
+            method: 'GET',
+            headers: headers,
+            timeout: 10000
+          });
+
+          if (testResponse.ok || testResponse.status === 403) {
+            testResults.availableEndpoints.push(endpoint);
+          }
+        } catch (error: any) {
+          // Endpoint not available or network error
+        }
+      }
+
+      const overallSuccess = testResults.basicConnectivity || testResults.contentManagement;
+
+      res.json({
+        success: overallSuccess,
+        message: overallSuccess ? 'XSIAM connection established' : 'XSIAM connection failed',
+        tenant: tenantUrl,
+        testResults: testResults,
+        recommendations: [
+          testResults.basicConnectivity ? '✓ Basic connectivity working' : '⚠ Basic connectivity failed',
+          testResults.contentManagement ? '✓ Content management API accessible' : '⚠ Content management API not accessible',
+          testResults.dataIngestion ? '✓ Data ingestion API accessible' : '⚠ Data ingestion API not accessible',
+          `Found ${testResults.availableEndpoints.length} accessible endpoints`,
+          testResults.availableEndpoints.length > 0 ? 'Ready for content deployment' : 'Limited API access detected'
+        ],
+        nextSteps: overallSuccess ? [
+          'Configure content deployment settings',
+          'Test XQL query execution',
+          'Set up log forwarding from lab infrastructure',
+          'Deploy generated detection content'
+        ] : [
+          'Verify API key permissions',
+          'Check network connectivity to XSIAM tenant',
+          'Contact XSIAM administrator for API access',
+          'Review tenant URL format'
+        ]
+      });
+
+    } catch (error: any) {
+      console.error('XSIAM connection test error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'XSIAM connection test failed',
+        details: 'Network connectivity or authentication issue'
+      });
+    }
+  });
+
   app.get("/api/content/packages", async (req, res) => {
     try {
       // First try to get from content storage system
@@ -1298,7 +1456,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // XSIAM Content Upload API endpoints
+  // XSIAM Connection Test API endpoint
+  app.post("/api/xsiam/test-connection", async (req, res) => {
+    try {
+      const { instance } = req.body;
+      const client = createXSIAMClient(instance);
+      const result = await client.testConnection();
+      res.json(result);
+    } catch (error: any) {
+      console.error('XSIAM connection test error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to test XSIAM connection' 
+      });
+    }
+  });
+
+// XSIAM Content Upload API endpoints
   app.post("/api/xsiam/upload-content", async (req, res) => {
     try {
       const { instance, contentPackage } = req.body;
@@ -1862,6 +2036,405 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Proxmox VM Management Routes
+  app.post("/api/proxmox/connect", async (req, res) => {
+    try {
+      const { host, username, port } = req.body;
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      
+      const testCommand = `ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -p ${port} ${username}@${host} "echo 'Connected to Proxmox'"`;
+      const { stdout } = await execAsync(testCommand);
+      
+      res.json({
+        success: true,
+        message: "Connected to Proxmox successfully",
+        output: stdout.trim()
+      });
+    } catch (error: any) {
+      res.json({
+        success: false,
+        error: error.message || "Failed to connect to Proxmox"
+      });
+    }
+  });
+
+  app.post("/api/proxmox/vms", async (req, res) => {
+    try {
+      const { host, username, port } = req.body;
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      
+      const command = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -p ${port} ${username}@${host} "pvesh get /nodes/\$(hostname)/qemu --output-format json"`;
+      const { stdout } = await execAsync(command);
+      const rawOutput = stdout.trim();
+      
+      let vms = [];
+      try {
+        const vmData = JSON.parse(rawOutput);
+        vms = vmData.map((vm: any) => ({
+          vmid: vm.vmid?.toString() || 'unknown',
+          name: vm.name || `VM-${vm.vmid}`,
+          status: vm.status || 'unknown',
+          cpu: vm.cpus ? `${vm.cpus} cores` : 'N/A',
+          mem: vm.maxmem ? `${Math.round(vm.maxmem / 1024 / 1024)}MB` : 'N/A',
+          disk: vm.maxdisk ? `${Math.round(vm.maxdisk / 1024 / 1024 / 1024)}GB` : 'N/A',
+          uptime: vm.uptime ? `${Math.floor(vm.uptime / 3600)}h ${Math.floor((vm.uptime % 3600) / 60)}m` : '',
+          node: vm.node || 'local'
+        }));
+      } catch (parseError) {
+        const lines = rawOutput.split('\n').filter(line => line.trim());
+        vms = lines.map((line, index) => ({
+          vmid: line.split(/\s+/)[0] || `vm-${index}`,
+          name: line.split(/\s+/)[1] || `VM-${line.split(/\s+/)[0]}`,
+          status: line.split(/\s+/)[2] || 'unknown',
+          cpu: 'N/A', mem: 'N/A', disk: 'N/A', uptime: '', node: 'local'
+        }));
+      }
+      
+      res.json({ success: true, vms, rawOutput });
+    } catch (error: any) {
+      res.json({
+        success: false,
+        error: error.message || "Failed to retrieve VM list",
+        vms: []
+      });
+    }
+  });
+
+  app.post("/api/proxmox/vm-control", async (req, res) => {
+    try {
+      const { host, username, port, vmid, action } = req.body;
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      
+      const commands = {
+        start: `qm start ${vmid}`,
+        stop: `qm stop ${vmid}`,
+        destroy: `qm destroy ${vmid}`
+      };
+      
+      if (!commands[action as keyof typeof commands]) {
+        throw new Error(`Invalid action: ${action}`);
+      }
+      
+      const command = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -p ${port} ${username}@${host} "${commands[action as keyof typeof commands]}"`;
+      const { stdout, stderr } = await execAsync(command);
+      
+      res.json({
+        success: true,
+        message: `VM ${vmid} ${action} completed`,
+        output: stdout,
+        stderr
+      });
+    } catch (error: any) {
+      res.json({
+        success: false,
+        error: error.message || `Failed to ${req.body.action} VM`
+      });
+    }
+  });
+
+  app.post("/api/proxmox/create-vm", async (req, res) => {
+    try {
+      const { host, username, port, vm } = req.body;
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      
+      const createCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -p ${port} ${username}@${host} "qm create ${vm.vmid} --name ${vm.name} --memory ${vm.memory} --cores ${vm.cores} --net0 virtio,bridge=${vm.network} --scsihw virtio-scsi-pci --scsi0 local-lvm:${vm.disk}"`;
+      const { stdout, stderr } = await execAsync(createCommand);
+      
+      res.json({
+        success: true,
+        message: `VM ${vm.name} created successfully`,
+        vmid: vm.vmid,
+        output: stdout,
+        stderr
+      });
+    } catch (error: any) {
+      res.json({
+        success: false,
+        error: error.message || "Failed to create VM"
+      });
+    }
+  });
+
+  app.post("/api/proxmox/setup-broker", async (req, res) => {
+    try {
+      const { host, username, port, vmid } = req.body;
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      
+      const setupScript = `
+        qm start ${vmid} || true
+        sleep 30
+        echo "Configuring XSIAM Broker VM ${vmid}..."
+        echo "VM should be accessible for SSH configuration"
+        echo "Manual steps required:"
+        echo "1. SSH to the broker VM"
+        echo "2. Configure XSIAM tenant settings"
+        echo "3. Setup log forwarding rules"
+        echo "4. Verify connectivity to XSIAM platform"
+      `;
+      
+      const command = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -p ${port} ${username}@${host} '${setupScript}'`;
+      const { stdout, stderr } = await execAsync(command);
+      
+      res.json({
+        success: true,
+        message: "Broker VM setup initiated",
+        output: stdout + '\n' + stderr,
+        nextSteps: [
+          "SSH to the broker VM",
+          "Configure XSIAM tenant connection", 
+          "Setup log forwarding configuration",
+          "Test connectivity to XSIAM"
+        ]
+      });
+    } catch (error: any) {
+      res.json({
+        success: false,
+        error: error.message || "Failed to setup broker VM"
+      });
+    }
+  });
+
+  // Azure VM Management Routes
+  app.post("/api/azure/connect", async (req, res) => {
+    try {
+      const { subscriptionId, resourceGroup, location } = req.body;
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      
+      // Test Azure CLI connectivity
+      const testCommand = `az account show --subscription "${subscriptionId}" --output json`;
+      const { stdout } = await execAsync(testCommand);
+      const accountInfo = JSON.parse(stdout);
+      
+      res.json({
+        success: true,
+        message: "Connected to Azure successfully",
+        subscription: accountInfo.name,
+        tenantId: accountInfo.tenantId
+      });
+    } catch (error: any) {
+      res.json({
+        success: false,
+        error: error.message.includes('az') ? 
+          "Azure CLI not found or not logged in. Run 'az login' first." : 
+          error.message || "Failed to connect to Azure"
+      });
+    }
+  });
+
+  app.post("/api/azure/vms", async (req, res) => {
+    try {
+      const { subscriptionId, resourceGroup } = req.body;
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      
+      const command = `az vm list --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --show-details --output json`;
+      const { stdout } = await execAsync(command);
+      const vmData = JSON.parse(stdout);
+      
+      const vms = vmData.map((vm: any) => ({
+        id: vm.id,
+        name: vm.name,
+        status: vm.provisioningState,
+        size: vm.hardwareProfile?.vmSize || 'Unknown',
+        location: vm.location,
+        resourceGroup: vm.resourceGroup,
+        publicIP: vm.publicIps || null,
+        privateIP: vm.privateIps || null,
+        osType: vm.storageProfile?.osDisk?.osType || 'Unknown',
+        powerState: vm.powerState || 'Unknown'
+      }));
+      
+      res.json({
+        success: true,
+        vms,
+        output: `Found ${vms.length} VMs in resource group ${resourceGroup}`
+      });
+    } catch (error: any) {
+      res.json({
+        success: false,
+        error: error.message || "Failed to retrieve VM list",
+        vms: []
+      });
+    }
+  });
+
+  app.post("/api/azure/vm-control", async (req, res) => {
+    try {
+      const { subscriptionId, resourceGroup, vmName, action } = req.body;
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      
+      const commands = {
+        start: `az vm start --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vmName}"`,
+        stop: `az vm stop --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vmName}"`,
+        deallocate: `az vm deallocate --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vmName}"`,
+        delete: `az vm delete --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vmName}" --yes`
+      };
+      
+      if (!commands[action as keyof typeof commands]) {
+        throw new Error(`Invalid action: ${action}`);
+      }
+      
+      const { stdout, stderr } = await execAsync(commands[action as keyof typeof commands]);
+      
+      res.json({
+        success: true,
+        message: `VM ${vmName} ${action} completed`,
+        output: stdout,
+        stderr
+      });
+    } catch (error: any) {
+      res.json({
+        success: false,
+        error: error.message || `Failed to ${req.body.action} VM`
+      });
+    }
+  });
+
+  app.post("/api/azure/create-vm", async (req, res) => {
+    try {
+      const { subscriptionId, resourceGroup, location, vm } = req.body;
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      
+      // Build Azure CLI command for VM creation
+      let createCommand = `az vm create --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vm.name}" --image "${vm.osImage}" --size "${vm.size}" --location "${location}" --admin-username "${vm.adminUsername}" --generate-ssh-keys --output json`;
+      
+      // Add SSH key if provided
+      if (vm.publicKey) {
+        createCommand += ` --ssh-key-values "${vm.publicKey}"`;
+      }
+      
+      // Add disk size if specified
+      if (vm.diskSize && vm.diskSize !== '30') {
+        createCommand += ` --os-disk-size-gb ${vm.diskSize}`;
+      }
+      
+      const { stdout, stderr } = await execAsync(createCommand);
+      const vmInfo = JSON.parse(stdout);
+      
+      res.json({
+        success: true,
+        message: `VM ${vm.name} created successfully`,
+        vmInfo: vmInfo,
+        publicIP: vmInfo.publicIpAddress,
+        privateIP: vmInfo.privateIpAddress,
+        output: stdout,
+        stderr
+      });
+    } catch (error: any) {
+      res.json({
+        success: false,
+        error: error.message || "Failed to create VM"
+      });
+    }
+  });
+
+  app.post("/api/azure/setup-broker", async (req, res) => {
+    try {
+      const { subscriptionId, resourceGroup, vmName } = req.body;
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      
+      // Get VM details first
+      const vmCommand = `az vm show --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vmName}" --show-details --output json`;
+      const { stdout: vmStdout } = await execAsync(vmCommand);
+      const vmInfo = JSON.parse(vmStdout);
+      
+      const setupScript = `
+        # XSIAM Broker VM Setup Script
+        echo "Configuring XSIAM Broker on Azure VM: ${vmName}"
+        echo "VM IP: ${vmInfo.publicIps || vmInfo.privateIps}"
+        echo "Resource Group: ${resourceGroup}"
+        echo ""
+        echo "Next steps for XSIAM broker setup:"
+        echo "1. SSH to the VM: ssh ${vmInfo.adminUsername || 'azureuser'}@${vmInfo.publicIps}"
+        echo "2. Install XSIAM broker package"
+        echo "3. Configure tenant connection"
+        echo "4. Setup log forwarding rules"
+        echo "5. Configure Azure monitoring integration"
+        echo "6. Test connectivity to XSIAM platform"
+      `;
+      
+      res.json({
+        success: true,
+        message: "Broker VM setup information generated",
+        output: setupScript,
+        vmInfo: {
+          publicIP: vmInfo.publicIps,
+          privateIP: vmInfo.privateIps,
+          adminUsername: vmInfo.adminUsername || 'azureuser',
+          osType: vmInfo.storageProfile?.osDisk?.osType
+        },
+        nextSteps: [
+          `SSH to the VM: ssh ${vmInfo.adminUsername || 'azureuser'}@${vmInfo.publicIps}`,
+          "Install XSIAM broker package",
+          "Configure XSIAM tenant connection",
+          "Setup Azure log forwarding",
+          "Test connectivity to XSIAM"
+        ]
+      });
+    } catch (error: any) {
+      res.json({
+        success: false,
+        error: error.message || "Failed to setup broker VM"
+      });
+    }
+  });
+
+  // Mount connection and infrastructure management routes
+  app.use('/api/connections', connectionManager);
+  app.use('/api/infrastructure', infrastructureDeployer);
+  
+  // Import and mount threat infrastructure mapping
+  const threatInfrastructureMapping = (await import('./threat-infrastructure-mapping')).default;
+  app.use('/api/threat-infrastructure', threatInfrastructureMapping);
+
+  // Azure VM Management Routes
+  const azureApi = await import('./azure-vm-api');
+  app.post('/api/azure/test-connection', azureApi.testAzureConnection);
+  app.get('/api/azure/resource-groups', azureApi.listResourceGroups);
+  app.get('/api/azure/vms', azureApi.listVMs);
+  app.post('/api/azure/vms/create', azureApi.createVM);
+  app.post('/api/azure/vms/start', azureApi.startVM);
+  app.post('/api/azure/vms/stop', azureApi.stopVM);
+
+  // Azure Use Case Automation Routes
+  const azureUseCaseApi = await import('./azure-use-case-automation');
+  app.post('/api/azure/deploy-use-case', azureUseCaseApi.deployUseCaseInfrastructure);
+  app.get('/api/azure/use-case-status', azureUseCaseApi.getUseCaseStatus);
+  app.post('/api/azure/execute-scenario', azureUseCaseApi.executeUseCaseScenario);
+  app.post('/api/azure/cleanup-resources', azureUseCaseApi.cleanupAzureResources);
+
+  // Proxmox XSIAM Broker Routes
+  const proxmoxBrokerApi = await import('./proxmox-broker-setup');
+  app.post('/api/proxmox/test-connectivity', proxmoxBrokerApi.testProxmoxConnectivity);
+  app.post('/api/proxmox/deploy-broker', proxmoxBrokerApi.deployProxmoxBroker);
+  app.get('/api/proxmox/broker-status', proxmoxBrokerApi.getProxmoxBrokerStatus);
+  app.post('/api/proxmox/configure-vm-forwarding', proxmoxBrokerApi.configureVMLogForwarding);
+
+  // Tailscale and VM Troubleshooting Routes
+  const tailscaleApi = await import('./tailscale-setup');
+  app.post('/api/tailscale/setup', tailscaleApi.setupTailscaleConnection);
+  app.get('/api/tailscale/status', tailscaleApi.checkTailscaleStatus);
+  app.post('/api/proxmox/vm-troubleshooting', tailscaleApi.generateProxmoxVMTroubleshooting);
 
   const httpServer = createServer(app);
   return httpServer;

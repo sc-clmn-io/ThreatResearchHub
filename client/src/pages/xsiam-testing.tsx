@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, CheckCircle, Copy, ExternalLink, Play, Shield, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle, Copy, ExternalLink, Play, Shield, Zap, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function XSIAMTestingPage() {
@@ -60,6 +60,48 @@ export default function XSIAMTestingPage() {
     
     loadContent();
   }, []);
+
+  const testXSIAMConnection = async () => {
+    if (!xsiamInstance.url || !xsiamInstance.apiKey) {
+      toast({
+        title: "Configuration Required",
+        description: "Please configure XSIAM URL and API key first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/xsiam/test-connection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ instance: xsiamInstance })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Connection Successful",
+          description: `Connected to ${xsiamInstance.name} - Upload functionality available`,
+        });
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: result.error || "Unable to connect to XSIAM instance",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Connection Error",
+        description: error.message || "Network error during connection test",
+        variant: "destructive"
+      });
+    }
+  };
 
   const uploadToXSIAM = async () => {
     if (!xsiamInstance.url || !xsiamInstance.apiKey || !generatedContent) {
@@ -680,7 +722,7 @@ view: |-
                 <input
                   type="url"
                   className="w-full p-2 border rounded-md"
-                  placeholder="https://your-instance.xdr.us.paloaltonetworks.com"
+                  placeholder="https://scoleman.xdr.us.paloaltonetworks.com"
                   value={xsiamInstance.url}
                   onChange={(e) => setXsiamInstance(prev => ({ ...prev, url: e.target.value }))}
                 />
@@ -698,9 +740,47 @@ view: |-
                 <p className="text-xs text-muted-foreground mt-1">
                   Advanced API key required for content upload functionality
                 </p>
+                <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-md border border-green-200 dark:border-green-800">
+                  <h4 className="text-sm font-medium text-green-900 dark:text-green-100">📍 Recommended URL Format:</h4>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-green-700 dark:text-green-300">Try these URL formats:</p>
+                      <div className="p-2 bg-green-100 dark:bg-green-800/30 rounded font-mono text-xs">
+                        <strong>✅ XSIAM V3.1 URL:</strong> https://scoleman.xdr.us.paloaltonetworks.com
+                      </div>
+                      <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        <strong>Note:</strong> XSIAM V3.1 uses XDR domain format for API access
+                      </div>
+                    </div>
+                    <div className="text-xs text-green-600 dark:text-green-400">
+                      <strong>✅ Upgraded XSIAM:</strong> Instances upgraded from XDR keep the XDR URL format
+                    </div>
+                  </div>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                    <strong>Why this format:</strong> XSIAM uses different endpoints than XDR
+                  </p>
+                  <p className="text-xs text-green-600 dark:text-green-400">
+                    Replace "yourorg" with your organization identifier (remove "api-" prefix)
+                  </p>
+                  <div className="mt-2 pt-2 border-t border-green-200 dark:border-green-700">
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      <strong>API Key:</strong> Get Advanced API Key from XSIAM Settings → API Keys
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="flex space-x-2 pt-4">
+                <Button 
+                  onClick={testXSIAMConnection}
+                  disabled={!xsiamInstance.url || !xsiamInstance.apiKey}
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Test Connection</span>
+                </Button>
+                
                 <Button 
                   onClick={uploadToXSIAM}
                   disabled={isUploading || !xsiamInstance.url || !xsiamInstance.apiKey || !generatedContent}
@@ -708,6 +788,24 @@ view: |-
                 >
                   <ExternalLink className="h-4 w-4" />
                   <span>{isUploading ? 'Uploading...' : 'Upload to XSIAM'}</span>
+                </Button>
+                
+                <Button 
+                  onClick={() => {
+                    setConnectionStatus(null);
+                    setUploadResults(null);
+                    setXsiamInstance(prev => ({ ...prev, url: '', apiKey: '', name: '' }));
+                    toast({ 
+                      title: "Connection history cleared",
+                      description: "All old connection attempts have been removed"
+                    });
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear History
                 </Button>
                 
                 {uploadResults && (

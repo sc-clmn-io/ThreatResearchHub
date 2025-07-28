@@ -1,0 +1,181 @@
+{
+  "metadata": {
+    "id": "docker-runtime-escape-2025",
+    "name": "Docker Runtime Escape Detection Package",
+    "description": "Complete detection package for Docker container runtime escape attempts including privileged container abuse, namespace manipulation, and filesystem breakout techniques",
+    "category": "cloud",
+    "severity": "critical",
+    "version": "1.0.0",
+    "ddlc_phase": "deployed",
+    "created_date": "2025-01-27T15:00:00Z",
+    "modified_date": "2025-01-27T15:30:00Z"
+  },
+  "threat_report": {
+    "id": "tr-docker-escape-2025",
+    "title": "Docker Container Runtime Escape Techniques",
+    "description": "Analysis of container breakout methods targeting Docker runtime to achieve host system compromise",
+    "source": "Container Security Research",
+    "published_date": "2025-01-27",
+    "cves": [
+      "CVE-2019-5736",
+      "CVE-2022-0847"
+    ],
+    "mitre_attack": {
+      "tactics": [
+        "Escape to Host",
+        "Privilege Escalation",
+        "Defense Evasion"
+      ],
+      "techniques": [
+        "T1611",
+        "T1068",
+        "T1055"
+      ],
+      "sub_techniques": [
+        "T1611.001",
+        "T1068.001",
+        "T1055.012"
+      ]
+    },
+    "indicators": {
+      "processes": [
+        "docker --privileged",
+        "nsenter -t 1 -m -u -i -n -p",
+        "chroot /host",
+        "mount /dev/sda1 /host"
+      ],
+      "file_paths": [
+        "/var/lib/docker/overlay2/../../../",
+        "/proc/self/exe",
+        "/host/etc/passwd",
+        "/host/root/.ssh/"
+      ],
+      "commands": [
+        "--privileged",
+        "nsenter",
+        "../../../",
+        "/proc/self/exe"
+      ]
+    },
+    "technologies": [
+      "Docker",
+      "containerd",
+      "runc",
+      "Linux Containers"
+    ],
+    "threat_actors": [
+      "Container Escapists",
+      "Cloud Threat Actors"
+    ],
+    "attack_vectors": [
+      "Privileged Container Abuse",
+      "Namespace Manipulation",
+      "Filesystem Path Traversal",
+      "Runtime Exploitation"
+    ]
+  },
+  "ddlc_metadata": {
+    "phase_history": [
+      {
+        "phase": "requirement",
+        "timestamp": "2025-01-27T14:00:00Z",
+        "notes": "Container escape detection requirements defined"
+      },
+      {
+        "phase": "design",
+        "timestamp": "2025-01-27T14:15:00Z",
+        "notes": "Detection logic designed for multiple escape techniques"
+      },
+      {
+        "phase": "development",
+        "timestamp": "2025-01-27T14:30:00Z",
+        "notes": "XQL correlation rule and response playbook developed"
+      },
+      {
+        "phase": "testing",
+        "timestamp": "2025-01-27T14:45:00Z",
+        "notes": "Tested against container escape scenarios"
+      },
+      {
+        "phase": "deployed",
+        "timestamp": "2025-01-27T15:00:00Z",
+        "notes": "Deployed to production XSIAM instance"
+      }
+    ],
+    "validation": {
+      "test_scenarios": [
+        "Docker privileged container escape",
+        "Namespace manipulation breakout",
+        "Filesystem path traversal escape",
+        "Legitimate container operations"
+      ],
+      "expected_tps": 8,
+      "expected_fps": 1,
+      "fidelity_score": 89
+    }
+  },
+  "data_sources": [
+    {
+      "name": "XDR Agent on Container Hosts", 
+      "type": "xdr_data",
+      "dataset": "xdr_data",
+      "required_fields": [
+        "event_type",
+        "agent_os_type",
+        "action_process_image_name", 
+        "action_process_command_line",
+        "actor_effective_username",
+        "action_process_image_path",
+        "causality_actor_process_command_line"
+      ],
+      "configuration": "Deploy Cortex XDR agent on all Linux container hosts. Enable process monitoring and command line logging. Configure agent to capture container runtime processes (docker, containerd, runc).",
+      "critical": true,
+      "validation_query": "dataset = xdr_data | filter agent_os_type = ENUM.AGENT_OS_LINUX and action_process_image_name contains \"docker\" | comp count() as docker_events | filter docker_events > 0"
+    },
+    {
+      "name": "Linux Syslog for Container Events",
+      "type": "syslog", 
+      "dataset": "syslog_raw",
+      "required_fields": [
+        "facility",
+        "severity",
+        "message",
+        "host",
+        "timestamp"
+      ],
+      "configuration": "Configure Docker daemon to log to syslog. Enable container start/stop/exec events in Docker daemon logging. Forward syslog from container hosts to XSIAM via Broker.",
+      "critical": true,
+      "validation_query": "dataset = syslog_raw | filter message contains \"docker\" or message contains \"container\" | comp count() as container_logs | filter container_logs > 0"
+    },
+    {
+      "name": "Linux Audit Logs",
+      "type": "linux_audit",
+      "dataset": "linux_audit_raw", 
+      "required_fields": [
+        "audit_type",
+        "syscall", 
+        "pid",
+        "exe",
+        "command"
+      ],
+      "configuration": "Enable auditd on container hosts. Configure audit rules for mount, chroot, unshare, setns syscalls. Add audit rules: -a always,exit -F arch=b64 -S mount,chroot,unshare,setns -k container_escape",
+      "critical": false,
+      "validation_query": "dataset = linux_audit_raw | filter syscall in (\"mount\", \"chroot\", \"unshare\", \"setns\") | comp count() as syscall_events"
+    },
+    {
+      "name": "Kubernetes Audit Logs",
+      "type": "k8s_audit",
+      "dataset": "kubernetes_audit_raw",
+      "required_fields": [
+        "verb",
+        "objectRef.resource",
+        "objectRef.name", 
+        "user.username",
+        "sourceIPs"
+      ],
+      "configuration": "If using Kubernetes: Enable audit logging in kube-apiserver. Configure audit policy for pod creation with privileged security context. Forward K8s audit logs to XSIAM.",
+      "critical": false,
+      "validation_query": "dataset = kubernetes_audit_raw | filter verb = \"create\" and objectRef.resource = \"pods\" | comp count() as k8s_events"
+    }
+  ]
+}

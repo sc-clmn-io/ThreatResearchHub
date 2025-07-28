@@ -31,7 +31,12 @@ import XSIAMDeployment from "@/pages/xsiam-deployment";
 import GitHubExportPage from "@/pages/github-export";
 import ContentRecommendationsPage from "@/pages/content-recommendations";
 import SequentialWorkflowPage from "@/pages/sequential-workflow";
+import ConnectionManagementPage from "@/pages/connection-management";
+import ThreatInfrastructurePage from "@/pages/threat-infrastructure";
 import NotFound from "@/pages/not-found";
+import { ProxmoxTest } from "@/pages/ProxmoxTest";
+import { AzureTest } from "@/pages/AzureTest";
+import { InfrastructureSetup } from "@/pages/InfrastructureSetup";
 
 function Router() {
   return (
@@ -65,6 +70,11 @@ function Router() {
         <Route path="/xsiam-deployment" component={XSIAMDeployment} />
         <Route path="/github-export" component={GitHubExportPage} />
         <Route path="/content-recommendations" component={ContentRecommendationsPage} />
+        <Route path="/connection-management" component={ConnectionManagementPage} />
+        <Route path="/threat-infrastructure" component={ThreatInfrastructurePage} />
+        <Route path="/proxmox-test" component={ProxmoxTest} />
+        <Route path="/azure-test" component={AzureTest} />
+        <Route path="/infrastructure-setup" component={InfrastructureSetup} />
         <Route component={NotFound} />
       </Switch>
     </PlatformLayout>

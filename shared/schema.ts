@@ -290,6 +290,76 @@ export interface SharedTemplate {
   updatedAt: string;
 }
 
+// Infrastructure Connections table for storing real environment credentials
+export const infrastructureConnections = pgTable("infrastructure_connections", {
+  id: varchar("id").primaryKey().notNull(),
+  connectionType: varchar("connection_type").notNull(), // 'docker', 'proxmox', 'azure', 'aws', 'gcp'
+  name: varchar("name").notNull(), // User-friendly name for the connection
+  
+  // Connection details (encrypted)
+  host: varchar("host"),
+  port: integer("port"),
+  username: varchar("username"),
+  encryptedCredentials: text("encrypted_credentials"), // Encrypted passwords/keys
+  
+  // Platform-specific configuration
+  configuration: jsonb("configuration").default({}), // Platform-specific settings
+  
+  // Connection status tracking
+  status: varchar("status").default("disconnected"), // 'connected', 'disconnected', 'error'
+  lastConnected: timestamp("last_connected"),
+  lastError: text("last_error"),
+  
+  // XSIAM integration settings
+  xsiamBrokerUrl: varchar("xsiam_broker_url"),
+  xsiamApiKey: text("xsiam_api_key"),
+  xsiamConfigured: boolean("xsiam_configured").default(false),
+  
+  // Deployment tracking
+  activeDeployments: jsonb("active_deployments").default([]), // Array of deployment IDs
+  totalDeployments: integer("total_deployments").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Deployment tracking for actual infrastructure deployments
+export const infrastructureDeployments = pgTable("infrastructure_deployments", {
+  id: varchar("id").primaryKey().notNull(),
+  connectionId: varchar("connection_id").references(() => infrastructureConnections.id).notNull(),
+  useCaseId: varchar("use_case_id").references(() => useCaseDefinitions.id),
+  
+  // Deployment configuration
+  deploymentType: varchar("deployment_type").notNull(), // 'endpoint', 'network', 'cloud', 'identity'
+  platform: varchar("platform").notNull(), // 'docker', 'proxmox', 'azure'
+  
+  // Infrastructure details
+  resourceDetails: jsonb("resource_details").notNull(), // VM IDs, container names, resource groups
+  networkConfiguration: jsonb("network_configuration"), // IP addresses, ports, network settings
+  
+  // XSIAM integration
+  xsiamIntegration: jsonb("xsiam_integration").default({}), // Log forwarding configuration
+  logsFlowing: boolean("logs_flowing").default(false),
+  lastLogReceived: timestamp("last_log_received"),
+  
+  // Deployment status
+  status: varchar("status").default("deploying"), // 'deploying', 'deployed', 'error', 'terminated'
+  deploymentStarted: timestamp("deployment_started").defaultNow(),
+  deploymentCompleted: timestamp("deployment_completed"),
+  
+  // Configuration scripts and validation
+  integrationScript: text("integration_script"), // Generated XSIAM integration script
+  validationScript: text("validation_script"), // Generated validation script
+  validationResults: jsonb("validation_results"), // Results from validation tests
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Additional type exports for compatibility
 export type XsiamContent = XSIAMContent;
 export type InsertXsiamContent = InsertXSIAMContent;
+export type InfrastructureConnection = typeof infrastructureConnections.$inferSelect;
+export type InsertInfrastructureConnection = typeof infrastructureConnections.$inferInsert;
+export type InfrastructureDeployment = typeof infrastructureDeployments.$inferSelect;
+export type InsertInfrastructureDeployment = typeof infrastructureDeployments.$inferInsert;

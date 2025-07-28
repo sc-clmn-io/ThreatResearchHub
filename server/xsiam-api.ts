@@ -5,6 +5,8 @@ export interface XSIAMInstance {
   url: string;
   version: '2.x' | '3.x' | 'cortex-cloud';
   apiKey: string;
+  keyId?: string;
+  keyType?: 'Standard' | 'Advanced';
   description?: string;
 }
 
@@ -21,12 +23,17 @@ export class XSIAMApiClient {
 
   constructor(instance: XSIAMInstance) {
     this.instance = instance;
+    
+    // Ensure URL ends without trailing slash for proper endpoint construction
+    const baseURL = instance.url.endsWith('/') ? instance.url.slice(0, -1) : instance.url;
+    
     this.client = axios.create({
-      baseURL: instance.url,
+      baseURL,
       timeout: 30000,
       headers: {
         'Authorization': `Bearer ${instance.apiKey}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'User-Agent': 'ThreatResearchHub/1.0'
       }
     });
@@ -46,21 +53,116 @@ export class XSIAMApiClient {
    */
   async testConnection(): Promise<XSIAMApiResponse> {
     try {
-      const endpoint = this.getEndpoint('health');
-      const response = await this.client.get(endpoint);
-      
-      return {
-        success: true,
-        data: response.data,
-        statusCode: response.status
-      };
-    } catch (error: any) {
+      // XSIAM V3.1 API endpoints for connection and content upload testing
+      const testEndpoints = [
+        '/public_api/v1/health',                     // XSIAM V3.1 public health endpoint
+        '/public_api/v1/system/status',              // System status endpoint
+        '/api/v1/analytics/correlation_rules',       // XQL Rules upload endpoint (V3.1)
+        '/api/v1/automation/playbooks',              // Playbooks upload endpoint
+        '/api/v1/incident_management/incident_layouts', // Alert layouts upload endpoint (V3.1)
+        '/api/v1/dashboards',                        // Dashboards upload endpoint
+        '/api/v1/content_management/packs',          // Content packs endpoint (V3.1)
+        '/xql/start_xql_query',                      // XQL query endpoint for V3.1
+        '/'                                          // Root endpoint
+      ];
+
+      console.log(`[XSIAM] Testing connection to: ${this.instance.url}`);
+      console.log(`[XSIAM] API Key length: ${this.instance.apiKey?.length || 0} characters`);
+      console.log(`[XSIAM] Key Type: ${this.instance.keyType || 'Not specified'}`);
+
+      let lastError;
+      for (const endpoint of testEndpoints) {
+        try {
+          const fullUrl = `${this.instance.url}${endpoint}`;
+          console.log(`[XSIAM] Testing endpoint: ${fullUrl}`);
+          
+          const response = await this.client.get(endpoint, {
+            timeout: 10000,
+            validateStatus: (status) => status < 500 // Accept 4xx as valid responses for auth testing
+          });
+
+          // Check if this is a content upload endpoint and log availability
+          if (endpoint.includes('/api/v1/')) {
+            const endpointType = endpoint.split('/').pop() || 'unknown';
+            console.log(`[XSIAM] Content endpoint ${endpointType}: Status ${response.status} - ${response.status === 200 ? 'Available' : response.status === 401 ? 'Auth Required' : 'Accessible'}`);
+          }
+          
+          console.log(`[XSIAM] Success! Status: ${response.status}, Endpoint: ${endpoint}`);
+          
+          return {
+            success: true,
+            data: {
+              message: `Connected successfully via ${endpoint}`,
+              version: this.instance.version,
+              url: this.instance.url,
+              endpoint: endpoint,
+              statusCode: response.status,
+              capabilities: this.getAvailableCapabilities(),
+              authStatus: response.status === 200 ? 'Authenticated' : response.status === 401 ? 'Authentication Required' : 'Accessible'
+            },
+            statusCode: response.status
+          };
+        } catch (error: any) {
+          console.log(`[XSIAM] Failed endpoint ${endpoint}:`, error.code || error.message);
+          lastError = error;
+          continue;
+        }
+      }
+
+      // If all endpoints failed, return detailed error
+      console.log(`[XSIAM] All endpoints failed. Last error:`, lastError?.code || lastError?.message);
       return {
         success: false,
-        error: error.response?.data?.message || error.message,
+        error: this.formatConnectionError(lastError),
+        statusCode: lastError?.response?.status
+      };
+    } catch (error: any) {
+      console.log(`[XSIAM] Connection test failed:`, error);
+      return {
+        success: false,
+        error: this.formatConnectionError(error),
         statusCode: error.response?.status
       };
     }
+  }
+
+  private formatConnectionError(error: any): string {
+    if (error.code === 'ENOTFOUND') {
+      return `DNS resolution failed - For XSIAM V3.1 upgraded from XDR, use: https://yourorg.xdr.us.paloaltonetworks.com`;
+    }
+    if (error.code === 'ECONNREFUSED') {
+      return `Connection refused - Verify URL and network connectivity`;
+    }
+    if (error.response?.status === 401) {
+      return `Authentication failed - Check API key permissions (Advanced API key required)`;
+    }
+    if (error.response?.status === 403) {
+      return `Access denied - API key lacks required permissions`;
+    }
+    if (error.response?.status === 404) {
+      return `Endpoint not found - Verify XSIAM version and URL format`;
+    }
+    
+    return error.response?.data?.message || error.message || 'Connection failed';
+  }
+
+  private getAvailableCapabilities(): string[] {
+    const capabilities = [];
+    
+    // Based on XSIAM version, determine what's available
+    switch (this.instance.version) {
+      case '3.x':
+        capabilities.push('XQL Correlation Rules', 'Basic Playbooks', 'Data Source Config');
+        break;
+      case 'cortex-cloud':
+        capabilities.push('XQL Correlation Rules', 'Advanced Playbooks', 'Alert Layouts', 'Dashboards');
+        break;
+      case '2.x':
+        capabilities.push('XQL Correlation Rules', 'Limited API Support');
+        break;
+    }
+    
+    return capabilities;
   }
 
   /**
@@ -453,15 +555,15 @@ export class XSIAMApiClient {
         onboardingWizard: '/onboarding/wizard'
       },
       '3.x': {
-        health: '/api/v1/health',
-        contentPacks: '/api/v1/content/packs',
+        health: '/public_api/v1/health',
+        contentPacks: '/api/v1/content_management/packs',
         marketplace: '/api/v1/marketplace',
         integrations: '/api/v1/integrations',
         playbooks: '/api/v1/automation/playbooks',
-        correlationRules: '/api/v1/analytics/correlation-rules',
-        alertLayouts: '/api/v1/incident/layouts',
+        correlationRules: '/api/v1/analytics/correlation_rules',
+        alertLayouts: '/api/v1/incident_management/incident_layouts',
         dashboards: '/api/v1/dashboards',
-        dataSources: '/api/v1/data-sources',
+        dataSources: '/api/v1/data_sources',
         onboardingWizard: '/api/v1/onboarding/wizard'
       },
       'cortex-cloud': {
