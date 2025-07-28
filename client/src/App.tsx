@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -38,6 +39,7 @@ import { ProxmoxTest } from "@/pages/ProxmoxTest";
 import { AzureTest } from "@/pages/AzureTest";
 import { InfrastructureSetup } from "@/pages/InfrastructureSetup";
 
+
 function Router() {
   return (
     <PlatformLayout>
@@ -74,6 +76,7 @@ function Router() {
         <Route path="/threat-infrastructure" component={ThreatInfrastructurePage} />
         <Route path="/proxmox-test" component={ProxmoxTest} />
         <Route path="/azure-test" component={AzureTest} />
+
         <Route path="/infrastructure-setup" component={InfrastructureSetup} />
         <Route component={NotFound} />
       </Switch>

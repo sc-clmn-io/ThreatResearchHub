@@ -1,441 +1,505 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Cloud, 
-  Server, 
-  Play, 
-  Trash2, 
+  Settings, 
+  PlayCircle, 
+  StopCircle, 
   CheckCircle, 
-  AlertTriangle,
-  Clock,
-  Activity,
-  Shield,
-  Database,
-  Network
+  AlertTriangle, 
+  Server, 
+  Network, 
+  Shield, 
+  Timer,
+  DollarSign,
+  Users,
+  Lock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-interface UseCaseConfig {
-  id: string;
-  title: string;
-  category: string;
-  description: string;
-  infrastructure: string[];
-  estimatedCost: string;
-  deploymentTime: string;
+interface ThreatInfrastructureMapping {
+  threatCategory: string;
+  attackVectors: string[];
+  requiredInfrastructure: {
+    azure: {
+      vms: {
+        count: number;
+        sizes: string[];
+        operatingSystems: string[];
+        networkConfig: string;
+      };
+      services: string[];
+      estimatedCost: {
+        setup: string;
+        hourly: string;
+      };
+    };
+    proxmox: any;
+  };
+  dataSourceRequirements: string[];
+  estimatedDeployTime: string;
+  complexityLevel: 'simple' | 'medium' | 'advanced';
 }
 
-const USE_CASES: UseCaseConfig[] = [
-  {
-    id: 'docker-runtime-escape',
-    title: 'Docker Runtime Escape Detection',
-    category: 'cloud',
-    description: 'Deploy container environment to test and detect Docker runtime escape attempts with XSIAM monitoring',
-    infrastructure: ['Azure Docker Host VM', 'XSIAM API Integration', 'Monitoring Dashboard'],
-    estimatedCost: '$2-4/hour',
-    deploymentTime: '8-12 minutes'
-  },
-  {
-    id: 'lateral-movement',
-    title: 'Lateral Movement Detection',
-    category: 'endpoint',
-    description: 'Create Active Directory environment to simulate and detect lateral movement attacks',
-    infrastructure: ['Azure Domain Controller', 'Azure Workstation VMs', 'XSIAM API Integration'],
-    estimatedCost: '$3-6/hour',
-    deploymentTime: '12-18 minutes'
-  },
-  {
-    id: 'cloud-privilege-escalation',
-    title: 'Cloud Privilege Escalation',
-    category: 'cloud',
-    description: 'Azure IAM environment for testing privilege escalation detection and response',
-    infrastructure: ['Azure Target VMs', 'Azure Monitoring VM', 'XSIAM API Integration'],
-    estimatedCost: '$2-5/hour',
-    deploymentTime: '10-15 minutes'
-  },
-  {
-    id: 'phishing-response',
-    title: 'Phishing Attack Response',
-    category: 'identity',
-    description: 'Email security testing environment with user behavior analytics',
-    infrastructure: ['Azure Email Server', 'Azure User Endpoints', 'XSIAM API Integration'],
-    estimatedCost: '$3-5/hour',
-    deploymentTime: '15-20 minutes'
-  }
-];
+interface AzureConnection {
+  tenantId: string;
+  clientId: string;
+  clientSecret: string;
+  subscriptionId: string;
+  resourceGroup: string;
+}
 
-export function AzureUseCaseManager() {
-  const [selectedUseCase, setSelectedUseCase] = useState<string>('');
-  const [resourceGroup, setResourceGroup] = useState('threat-research-lab');
-  const [location, setLocation] = useState('East US');
-  const [isDeploying, setIsDeploying] = useState(false);
-  const [deploymentStatus, setDeploymentStatus] = useState<any>(null);
-  const [existingResources, setExistingResources] = useState<any[]>([]);
-
+export default function AzureUseCaseManager() {
   const { toast } = useToast();
+  const [azureConnection, setAzureConnection] = useState<AzureConnection>({
+    tenantId: '',
+    clientId: '',
+    clientSecret: '',
+    subscriptionId: '',
+    resourceGroup: ''
+  });
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [connectionError, setConnectionError] = useState<string>('');
+  const [threatMappings, setThreatMappings] = useState<Record<string, ThreatInfrastructureMapping>>({});
+  const [selectedThreat, setSelectedThreat] = useState<string>('');
+  const [deploymentStatus, setDeploymentStatus] = useState<'idle' | 'deploying' | 'deployed' | 'error'>('idle');
+  const [deploymentProgress, setDeploymentProgress] = useState(0);
+  const [deployedResources, setDeployedResources] = useState<any[]>([]);
 
-  const cleanupResources = async () => {
+  useEffect(() => {
+    // Load saved Azure connection details
+    const savedConnection = localStorage.getItem('azureConnection');
+    if (savedConnection) {
+      setAzureConnection(JSON.parse(savedConnection));
+    }
+
+    // Load threat infrastructure mappings
+    loadThreatMappings();
+  }, []);
+
+  const loadThreatMappings = async () => {
     try {
-      toast({
-        title: "Cleanup Initiated",
-        description: "Removing all Azure resources to make room for new deployments..."
-      });
+      const response = await fetch('/api/threat-infrastructure/mappings');
+      if (response.ok) {
+        const mappings = await response.json();
+        setThreatMappings(mappings);
+      }
+    } catch (error) {
+      console.error('Failed to load threat mappings:', error);
+    }
+  };
 
-      const response = await fetch('/api/azure/cleanup-resources', {
+  const testAzureConnection = async () => {
+    setConnectionStatus('connecting');
+    setConnectionError('');
+    
+    try {
+      const response = await fetch('/api/azure/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirm: true })
+        body: JSON.stringify(azureConnection)
       });
 
       const result = await response.json();
       
       if (result.success) {
+        setConnectionStatus('connected');
+        localStorage.setItem('azureConnection', JSON.stringify(azureConnection));
         toast({
-          title: "Resources Cleaned",
-          description: `${result.deletions?.length || 0} resource groups scheduled for deletion. This may take several minutes.`
+          title: "Azure Connected",
+          description: "Successfully connected to Azure subscription",
         });
-        setExistingResources([]);
       } else {
+        setConnectionStatus('error');
+        setConnectionError(result.error || 'Connection failed');
         toast({
-          title: "Cleanup Failed",
-          description: result.message || "Unable to clean up existing resources",
-          variant: "destructive"
+          title: "Connection Failed",
+          description: result.error || 'Failed to connect to Azure',
+          variant: "destructive",
         });
       }
     } catch (error) {
+      setConnectionStatus('error');
+      setConnectionError('Network error');
       toast({
-        title: "Cleanup Error",
-        description: "Failed to communicate with Azure cleanup service",
-        variant: "destructive"
+        title: "Connection Error",
+        description: "Network error connecting to Azure",
+        variant: "destructive",
       });
     }
   };
 
-  const deployUseCase = async () => {
-    if (!selectedUseCase) {
+  const deployThreatInfrastructure = async () => {
+    if (!selectedThreat) {
       toast({
-        title: "No Use Case Selected",
-        description: "Please select a use case to deploy",
-        variant: "destructive"
+        title: "No Threat Selected",
+        description: "Please select a threat scenario to deploy",
+        variant: "destructive",
       });
       return;
     }
 
-    setIsDeploying(true);
+    setDeploymentStatus('deploying');
+    setDeploymentProgress(0);
+    
     try {
+      const mapping = threatMappings[selectedThreat];
+      const deploymentData = {
+        threatScenario: selectedThreat,
+        azureConnection,
+        mapping: mapping.requiredInfrastructure.azure
+      };
+
       const response = await fetch('/api/azure/deploy-use-case', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          useCaseId: selectedUseCase,
-          resourceGroup,
-          location
-        })
+        body: JSON.stringify(deploymentData)
       });
 
       const result = await response.json();
       
       if (result.success) {
-        setDeploymentStatus(result);
+        setDeploymentStatus('deployed');
+        setDeploymentProgress(100);
+        setDeployedResources(result.resources || []);
         toast({
-          title: "Deployment Started",
-          description: `Infrastructure deployment initiated for ${result.useCase.title}`
+          title: "Infrastructure Deployed",
+          description: `Successfully deployed ${mapping.threatCategory} infrastructure`,
         });
       } else {
+        setDeploymentStatus('error');
         toast({
           title: "Deployment Failed",
-          description: result.message || "Failed to start deployment",
-          variant: "destructive"
+          description: result.error || 'Failed to deploy infrastructure',
+          variant: "destructive",
         });
       }
     } catch (error) {
+      setDeploymentStatus('error');
       toast({
         title: "Deployment Error",
-        description: "Failed to communicate with Azure services",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDeploying(false);
-    }
-  };
-
-  const executeScenario = async (scenarioType: string) => {
-    try {
-      const response = await fetch('/api/azure/execute-scenario', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          useCaseId: selectedUseCase,
-          scenarioType,
-          resourceGroup
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        toast({
-          title: "Scenario Executed",
-          description: `${scenarioType} scenario completed successfully`
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Execution Failed",
-        description: "Failed to execute threat scenario",
-        variant: "destructive"
+        description: "Error deploying infrastructure",
+        variant: "destructive",
       });
     }
   };
 
-  const selectedUseCaseConfig = USE_CASES.find(uc => uc.id === selectedUseCase);
+  const getComplexityColor = (level: string) => {
+    switch (level) {
+      case 'simple': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'advanced': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getConnectionStatusColor = () => {
+    switch (connectionStatus) {
+      case 'connected': return 'text-green-600';
+      case 'connecting': return 'text-yellow-600';
+      case 'error': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const getConnectionStatusIcon = () => {
+    switch (connectionStatus) {
+      case 'connected': return <CheckCircle className="w-4 h-4" />;
+      case 'connecting': return <Timer className="w-4 h-4" />;
+      case 'error': return <AlertTriangle className="w-4 h-4" />;
+      default: return <Cloud className="w-4 h-4" />;
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Azure Use Case Automation</h2>
-        <p className="text-muted-foreground">
-          Deploy complete threat detection environments with automated XSIAM integration
-        </p>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Azure Use Case Infrastructure</h1>
+          <p className="text-muted-foreground">Deploy threat-specific infrastructure in Azure for XSIAM testing</p>
+        </div>
+        <div className={`flex items-center gap-2 ${getConnectionStatusColor()}`}>
+          {getConnectionStatusIcon()}
+          <span className="font-medium capitalize">{connectionStatus}</span>
+        </div>
       </div>
 
-      <Tabs defaultValue="deploy" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="deploy">Deploy Use Case</TabsTrigger>
-          <TabsTrigger value="manage">Manage Infrastructure</TabsTrigger>
-          <TabsTrigger value="scenarios">Execute Scenarios</TabsTrigger>
+      <Tabs defaultValue="connection" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="connection">Azure Connection</TabsTrigger>
+          <TabsTrigger value="threats">Threat Scenarios</TabsTrigger>
+          <TabsTrigger value="deployment">Infrastructure Deployment</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="deploy" className="space-y-4">
+        <TabsContent value="connection">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Cloud className="w-5 h-5" />
-                Infrastructure Deployment
+                <Settings className="w-5 h-5" />
+                Azure Service Principal Configuration
               </CardTitle>
               <CardDescription>
-                Select and deploy complete threat testing environments
+                Configure Azure credentials for automated infrastructure deployment and XSIAM integration
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="resource-group">Resource Group</Label>
+                  <Label htmlFor="tenantId">Tenant ID</Label>
                   <Input
-                    id="resource-group"
-                    value={resourceGroup}
-                    onChange={(e) => setResourceGroup(e.target.value)}
-                    placeholder="threat-research-lab"
+                    id="tenantId"
+                    value={azureConnection.tenantId}
+                    onChange={(e) => setAzureConnection({ ...azureConnection, tenantId: e.target.value })}
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                   />
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="location">Azure Location</Label>
-                  <Select value={location} onValueChange={setLocation}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="East US">East US</SelectItem>
-                      <SelectItem value="West US 2">West US 2</SelectItem>
-                      <SelectItem value="Central US">Central US</SelectItem>
-                      <SelectItem value="West Europe">West Europe</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="clientId">Client ID (Application ID)</Label>
+                  <Input
+                    id="clientId"
+                    value={azureConnection.clientId}
+                    onChange={(e) => setAzureConnection({ ...azureConnection, clientId: e.target.value })}
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="clientSecret">Client Secret</Label>
+                  <Input
+                    id="clientSecret"
+                    type="password"
+                    value={azureConnection.clientSecret}
+                    onChange={(e) => setAzureConnection({ ...azureConnection, clientSecret: e.target.value })}
+                    placeholder="Client secret value"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="subscriptionId">Subscription ID</Label>
+                  <Input
+                    id="subscriptionId"
+                    value={azureConnection.subscriptionId}
+                    onChange={(e) => setAzureConnection({ ...azureConnection, subscriptionId: e.target.value })}
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="resourceGroup">Resource Group</Label>
+                  <Input
+                    id="resourceGroup"
+                    value={azureConnection.resourceGroup}
+                    onChange={(e) => setAzureConnection({ ...azureConnection, resourceGroup: e.target.value })}
+                    placeholder="threat-lab-rg"
+                  />
                 </div>
               </div>
+              
+              {connectionError && (
+                <Alert>
+                  <AlertTriangle className="w-4 h-4" />
+                  <AlertDescription>{connectionError}</AlertDescription>
+                </Alert>
+              )}
 
-              <div className="space-y-2">
-                <Label>Select Use Case</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {USE_CASES.map((useCase) => (
+              <Button 
+                onClick={testAzureConnection}
+                disabled={connectionStatus === 'connecting' || !azureConnection.tenantId}
+                className="w-full"
+              >
+                {connectionStatus === 'connecting' ? 'Testing Connection...' : 'Test Azure Connection'}
+              </Button>
+
+              {connectionStatus === 'connected' && (
+                <Alert>
+                  <CheckCircle className="w-4 h-4" />
+                  <AlertDescription>
+                    Successfully connected to Azure. Ready to deploy threat infrastructure.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="threats">
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Available Threat Scenarios
+                </CardTitle>
+                <CardDescription>
+                  Select a threat scenario to view infrastructure requirements and deploy to Azure
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {Object.entries(threatMappings).map(([key, mapping]) => (
                     <Card 
-                      key={useCase.id}
-                      className={`cursor-pointer transition-colors ${
-                        selectedUseCase === useCase.id 
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
-                          : 'hover:border-gray-300'
-                      }`}
-                      onClick={() => setSelectedUseCase(useCase.id)}
+                      key={key} 
+                      className={`cursor-pointer transition-all ${selectedThreat === key ? 'ring-2 ring-blue-500' : 'hover:shadow-md'}`}
+                      onClick={() => setSelectedThreat(key)}
                     >
                       <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-medium text-sm">{useCase.title}</h3>
-                          <Badge variant="outline" className="text-xs">
-                            {useCase.category}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          {useCase.description}
-                        </p>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs">
-                            <Clock className="w-3 h-3" />
-                            {useCase.deploymentTime}
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <Database className="w-3 h-3" />
-                            {useCase.estimatedCost}
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold">{mapping.threatCategory}</h3>
+                              <Badge className={getComplexityColor(mapping.complexityLevel)}>
+                                {mapping.complexityLevel}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Attack Vectors: {mapping.attackVectors.join(', ')}
+                            </p>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div className="flex items-center gap-2">
+                                <Server className="w-4 h-4" />
+                                <span>{mapping.requiredInfrastructure.azure.vms.count} VMs</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Timer className="w-4 h-4" />
+                                <span>{mapping.estimatedDeployTime}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <DollarSign className="w-4 h-4" />
+                                <span>{mapping.requiredInfrastructure.azure.estimatedCost.setup} setup</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Network className="w-4 h-4" />
+                                <span>{mapping.requiredInfrastructure.azure.estimatedCost.hourly}/hr</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
-              </div>
-
-              {selectedUseCaseConfig && (
-                <Alert>
-                  <Shield className="w-4 h-4" />
-                  <AlertDescription>
-                    <strong>Infrastructure:</strong> {selectedUseCaseConfig.infrastructure.join(', ')}
-                    <br />
-                    <strong>Estimated Cost:</strong> {selectedUseCaseConfig.estimatedCost} during testing
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="flex gap-3">
-                <Button 
-                  onClick={deployUseCase} 
-                  disabled={!selectedUseCase || isDeploying}
-                  className="flex-1"
-                >
-                  {isDeploying ? 'Deploying...' : 'Deploy Infrastructure'}
-                </Button>
-                <Button variant="outline" onClick={cleanupResources}>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Clean Resources
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="manage" className="space-y-4">
-          {deploymentStatus && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  Deployment Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <strong>Use Case:</strong> {deploymentStatus.useCase.title}
-                  </div>
-                  <div>
-                    <strong>Resource Group:</strong> {deploymentStatus.deployment.resourceGroup}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <strong>Deployed Azure VMs:</strong>
-                    {deploymentStatus.deployment.vms.map((vm: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-2 border rounded">
-                        <div>
-                          <div className="font-medium">{vm.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Role: {vm.role} | Azure VM
-                          </div>
-                          <div className="text-xs text-blue-600 mt-1">
-                            XSIAM API Integration configured
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          {vm.publicIp && (
-                            <div className="text-sm font-mono">{vm.publicIp}</div>
-                          )}
-                          <Badge variant={vm.status === 'created' ? 'default' : 'destructive'}>
-                            {vm.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {deploymentStatus.deployment.xsiamIntegration && (
-                    <div className="space-y-2">
-                      <strong>XSIAM API Integration:</strong>
-                      {deploymentStatus.deployment.xsiamIntegration.map((integration: any, index: number) => (
-                        <div key={index} className="p-2 border rounded bg-blue-50 dark:bg-blue-950">
-                          <div className="font-medium">{integration.vm}</div>
-                          <div className="text-sm text-muted-foreground">{integration.message}</div>
-                          <div className="text-xs mt-1">
-                            <strong>Method:</strong> {integration.integrationMethod}
-                          </div>
-                          {integration.dataCollection && (
-                            <div className="mt-1 text-xs">
-                              <strong>Data Collection:</strong> {integration.dataCollection.join(', ')}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <strong>Next Steps:</strong>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                      {deploymentStatus.nextSteps.map((step: string, index: number) => (
-                        <li key={index}>{step}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
               </CardContent>
             </Card>
-          )}
+
+            {selectedThreat && threatMappings[selectedThreat] && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Infrastructure Details: {threatMappings[selectedThreat].threatCategory}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">Azure VMs</h4>
+                      <ul className="text-sm space-y-1">
+                        {threatMappings[selectedThreat].requiredInfrastructure.azure.vms.sizes.map((size, index) => (
+                          <li key={index} className="flex items-center gap-2">
+                            <Server className="w-3 h-3" />
+                            {size} - {threatMappings[selectedThreat].requiredInfrastructure.azure.vms.operatingSystems[index] || 'OS TBD'}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Azure Services</h4>
+                      <ul className="text-sm space-y-1">
+                        {threatMappings[selectedThreat].requiredInfrastructure.azure.services.map((service, index) => (
+                          <li key={index} className="flex items-center gap-2">
+                            <Cloud className="w-3 h-3" />
+                            {service}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div>
+                    <h4 className="font-semibold mb-2">Data Source Requirements</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {threatMappings[selectedThreat].dataSourceRequirements.map((source, index) => (
+                        <Badge key={index} variant="outline">{source}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
-        <TabsContent value="scenarios" className="space-y-4">
+        <TabsContent value="deployment">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Threat Scenario Execution
+                <PlayCircle className="w-5 h-5" />
+                Infrastructure Deployment
               </CardTitle>
               <CardDescription>
-                Execute realistic attack scenarios for detection testing
+                Deploy selected threat scenario infrastructure to Azure with XSIAM integration
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {selectedUseCaseConfig ? (
-                <div className="grid gap-3">
-                  {selectedUseCaseConfig.id === 'docker-runtime-escape' && (
-                    <Button onClick={() => executeScenario('docker-escape')} variant="outline">
-                      <Play className="w-4 h-4 mr-2" />
-                      Execute Container Escape
-                    </Button>
-                  )}
-                  {selectedUseCaseConfig.id === 'lateral-movement' && (
-                    <Button onClick={() => executeScenario('lateral-movement')} variant="outline">
-                      <Play className="w-4 h-4 mr-2" />
-                      Simulate Lateral Movement
-                    </Button>
-                  )}
-                  {selectedUseCaseConfig.id === 'cloud-privilege-escalation' && (
-                    <Button onClick={() => executeScenario('privilege-escalation')} variant="outline">
-                      <Play className="w-4 h-4 mr-2" />
-                      Test Privilege Escalation
-                    </Button>
-                  )}
-                </div>
-              ) : (
+              {!selectedThreat ? (
                 <Alert>
                   <AlertTriangle className="w-4 h-4" />
                   <AlertDescription>
-                    Select and deploy a use case first to execute threat scenarios
+                    Please select a threat scenario from the Threat Scenarios tab before deploying.
                   </AlertDescription>
                 </Alert>
+              ) : connectionStatus !== 'connected' ? (
+                <Alert>
+                  <AlertTriangle className="w-4 h-4" />
+                  <AlertDescription>
+                    Please configure and test Azure connection before deploying infrastructure.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <>
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-semibold mb-2">Ready to Deploy: {threatMappings[selectedThreat]?.threatCategory}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      This will create {threatMappings[selectedThreat]?.requiredInfrastructure.azure.vms.count} VMs and required services in your Azure subscription.
+                    </p>
+                  </div>
+
+                  {deploymentStatus === 'deploying' && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Deployment Progress</span>
+                        <span>{deploymentProgress}%</span>
+                      </div>
+                      <Progress value={deploymentProgress} />
+                    </div>
+                  )}
+
+                  {deploymentStatus === 'deployed' && (
+                    <Alert>
+                      <CheckCircle className="w-4 h-4" />
+                      <AlertDescription>
+                        Infrastructure deployed successfully! Resources are ready for threat testing with XSIAM integration.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={deployThreatInfrastructure}
+                      disabled={deploymentStatus === 'deploying' || deploymentStatus === 'deployed'}
+                      className="flex-1"
+                    >
+                      {deploymentStatus === 'deploying' ? 'Deploying...' : 'Deploy Infrastructure'}
+                    </Button>
+                    {deploymentStatus === 'deployed' && (
+                      <Button variant="outline">
+                        View Resources
+                      </Button>
+                    )}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
