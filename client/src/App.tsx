@@ -38,6 +38,7 @@ import NotFound from "@/pages/not-found";
 import { ProxmoxTest } from "@/pages/ProxmoxTest";
 import { AzureTest } from "@/pages/AzureTest";
 import { InfrastructureSetup } from "@/pages/InfrastructureSetup";
+import { DockerHostManager } from "@/components/docker-host-manager";
 
 
 function Router() {
@@ -76,6 +77,7 @@ function Router() {
         <Route path="/threat-infrastructure" component={ThreatInfrastructurePage} />
         <Route path="/proxmox-test" component={ProxmoxTest} />
         <Route path="/azure-test" component={AzureTest} />
+        <Route path="/docker-host-manager" component={DockerHostManager} />
 
         <Route path="/infrastructure-setup" component={InfrastructureSetup} />
         <Route component={NotFound} />
