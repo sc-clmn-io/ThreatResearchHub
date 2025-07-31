@@ -220,7 +220,7 @@ For each data source, document:
    For Docker:
    docker run -d --name xsiam-broker \\
      -e XSIAM_TENANT_ID=your-tenant-id \\
-     -e XSIAM_API_KEY=your-api-key \\
+     -e YOUR_XSIAM_API_KEY=your-api-key \\
      paloaltonetworks/xsiam-broker:latest
 
 4. Configure network connectivity to XSIAM tenant:

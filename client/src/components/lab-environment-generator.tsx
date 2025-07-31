@@ -190,7 +190,7 @@ export default function LabEnvironmentGenerator() {
       category: 'identity',
       status: 'pending',
       config: {
-        tenant: 'scoleman.xdr.us.paloaltonetworks.com',
+        tenant: 'demo-tenant.xdr.us.paloaltonetworks.com',
         brokers: 2,
         dataSources: ['Windows Events', 'Linux Syslog', 'Firewall Logs', 'Cloud Audit'],
         storage: '1TB/month'
@@ -282,7 +282,7 @@ ${labEnvironment.deploymentSteps.map((step, index) =>
 
 echo "Lab deployment completed!"
 echo "Total monthly cost: $${labEnvironment.totalCost.monthly}"
-echo "Connect to XSIAM tenant: scoleman.xdr.us.paloaltonetworks.com"
+echo "Connect to XSIAM tenant: demo-tenant.xdr.us.paloaltonetworks.com"
 `;
 
     const blob = new Blob([script], { type: 'text/plain' });
@@ -547,7 +547,7 @@ echo "Connect to XSIAM tenant: scoleman.xdr.us.paloaltonetworks.com"
               <AlertDescription>
                 <strong>Next Steps:</strong> Deploy the lab environment, configure XSIAM data ingestion, 
                 and execute threat simulation scenarios. Use your {threatContext.source} tenant at 
-                scoleman.xdr.us.paloaltonetworks.com for live testing.
+                demo-tenant.xdr.us.paloaltonetworks.com for live testing.
               </AlertDescription>
             </Alert>
           </TabsContent>

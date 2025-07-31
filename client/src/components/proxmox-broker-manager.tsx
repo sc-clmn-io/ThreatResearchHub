@@ -20,7 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 export function ProxmoxBrokerManager() {
-  const [proxmoxHost, setProxmoxHost] = useState('100.126.253.49');
+  const [proxmoxHost, setProxmoxHost] = useState('100.64.0.1');
   const [sshUser, setSshUser] = useState('root');
   const [isDeploying, setIsDeploying] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
@@ -230,7 +230,7 @@ export function ProxmoxBrokerManager() {
               <Alert>
                 <AlertTriangle className="w-4 h-4" />
                 <AlertDescription>
-                  <strong>XSIAM Broker VM 200: Running Successfully</strong>
+                  <strong>XSIAM Broker VM XXX: Running Successfully</strong>
                   <br />
                   Status: Operational | Memory: 4096MB | Ready for tenant configuration
                   <br />
@@ -244,12 +244,12 @@ export function ProxmoxBrokerManager() {
                   disabled={isTestingConnection}
                   className="w-full"
                 >
-                  {isTestingConnection ? 'Testing Connection...' : 'Test Tailscale IP (100.126.253.49)'}
+                  {isTestingConnection ? 'Testing Connection...' : 'Test Tailscale IP (100.64.0.1)'}
                 </Button>
                 
                 <Button 
                   onClick={() => {
-                    setProxmoxHost('192.168.1.188');
+                    setProxmoxHost('192.168.100.188');
                     setTimeout(testConnectivity, 100);
                   }} 
                   disabled={isTestingConnection}
@@ -257,7 +257,7 @@ export function ProxmoxBrokerManager() {
                   className="w-full"
                 >
                   <Network className="w-4 h-4 mr-2" />
-                  Test Local IP (192.168.1.188)
+                  Test Local IP (192.168.100.188)
                 </Button>
               </div>
 
@@ -294,7 +294,7 @@ export function ProxmoxBrokerManager() {
                     <Alert>
                       <Terminal className="w-4 h-4" />
                       <AlertDescription>
-                        <strong>Configure XSIAM Broker (VM 200 Running):</strong>
+                        <strong>Configure XSIAM Broker (VM XXX Running):</strong>
                         <br />
                         1. Access broker console: <code>qm monitor 200</code> or VNC console
                         <br />
@@ -434,7 +434,7 @@ export function ProxmoxBrokerManager() {
                     id="proxmox-host"
                     value={proxmoxHost}
                     onChange={(e) => setProxmoxHost(e.target.value)}
-                    placeholder="192.168.1.188"
+                    placeholder="192.168.100.188"
                   />
                 </div>
                 
@@ -609,7 +609,7 @@ export function ProxmoxBrokerManager() {
                   <code className="mx-1 px-1 bg-gray-200 dark:bg-gray-700 rounded">/etc/rsyslog.d/99-xsiam-forward.conf</code>:
                   <br />
                   <code className="block mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-                    *.* @@192.168.1.188:514
+                    *.* @@192.168.100.188:514
                   </code>
                   Then restart rsyslog: <code>systemctl restart rsyslog</code>
                 </AlertDescription>

@@ -24,7 +24,7 @@ export default function XSIAMConnectorGuide() {
     },
     {
       step: 3,
-      title: "Test CVE-2025-1974 Detection",
+      title: "Test CVE-YYYY-NNNN Detection",
       command: "./test-cve-2025-1974.sh",
       description: "Triggers vulnerability and verifies XSIAM detection",
       duration: "2-3 minutes",
@@ -41,7 +41,7 @@ export default function XSIAMConnectorGuide() {
     },
     {
       name: "xsiam-cve-2025-1974-correlation-rule.json", 
-      description: "CVE-2025-1974 detection rules for XSIAM",
+      description: "CVE-YYYY-NNNN detection rules for XSIAM",
       status: "ready",
       icon: "🔍"
     },
@@ -58,7 +58,7 @@ export default function XSIAMConnectorGuide() {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">XSIAM Kubernetes Connector</h1>
         <p className="text-muted-foreground">
-          Complete CVE-2025-1974 detection workflow with authentic Wiz IngressNightmare vulnerability
+          Complete CVE-YYYY-NNNN detection workflow with authentic Wiz IngressNightmare vulnerability
         </p>
         <Badge variant="destructive" className="text-sm">
           Critical Vulnerability Testing
@@ -186,7 +186,7 @@ export default function XSIAMConnectorGuide() {
           <div className="space-y-2">
             <p className="font-medium">After Vulnerability Testing:</p>
             <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-              <li>• CVE-2025-1974 alerts in XSIAM Incidents</li>
+              <li>• CVE-YYYY-NNNN alerts in XSIAM Incidents</li>
               <li>• Correlation rule triggers correctly</li>
               <li>• Alert layout displays response actions</li>
             </ul>
@@ -215,7 +215,7 @@ export default function XSIAMConnectorGuide() {
                 helm uninstall konnector -n pan
               </code>
               <code className="text-xs bg-muted px-2 py-1 rounded block">
-                az group delete --name wiz-ingress-nightmare-rg
+                az group delete --name example-resource-group
               </code>
             </div>
           </div>

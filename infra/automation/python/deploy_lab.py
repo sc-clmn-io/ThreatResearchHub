@@ -639,7 +639,7 @@ def main():
     config = {
         'lab_directory': args.lab_dir,
         'xsiam_url': args.xsiam_url or os.getenv('XSIAM_URL', ''),
-        'xsiam_api_key': args.xsiam_key or os.getenv('XSIAM_API_KEY', ''),
+        'xsiam_api_key': args.xsiam_key or os.getenv('YOUR_XSIAM_API_KEY', ''),
     }
     
     # Load config file if exists

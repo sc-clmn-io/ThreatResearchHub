@@ -106,7 +106,7 @@ export function InfrastructureQuickAccess() {
               Local Proxmox Management
             </CardTitle>
             <CardDescription>
-              Manage Proxmox server (192.168.1.188) via Docker Desktop
+              Manage Proxmox server (192.168.100.188) via Docker Desktop
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -123,7 +123,7 @@ export function InfrastructureQuickAccess() {
             <Alert>
               <Container className="w-4 h-4" />
               <AlertDescription>
-                <strong>Network Limitation:</strong> Replit cannot reach private IP 192.168.1.188 directly
+                <strong>Network Limitation:</strong> Replit cannot reach private IP 192.168.100.188 directly
               </AlertDescription>
             </Alert>
             
@@ -175,7 +175,7 @@ export function InfrastructureQuickAccess() {
               <div className="space-y-1 text-sm text-muted-foreground">
                 <div>1. Download project ZIP</div>
                 <div>2. Install Docker Desktop</div>
-                <div>3. SSH key to Proxmox: ssh-copy-id root@192.168.1.188</div>
+                <div>3. SSH key to Proxmox: ssh-copy-id root@192.168.100.188</div>
                 <div>4. Run: ./start-docker.sh</div>
               </div>
             </div>

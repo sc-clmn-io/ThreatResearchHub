@@ -22,6 +22,7 @@ import LabBuildPlannerPage from "@/pages/lab-build-planner";
 import LabEnvironmentPage from "@/pages/lab-environment";
 import UserGuidePage from "@/pages/user-guide";
 import PIISanitizerPage from "@/pages/pii-sanitizer";
+import RepositorySanitizerPage from "@/pages/repository-sanitizer";
 import ThreatArchivePage from "@/pages/threat-archive";
 import ThreatInputPage from "@/pages/threat-input";
 import ThreatMonitoringPage from "@/pages/threat-monitoring";
@@ -65,6 +66,7 @@ function Router() {
         <Route path="/lab-environment" component={LabEnvironmentPage} />
         <Route path="/user-guide" component={UserGuidePage} />
         <Route path="/pii-sanitizer" component={PIISanitizerPage} />
+        <Route path="/repository-sanitizer" component={RepositorySanitizerPage} />
         <Route path="/threat-archive" component={ThreatArchivePage} />
         <Route path="/threat-monitoring" component={ThreatMonitoringPage} />
 

@@ -81,7 +81,7 @@ export default function DataBackupSystem() {
       const zip = new JSZip();
       
       // Add main backup file
-      zip.file('threatresearchhub-backup.json', JSON.stringify(backupData, null, 2));
+      zip.file('security-research-platform-backup.json', JSON.stringify(backupData, null, 2));
       
       // Create organized folder structure
       const dataFolder = zip.folder('data');
@@ -132,7 +132,7 @@ export default function DataBackupSystem() {
       // Generate XSIAM Playbooks
       if (trainingPaths.length > 0) {
         trainingPaths.forEach((tp: any, index: number) => {
-          const playbookYaml = `id: threatresearchhub-${tp.title.toLowerCase().replace(/[^\w]/g, '-')}
+          const playbookYaml = `id: security-research-platform-${tp.title.toLowerCase().replace(/[^\w]/g, '-')}
 version: 1
 name: ${tp.title}
 description: ${tp.description || `Automated response for ${tp.title}`}
@@ -195,7 +195,7 @@ Platform configuration:
 
 ## Restoration Instructions
 
-1. Import threatresearchhub-backup.json for complete restoration
+1. Import security-research-platform-backup.json for complete restoration
 2. Use individual files in /data/ for selective restoration
 3. Deploy /exports/ content directly to XSIAM instances
 4. Restore /config/ for user preferences
@@ -227,7 +227,7 @@ This backup includes everything needed to rebuild the entire platform:
 This backup can be directly uploaded to a private GitHub repository for secure storage.
 
 ## Quick Setup:
-1. Create private repository: threatresearchhub-private
+1. Create private repository: security-research-platform-private
 2. Upload this backup ZIP
 3. Extract and commit all files
 4. Set up automated daily backups
@@ -235,7 +235,7 @@ This backup can be directly uploaded to a private GitHub repository for secure s
 See GITHUB_EXPORT_GUIDE.md for detailed instructions.
 
 ## Repository URL Template:
-https://github.com/YOUR_USERNAME/threatresearchhub-private
+https://github.com/YOUR_USERNAME/security-research-platform-private
 
 ## Security:
 - Repository MUST be private
@@ -342,7 +342,7 @@ VITE_APP_VERSION=1.0.0
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `threatresearchhub-backup-${new Date().toISOString().split('T')[0]}.zip`;
+      a.download = `security-research-platform-backup-${new Date().toISOString().split('T')[0]}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

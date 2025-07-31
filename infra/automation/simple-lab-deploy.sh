@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 # Configuration
 LAB_DIR="docker-escape-lab"
 XSIAM_URL=""
-XSIAM_API_KEY=""
+YOUR_XSIAM_API_KEY=""
 
 # Logging
 LOG_FILE="lab-deployment.log"
@@ -566,7 +566,7 @@ EOF
 configure_xsiam_integration() {
     print_header "Configuring XSIAM Integration"
     
-    if [[ -z "$XSIAM_URL" || -z "$XSIAM_API_KEY" ]]; then
+    if [[ -z "$XSIAM_URL" || -z "$YOUR_XSIAM_API_KEY" ]]; then
         print_warning "XSIAM credentials not provided. Skipping XSIAM integration."
         print_warning "To enable XSIAM integration later, run: ./scripts/automation/configure_xsiam.sh"
         
@@ -579,12 +579,12 @@ echo "XSIAM Integration Configuration"
 echo "============================="
 
 read -p "Enter your XSIAM tenant URL (e.g., https://your-tenant.xdr.us.paloaltonetworks.com): " XSIAM_URL
-read -s -p "Enter your XSIAM API key: " XSIAM_API_KEY
+read -s -p "Enter your XSIAM API key: " YOUR_XSIAM_API_KEY
 echo
 
 # Test connectivity
 echo "Testing XSIAM connectivity..."
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $XSIAM_API_KEY" "$XSIAM_URL/public_api/v1/healthcheck")
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $YOUR_XSIAM_API_KEY" "$XSIAM_URL/public_api/v1/healthcheck")
 
 if [[ "$HTTP_CODE" == "200" ]]; then
     echo "✓ XSIAM connectivity successful"
@@ -599,7 +599,7 @@ if [[ "$HTTP_CODE" == "200" ]]; then
 output.http:
   hosts: ["${XSIAM_URL}/logs/v1/"]
   headers:
-    Authorization: "Bearer ${XSIAM_API_KEY}"
+    Authorization: "Bearer ${YOUR_XSIAM_API_KEY}"
     Content-Type: "application/json"
   compression_level: 1
   bulk_max_size: 50
@@ -619,7 +619,7 @@ EOF
     
     # Test XSIAM connectivity
     print_header "Testing XSIAM Connectivity"
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $XSIAM_API_KEY" "$XSIAM_URL/public_api/v1/healthcheck")
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $YOUR_XSIAM_API_KEY" "$XSIAM_URL/public_api/v1/healthcheck")
     
     if [[ "$HTTP_CODE" == "200" ]]; then
         print_success "XSIAM connectivity successful"
@@ -631,7 +631,7 @@ EOF
 # output.http:
 #   hosts: ["${XSIAM_URL}/logs/v1/"]
 #   headers:
-#     Authorization: "Bearer ${XSIAM_API_KEY}"
+#     Authorization: "Bearer ${YOUR_XSIAM_API_KEY}"
 #     Content-Type: "application/json"
 #   compression_level: 1
 #   bulk_max_size: 50
@@ -796,7 +796,7 @@ main() {
                 shift 2
                 ;;
             --xsiam-key)
-                XSIAM_API_KEY="$2"
+                YOUR_XSIAM_API_KEY="$2"
                 shift 2
                 ;;
             --help)
@@ -816,8 +816,8 @@ main() {
     if [[ -z "$XSIAM_URL" ]]; then
         read -p "Enter XSIAM tenant URL (optional, press Enter to skip): " XSIAM_URL
     fi
-    if [[ -n "$XSIAM_URL" && -z "$XSIAM_API_KEY" ]]; then
-        read -s -p "Enter XSIAM API key: " XSIAM_API_KEY
+    if [[ -n "$XSIAM_URL" && -z "$YOUR_XSIAM_API_KEY" ]]; then
+        read -s -p "Enter XSIAM API key: " YOUR_XSIAM_API_KEY
         echo
     fi
     

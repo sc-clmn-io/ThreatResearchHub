@@ -111,7 +111,7 @@ export default function InfrastructureStatus() {
               <Alert className="border-gray-200 bg-gray-50">
                 <AlertTriangle className="w-4 h-4" />
                 <AlertDescription>
-                  Proxmox connection not established. Check network connectivity to 192.168.1.188.
+                  Proxmox connection not established. Check network connectivity to 192.168.100.188.
                 </AlertDescription>
               </Alert>
             )}
@@ -188,7 +188,7 @@ export default function InfrastructureStatus() {
                   <p className="text-sm font-medium">Required Steps:</p>
                   <ol className="text-sm space-y-1 list-decimal list-inside">
                     <li>Complete Azure service principal setup</li>
-                    <li>Grant Contributor role to ThreatLab-App</li>
+                    <li>Grant Contributor role to ExampleApp-ServicePrincipal</li>
                     <li>Test connection and verify permissions</li>
                   </ol>
                 </div>

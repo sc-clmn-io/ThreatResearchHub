@@ -77,7 +77,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Web application with container escape vulnerabilities',
         logForwarding: {
           type: 'APPLICATION_LOG',
-          destination: '192.168.1.124:514',
+          destination: '192.168.100.124:514',
           description: 'Application logs via custom log forwarder (Fluent Bit)'
         }
       },
@@ -86,7 +86,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Privileged container for testing escape techniques',
         logForwarding: {
           type: 'XSIAM_AGENT',
-          destination: '192.168.1.124:443',
+          destination: '192.168.100.124:443',
           description: 'XSIAM EDR agent for endpoint detection and response'
         }
       },
@@ -95,7 +95,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Host monitoring and forensics container',
         logForwarding: {
           type: 'SYSLOG_FORWARDER',
-          destination: '192.168.1.124:514',
+          destination: '192.168.100.124:514',
           description: 'System logs via rsyslog forwarder'
         }
       }
@@ -114,7 +114,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Frontend web application',
         logForwarding: {
           type: 'APPLICATION_LOG',
-          destination: '192.168.1.124:514',
+          destination: '192.168.100.124:514',
           description: 'NGINX access logs via Filebeat'
         }
       },
@@ -123,7 +123,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Backend API service',
         logForwarding: {
           type: 'APPLICATION_LOG',
-          destination: '192.168.1.124:514',
+          destination: '192.168.100.124:514',
           description: 'Application logs via structured JSON logging'
         }
       },
@@ -132,7 +132,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'PostgreSQL database',
         logForwarding: {
           type: 'SYSLOG_FORWARDER',
-          destination: '192.168.1.124:514',
+          destination: '192.168.100.124:514',
           description: 'Database audit logs via syslog-ng'
         }
       },
@@ -141,7 +141,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Network reconnaissance tools',
         logForwarding: {
           type: 'CUSTOM_INTEGRATION',
-          destination: '192.168.1.124:443',
+          destination: '192.168.100.124:443',
           description: 'Custom XSIAM integration for network scan results'
         }
       }
@@ -160,7 +160,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Service with privilege escalation vulnerabilities',
         logForwarding: {
           type: 'XSIAM_AGENT',
-          destination: '192.168.1.124:443',
+          destination: '192.168.100.124:443',
           description: 'XSIAM agent for behavioral analysis and detection'
         }
       },
@@ -169,7 +169,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Tools for testing privilege escalation',
         logForwarding: {
           type: 'APPLICATION_LOG',
-          destination: '192.168.1.124:514',
+          destination: '192.168.100.124:514',
           description: 'Tool execution logs via centralized logging'
         }
       }
@@ -188,7 +188,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Isolated sandbox for malware execution',
         logForwarding: {
           type: 'XSIAM_AGENT',
-          destination: '192.168.1.124:443',
+          destination: '192.168.100.124:443',
           description: 'Real-time behavioral monitoring via XSIAM agent'
         }
       },
@@ -197,7 +197,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Repository of malware samples',
         logForwarding: {
           type: 'SYSLOG_FORWARDER',
-          destination: '192.168.1.124:514',
+          destination: '192.168.100.124:514',
           description: 'File access logs via audit daemon'
         }
       },
@@ -206,7 +206,7 @@ const threatScenarios: ThreatScenario[] = [
         description: 'Analysis and monitoring utilities',
         logForwarding: {
           type: 'CUSTOM_INTEGRATION',
-          destination: '192.168.1.124:443',
+          destination: '192.168.100.124:443',
           description: 'Analysis results via XSIAM REST API'
         }
       }
@@ -320,7 +320,7 @@ export function DockerHostManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vmid,
-          brokerIP: '192.168.1.124',
+          brokerIP: '192.168.100.124',
           brokerPort: '514'
         })
       });
@@ -689,7 +689,7 @@ export function DockerHostManager() {
               <Alert>
                 <Network className="w-4 h-4" />
                 <AlertDescription>
-                  <strong>XSIAM Integration:</strong> VM will be configured to forward all Docker logs to the XSIAM broker at 192.168.1.124:514
+                  <strong>XSIAM Integration:</strong> VM will be configured to forward all Docker logs to the XSIAM broker at 192.168.100.124:514
                 </AlertDescription>
               </Alert>
 

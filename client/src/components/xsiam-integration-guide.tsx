@@ -327,7 +327,7 @@ function DataIngestionStep({ useCase }: any) {
     'network': {
       parser: 'CEF Parser',
       fields: ['timestamp', 'src_ip', 'dst_ip', 'src_port', 'dst_port', 'protocol', 'action'],
-      sample: `CEF:0|Palo Alto Networks|PAN-OS|10.1.0|THREAT|url|3|rt=Jul 20 2025 19:52:00 src=192.168.1.100 dst=203.0.113.50 spt=49152 dpt=443 proto=TCP act=blocked`
+      sample: `CEF:0|Palo Alto Networks|PAN-OS|10.1.0|THREAT|url|3|rt=Jul 20 2025 19:52:00 src=192.168.100.100 dst=203.0.113.50 spt=49152 dpt=443 proto=TCP act=blocked`
     },
     'endpoint': {
       parser: 'Windows Event Parser',
@@ -352,7 +352,7 @@ function DataIngestionStep({ useCase }: any) {
   "user": "john.doe@company.com",
   "auth_method": "saml",
   "result": "success",
-  "source_ip": "192.168.1.100",
+  "source_ip": "192.168.100.100",
   "risk_score": 85
 }`
     }

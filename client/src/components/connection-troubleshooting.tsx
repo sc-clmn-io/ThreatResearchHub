@@ -9,7 +9,7 @@ interface ConnectionTroubleshootingProps {
   isPrivateIP?: boolean;
 }
 
-export function ConnectionTroubleshooting({ host = '192.168.1.188', isPrivateIP = true }: ConnectionTroubleshootingProps) {
+export function ConnectionTroubleshooting({ host = '192.168.100.188', isPrivateIP = true }: ConnectionTroubleshootingProps) {
   
   const downloadProject = () => {
     // Create download link for the project

@@ -63,6 +63,7 @@ const navigationItems: NavItem[] = [
   
   // SUPPORTING TOOLS
   { href: "/user-guide", icon: BookOpen, label: "📖 User Guide", category: 'tools', description: "Complete documentation and interactive tutorial" },
+  { href: "/repository-sanitizer", icon: Shield, label: "🛡️ Repository Sanitizer", category: 'tools', description: "Sanitize repository for safe public sharing while protecting PAN employment" },
   { href: "/ddlc-workflow-demo", icon: RefreshCw, label: "🔄 DDLC Workflow", category: 'tools', description: "Detection Development Life Cycle management" },
   { href: "/templates", icon: Share2, label: "📋 Templates", category: 'tools', description: "Community-shared training scenarios" },
   { href: "/content-library", icon: Database, label: "📚 Content Library", category: 'tools', description: "Manage generated XSIAM content" }

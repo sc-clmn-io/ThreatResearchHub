@@ -338,7 +338,7 @@ export function TestingValidationDashboard() {
                 <div className="space-y-2">
                   <h4 className="font-medium">Connection Testing</h4>
                   <code className="text-xs bg-gray-100 p-2 rounded block">
-                    curl -H "Authorization: Bearer $XSIAM_API_KEY" https://tenant.xdr.us.paloaltonetworks.com/api/v1/health
+                    curl -H "Authorization: Bearer $YOUR_XSIAM_API_KEY" https://tenant.xdr.us.paloaltonetworks.com/api/v1/health
                   </code>
                 </div>
                 

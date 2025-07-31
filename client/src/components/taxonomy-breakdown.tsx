@@ -108,7 +108,7 @@ export function TaxonomyBreakdownModal({ isOpen, onClose }: { isOpen: boolean; o
 
   const openDB = (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open('threatresearchhub-db', 1);
+      const request = indexedDB.open('security-research-platform-db', 1);
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);
       request.onupgradeneeded = (event) => {

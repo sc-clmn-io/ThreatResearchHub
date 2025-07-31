@@ -272,7 +272,7 @@ export function InfrastructureConnectionStatus() {
                   <Label htmlFor="proxmox-host">Host/IP Address</Label>
                   <Input
                     id="proxmox-host"
-                    placeholder="192.168.1.100"
+                    placeholder="192.168.100.100"
                     value={proxmoxForm.host}
                     onChange={(e) => setProxmoxForm(prev => ({ ...prev, host: e.target.value }))}
                   />

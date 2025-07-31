@@ -10,7 +10,7 @@
     lab_directory: "/home/{{ lab_user }}/docker-escape-lab"
     docker_compose_version: "2.21.0"
     xsiam_url: "{{ lookup('env', 'XSIAM_URL') | default('') }}"
-    xsiam_api_key: "{{ lookup('env', 'XSIAM_API_KEY') | default('') }}"
+    xsiam_api_key: "{{ lookup('env', 'YOUR_XSIAM_API_KEY') | default('') }}"
     
   tasks:
     - name: Create lab user if not exists

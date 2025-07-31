@@ -124,7 +124,7 @@ export function InfrastructureAlternatives() {
           <Alert>
             <Network className="h-4 w-4" />
             <AlertDescription>
-              <strong>Network Constraint:</strong> Replit cloud cannot connect to 192.168.1.188 or other private IPs. 
+              <strong>Network Constraint:</strong> Replit cloud cannot connect to 192.168.100.188 or other private IPs. 
               Use these alternatives for immediate lab deployment while maintaining XSIAM integration.
             </AlertDescription>
           </Alert>

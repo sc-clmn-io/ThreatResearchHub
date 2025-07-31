@@ -286,7 +286,7 @@ ${option.requirements.map(req => `- ${req}`).join('\n')}
 
 ### XSIAM Integration
 - Cortex XDR agent deployment across all endpoints
-- Data source integration with scoleman.xdr.us.paloaltonetworks.com
+- Data source integration with demo-tenant.xdr.us.paloaltonetworks.com
 - Custom correlation rules for ${threatContext.threat}
 - Automated response playbook development
 - Comprehensive findings report generation
@@ -507,7 +507,7 @@ ${option.requirements.map(req => `- ${req}`).join('\n')}
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
                       <strong>Next Steps:</strong> Download procurement quotes, review with your team, 
-                      and begin vendor account setup. The XSIAM tenant at scoleman.xdr.us.paloaltonetworks.com 
+                      and begin vendor account setup. The XSIAM tenant at demo-tenant.xdr.us.paloaltonetworks.com 
                       is ready for data source integration once infrastructure is deployed.
                     </AlertDescription>
                   </Alert>

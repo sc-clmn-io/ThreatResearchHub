@@ -113,9 +113,9 @@ vms:
 network:
   base_ip: "192.168.1"
   ubuntu_start: 100
-  xsiam_ip: "192.168.1.90"
-  windows_ip: "192.168.1.95"
-  gateway: "192.168.1.1"
+  xsiam_ip: "192.168.100.90"
+  windows_ip: "192.168.100.95"
+  gateway: "192.168.100.1"
   dns: "8.8.8.8"
 
 # Lab Services

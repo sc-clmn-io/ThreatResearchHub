@@ -40,7 +40,7 @@ const XSIAM_TEST_SCENARIOS = {
         field_name: "source_ip",
         field_type: "string" as const,
         description: "Source IP address of VPN connection",
-        sample_value: "192.168.1.100",
+        sample_value: "192.168.100.100",
         required: true
       },
       {

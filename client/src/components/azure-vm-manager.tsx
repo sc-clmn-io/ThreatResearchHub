@@ -53,7 +53,7 @@ interface AzureConnection {
 
 export function AzureVMManager() {
   const [connection, setConnection] = useState<AzureConnection>({
-    subscriptionId: 'be483e87-c15f-48a1-ba98-f44540908db0',
+    subscriptionId: 'EXAMPLE_CLUSTER_URI',
     resourceGroup: '',
     location: 'East US',
     connected: false

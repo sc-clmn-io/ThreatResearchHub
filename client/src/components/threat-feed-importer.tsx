@@ -30,12 +30,12 @@ interface ThreatFeedImporterProps {
 const sampleThreats: ThreatReport[] = [
   {
     id: "threat_2025_001",
-    title: "CVE-2025-1974: The IngressNightmare in Kubernetes",
+    title: "CVE-YYYY-NNNN: The IngressNightmare in Kubernetes",
     url: "https://unit42.paloaltonetworks.com/kubernetes-ingress-nightmare",
     source: "Unit42",
     severity: "critical",
     publishedDate: "2025-01-26",
-    cves: ["CVE-2025-1974"],
+    cves: ["CVE-YYYY-NNNN"],
     technologies: ["Kubernetes", "Docker", "Container Orchestration"],
     vulnerabilityTypes: ["Remote Code Execution", "Privilege Escalation"],
     summary: "Critical remote code execution vulnerability in Kubernetes Ingress controllers allowing attackers to execute arbitrary code on clusters through malicious ingress configurations.",

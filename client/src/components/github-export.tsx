@@ -40,7 +40,7 @@ export default function GitHubExport() {
   const [config, setConfig] = useState<GitHubConfig>({
     token: '',
     username: '',
-    repository: 'threatresearchhub',
+    repository: 'security-research-platform',
     branch: 'main'
   });
   const [isConfigured, setIsConfigured] = useState(false);
@@ -390,7 +390,7 @@ export default function GitHubExport() {
                       <Label htmlFor="repository">Repository Name *</Label>
                       <Input
                         id="repository"
-                        placeholder="threatresearchhub"
+                        placeholder="security-research-platform"
                         value={config.repository}
                         onChange={(e) => setConfig(prev => ({ ...prev, repository: e.target.value }))}
                       />

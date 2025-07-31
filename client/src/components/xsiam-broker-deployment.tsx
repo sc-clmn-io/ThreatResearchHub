@@ -127,7 +127,7 @@ echo "   Network: $NETWORK_BRIDGE"
 # Copy this configuration for broker setup
 
 # XSIAM Connection Settings
-XSIAM_API_KEY="${xsiamConfig.apiKey}"
+YOUR_XSIAM_API_KEY="${xsiamConfig.apiKey}"
 XSIAM_BROKER_URL="${xsiamConfig.brokerUrl}"
 XSIAM_TENANT_ID="${xsiamConfig.tenantId}"
 XSIAM_ORG_ID="${xsiamConfig.orgId}"

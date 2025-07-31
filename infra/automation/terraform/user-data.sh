@@ -12,7 +12,7 @@ echo "Starting Docker Escape Detection Lab deployment at $(date)"
 
 # Variables from Terraform
 XSIAM_URL="${xsiam_url}"
-XSIAM_API_KEY="${xsiam_api_key}"
+YOUR_XSIAM_API_KEY="${xsiam_api_key}"
 LAB_USER="ubuntu"
 if [[ -f /etc/os-release ]]; then
     source /etc/os-release

@@ -36,7 +36,7 @@ docker run -d \\
   --network threat-lab-network \\
   -p 8443:443 \\
   -v /var/log:/host-logs:ro \\
-  -e XSIAM_API_KEY="$XSIAM_API_KEY" \\
+  -e YOUR_XSIAM_API_KEY="$YOUR_XSIAM_API_KEY" \\
   -e XSIAM_TENANT_URL="$XSIAM_TENANT_URL" \\
   alpine:latest sh -c "while true; do sleep 300; done"
 
@@ -67,7 +67,7 @@ echo "   Network Traffic: localhost:9090"
 
 echo ""
 echo "🔧 Configure XSIAM forwarding:"
-echo "1. Set XSIAM_API_KEY environment variable"
+echo "1. Set YOUR_XSIAM_API_KEY environment variable"
 echo "2. Set XSIAM_TENANT_URL environment variable"
 echo "3. Configure log forwarding rules"
 `;

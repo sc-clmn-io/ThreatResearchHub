@@ -201,7 +201,7 @@ export default function AlertLayoutPreviewModal({
                                         <div className="text-gray-600">Sample Value</div>
                                         <div className="font-mono">
                                           {field?.type === 'date' ? '2025-01-15 10:30:00' :
-                                           field?.type === 'ip' ? '192.168.1.100' :
+                                           field?.type === 'ip' ? '192.168.100.100' :
                                            field?.type === 'number' ? '42' :
                                            field?.type === 'email' ? 'analyst@company.com' :
                                            field?.type === 'user' ? 'john.doe' :

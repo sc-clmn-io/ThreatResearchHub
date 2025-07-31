@@ -96,7 +96,7 @@ export default function AzureCredentialsGuide() {
               </Alert>
               <ol className="space-y-2 text-sm">
                 <li>1. Click <Badge variant="outline">+ New registration</Badge></li>
-                <li>2. Enter name: <code className="bg-gray-100 px-2 py-1 rounded">ThreatLab-App</code></li>
+                <li>2. Enter name: <code className="bg-gray-100 px-2 py-1 rounded">ExampleApp-ServicePrincipal</code></li>
                 <li>3. Select "Accounts in this organizational directory only"</li>
                 <li>4. Click <Badge variant="outline">Register</Badge></li>
               </ol>
@@ -261,7 +261,7 @@ export default function AzureCredentialsGuide() {
             <li>2. Click <strong>Access control (IAM)</strong></li>
             <li>3. Click <Badge variant="outline">+ Add</Badge> → <strong>Add role assignment</strong></li>
             <li>4. Select <strong>Contributor</strong> role</li>
-            <li>5. Search for your app name (ThreatLab-App)</li>
+            <li>5. Search for your app name (ExampleApp-ServicePrincipal)</li>
             <li>6. Select it and click <Badge variant="outline">Save</Badge></li>
           </ol>
         </div>

@@ -17,7 +17,7 @@ interface DiagnosticResult {
 }
 
 export function NetworkDiagnostics() {
-  const [host, setHost] = useState('192.168.1.188');
+  const [host, setHost] = useState('192.168.100.188');
   const [port, setPort] = useState(8006);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<DiagnosticResult[]>([]);
@@ -133,7 +133,7 @@ export function NetworkDiagnostics() {
               <Label htmlFor="diag-host">Host/IP Address</Label>
               <Input
                 id="diag-host"
-                placeholder="192.168.1.188"
+                placeholder="192.168.100.188"
                 value={host}
                 onChange={(e) => setHost(e.target.value)}
                 disabled={isRunning}

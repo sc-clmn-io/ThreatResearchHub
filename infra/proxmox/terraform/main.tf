@@ -113,7 +113,7 @@ resource "proxmox_vm_qemu" "security_lab_vm" {
   sshkeys = file("~/.ssh/id_rsa.pub")
   
   # IP configuration (adjust network as needed)
-  ipconfig0 = "ip=192.168.1.${100 + count.index}/24,gw=192.168.1.1"
+  ipconfig0 = "ip=192.168.1.${100 + count.index}/24,gw=192.168.100.1"
   nameserver = "8.8.8.8"
   
   # VM lifecycle
@@ -171,7 +171,7 @@ resource "proxmox_vm_qemu" "xsiam_vm" {
   sshkeys = file("~/.ssh/id_rsa.pub")
   
   # Dedicated IP for XSIAM
-  ipconfig0 = "ip=192.168.1.90/24,gw=192.168.1.1"
+  ipconfig0 = "ip=192.168.100.90/24,gw=192.168.100.1"
   nameserver = "8.8.8.8"
   
   tags = "xsiam,security-lab,terraform"
@@ -209,7 +209,7 @@ resource "proxmox_vm_qemu" "windows_endpoint" {
   # Windows-specific cloud-init
   ciuser     = "Administrator"
   cipassword = "SecurityLab123!"
-  ipconfig0  = "ip=192.168.1.95/24,gw=192.168.1.1"
+  ipconfig0  = "ip=192.168.100.95/24,gw=192.168.100.1"
   nameserver = "8.8.8.8"
   
   tags = "windows,endpoint,security-lab"
@@ -292,9 +292,9 @@ output "lab_network_info" {
   description = "Lab network configuration"
   value = {
     ubuntu_vms = [for i in range(var.vm_count) : "192.168.1.${100 + i}"]
-    xsiam_server = "192.168.1.90"
-    windows_endpoint = "192.168.1.95"
-    network_range = "192.168.1.0/24"
-    gateway = "192.168.1.1"
+    xsiam_server = "192.168.100.90"
+    windows_endpoint = "192.168.100.95"
+    network_range = "192.168.100.0/24"
+    gateway = "192.168.100.1"
   }
 }

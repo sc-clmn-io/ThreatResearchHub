@@ -46,7 +46,7 @@ interface ProxmoxConnection {
 
 export function ProxmoxVMManager() {
   const [connection, setConnection] = useState<ProxmoxConnection>({
-    host: '192.168.1.188',
+    host: '192.168.100.188',
     username: 'root',
     port: 22,
     connected: false
@@ -315,7 +315,7 @@ export function ProxmoxVMManager() {
                 id="host"
                 value={connection.host}
                 onChange={(e) => setConnection(prev => ({ ...prev, host: e.target.value }))}
-                placeholder="192.168.1.188"
+                placeholder="192.168.100.188"
               />
             </div>
             <div>
