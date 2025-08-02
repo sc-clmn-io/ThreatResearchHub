@@ -213,7 +213,7 @@ The application will be available at `http://localhost:5000`
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on:
+We welcome contributions! Please see CONTRIBUTING.md for details on:
 
 - Code standards and style guide
 - Testing requirements and procedures
@@ -225,13 +225,13 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [COMPREHENSIVE_7_STAGE_WALKTHROUGH.md](COMPREHENSIVE_7_STAGE_WALKTHROUGH.md) | Complete step-by-step implementation guide | Security engineers |
-| [DEVELOPMENT_MANIFEST.md](DEVELOPMENT_MANIFEST.md) | Platform capabilities and architecture | Technical stakeholders |
-| [DOCUMENTATION_STRUCTURE.md](DOCUMENTATION_STRUCTURE.md) | Navigation guide for all documentation | All users |
+| COMPREHENSIVE_7_STAGE_WALKTHROUGH.md | Complete step-by-step implementation guide | Security engineers |
+| DEVELOPMENT_MANIFEST.md | Platform capabilities and architecture | Technical stakeholders |
+| DOCUMENTATION_STRUCTURE.md | Navigation guide for all documentation | All users |
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Support
 
