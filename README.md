@@ -226,7 +226,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 | Document | Purpose | Audience |
 |----------|---------|----------|
 | [COMPREHENSIVE_7_STAGE_WALKTHROUGH.md](COMPREHENSIVE_7_STAGE_WALKTHROUGH.md) | Complete step-by-step implementation guide | Security engineers |
-| [MANIFEST.md](MANIFEST.md) | Platform capabilities and architecture | Technical stakeholders |
+| [DEVELOPMENT_MANIFEST.md](DEVELOPMENT_MANIFEST.md) | Platform capabilities and architecture | Technical stakeholders |
 | [DOCUMENTATION_STRUCTURE.md](DOCUMENTATION_STRUCTURE.md) | Navigation guide for all documentation | All users |
 
 ## License
