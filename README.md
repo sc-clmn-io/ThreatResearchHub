@@ -1,8 +1,33 @@
 # ThreatResearchHub
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/sc-clmn-io/ThreatResearchHub/main/assets/7-stage-workflow.svg" alt="7-Stage Workflow" width="1000" />
-</div>
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                     ThreatResearchHub: 7-Stage Security Content Engineering                     ║
+║                            Complete Implementation Timeline: 4-6 Hours                          ║
+╠═══════════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                                   ║
+║  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+║  │     [1]     │  │     [2]     │  │     [3]     │  │     [4]     │  │     [5]     │  │     [6]     │  │     [7]     │
+║  │   USE CASE  │──│  SECURITY   │──│INFRASTRUCTURE│──│ DATA SOURCE │──│  CONTENT    │──│ TESTING &   │──│DOCUMENTATION│
+║  │ DEFINITION  │  │    STACK    │  │ DEPLOYMENT  │  │CONFIGURATION│  │ GENERATION  │  │ VALIDATION  │  │& DEPLOYMENT │
+║  │             │  │CONFIGURATION│  │             │  │             │  │             │  │             │  │             │
+║  │  15-30 min  │  │  30-45 min  │  │  60-90 min  │  │  60-90 min  │  │  45-75 min  │  │  30-60 min  │  │  30-45 min  │
+║  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘
+║       │               │               │               │               │               │               │
+║   ┌───▼───┐       ┌───▼───┐       ┌───▼───┐       ┌───▼───┐       ┌───▼───┐       ┌───▼───┐       ┌───▼───┐
+║   │Define │       │Config │       │Deploy │       │Setup  │       │Generate│      │Test & │       │Create │
+║   │Threat │       │Multi- │       │Lab    │       │Data   │       │Rules/ │      │Validate│      │Production│
+║   │Objectives│     │Vendor │       │Environment│   │Ingestion│     │Playbooks│    │Content│      │Packages│
+║   │& IOCs │       │Stack  │       │& Assets│      │Pipelines│     │Dashboards│   │Accuracy│     │& Docs │
+║   └───────┘       └───────┘       └───────┘       └───────┘       └───────┘       └───────┘       └───────┘
+║                                                                                                   ║
+╠═══════════════════════════════════════════════════════════════════════════════════════════════════╣
+║  🏢 VENDOR-AGNOSTIC ARCHITECTURE SUPPORTING 20+ SECURITY PLATFORMS ACROSS 6 CATEGORIES          ║
+║     SIEM: XSIAM • Splunk • Sentinel • QRadar • Elastic • Chronicle                              ║
+║     EDR: CrowdStrike • SentinelOne • Cortex XDR • Defender • Carbon Black                       ║
+║     SOAR: XSOAR • Phantom • Resilient • Demisto • Swimlane                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
+```
 
 **Threat Use Case Build and Test Workflow**
 
