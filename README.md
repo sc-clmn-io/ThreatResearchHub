@@ -1,33 +1,50 @@
 # ThreatResearchHub
 
-```
-╔══════════════════════════════════════════════════════════════════════════════════════════════════╗
-║                     ThreatResearchHub: 7-Stage Security Content Engineering                     ║
-║                            Complete Implementation Timeline: 4-6 Hours                          ║
-╠═══════════════════════════════════════════════════════════════════════════════════════════════════╣
-║                                                                                                   ║
-║  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-║  │     [1]     │  │     [2]     │  │     [3]     │  │     [4]     │  │     [5]     │  │     [6]     │  │     [7]     │
-║  │   USE CASE  │──│  SECURITY   │──│INFRASTRUCTURE│──│ DATA SOURCE │──│  CONTENT    │──│ TESTING &   │──│DOCUMENTATION│
-║  │ DEFINITION  │  │    STACK    │  │ DEPLOYMENT  │  │CONFIGURATION│  │ GENERATION  │  │ VALIDATION  │  │& DEPLOYMENT │
-║  │             │  │CONFIGURATION│  │             │  │             │  │             │  │             │  │             │
-║  │  15-30 min  │  │  30-45 min  │  │  60-90 min  │  │  60-90 min  │  │  45-75 min  │  │  30-60 min  │  │  30-45 min  │
-║  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘
-║       │               │               │               │               │               │               │
-║   ┌───▼───┐       ┌───▼───┐       ┌───▼───┐       ┌───▼───┐       ┌───▼───┐       ┌───▼───┐       ┌───▼───┐
-║   │Define │       │Config │       │Deploy │       │Setup  │       │Generate│      │Test & │       │Create │
-║   │Threat │       │Multi- │       │Lab    │       │Data   │       │Rules/ │      │Validate│      │Production│
-║   │Objectives│     │Vendor │       │Environment│   │Ingestion│     │Playbooks│    │Content│      │Packages│
-║   │& IOCs │       │Stack  │       │& Assets│      │Pipelines│     │Dashboards│   │Accuracy│     │& Docs │
-║   └───────┘       └───────┘       └───────┘       └───────┘       └───────┘       └───────┘       └───────┘
-║                                                                                                   ║
-╠═══════════════════════════════════════════════════════════════════════════════════════════════════╣
-║  🏢 VENDOR-AGNOSTIC ARCHITECTURE SUPPORTING 20+ SECURITY PLATFORMS ACROSS 6 CATEGORIES          ║
-║     SIEM: XSIAM • Splunk • Sentinel • QRadar • Elastic • Chronicle                              ║
-║     EDR: CrowdStrike • SentinelOne • Cortex XDR • Defender • Carbon Black                       ║
-║     SOAR: XSOAR • Phantom • Resilient • Demisto • Swimlane                                      ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
-```
+<div align="center">
+
+<table>
+<tr>
+<td align="center" width="140">
+<img src="https://img.shields.io/badge/🕐-Stage%201-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 1"/><br>
+<strong>Use Case<br>Definition</strong><br>
+<em>15-20 minutes</em>
+</td>
+<td align="center" width="140">
+<img src="https://img.shields.io/badge/🕑-Stage%202-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 2"/><br>
+<strong>Security Stack<br>Configuration</strong><br>
+<em>10-15 minutes</em>
+</td>
+<td align="center" width="140">
+<img src="https://img.shields.io/badge/🕒-Stage%203-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 3"/><br>
+<strong>Infrastructure<br>Deployment</strong><br>
+<em>2-4 hours</em>
+</td>
+<td align="center" width="140">
+<img src="https://img.shields.io/badge/🕓-Stage%204-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 4"/><br>
+<strong>Data Source<br>Configuration</strong><br>
+<em>1-2 hours</em>
+</td>
+<td align="center" width="140">
+<img src="https://img.shields.io/badge/🕔-Stage%205-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 5"/><br>
+<strong>Platform Content<br>Generation</strong><br>
+<em>45-60 minutes</em>
+</td>
+<td align="center" width="140">
+<img src="https://img.shields.io/badge/🕕-Stage%206-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 6"/><br>
+<strong>Testing &<br>Validation</strong><br>
+<em>30-45 minutes</em>
+</td>
+<td align="center" width="140">
+<img src="https://img.shields.io/badge/🕖-Stage%207-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 7"/><br>
+<strong>Documentation &<br>Deployment</strong><br>
+<em>20-30 minutes</em>
+</td>
+</tr>
+</table>
+
+**Threat Use Case Build and Test Workflow** • *Complete in 4-6 hours*
+
+</div>
 
 **Threat Use Case Build and Test Workflow**
 
