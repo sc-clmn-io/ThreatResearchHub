@@ -1,0 +1,23 @@
+{
+  "rule_name": "Enhanced_Threat_Detection_Package",
+  "version": "2.0",
+  "last_updated": "2025-08-02",
+  "description": "Updated comprehensive threat detection rules with enhanced coverage",
+  "xql_queries": [
+    {
+      "name": "Advanced_Container_Escape_Detection",
+      "query": "dataset = xdr_data | filter event_type = ENUM.PROCESS and action_process_image_name contains \"docker\" or action_process_image_name contains \"containerd\" | filter action_process_command_line contains \"--privileged\" or action_process_command_line contains \"--cap-add=SYS_ADMIN\" | fields agent_hostname, action_process_image_name, action_process_command_line, event_timestamp | limit 1000",
+      "severity": "HIGH",
+      "mitre_tactics": ["TA0004", "TA0005"],
+      "mitre_techniques": ["T1611"]
+    },
+    {
+      "name": "Enhanced_APT29_Activity_Detection",
+      "query": "dataset = xdr_data | filter event_type = ENUM.NETWORK and action_remote_ip in (\"185.220.100.240\", \"185.220.100.241\", \"185.220.100.242\") or action_remote_port in (443, 80, 8080) and actor_process_image_name contains \"powershell\" | fields agent_hostname, action_remote_ip, action_remote_port, actor_process_image_name, event_timestamp | limit 1000",
+      "severity": "CRITICAL",
+      "mitre_tactics": ["TA0011", "TA0001"],
+      "mitre_techniques": ["T1071.001", "T1059.001"]
+    }
+  ],
+  "deployment_status": "Updated for August 2025 release"
+}
