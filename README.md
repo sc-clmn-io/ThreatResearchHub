@@ -47,7 +47,7 @@ Note: Currently ThreatResearchHub is focused on support for the Palo Alto Networ
 - **Frontend**: React 18 + TypeScript + Tailwind CSS
 - **Backend**: Node.js + Express + PostgreSQL
 - **Content Engine**: Multi-platform query generation
-- **Lab Automation**: Docker + Infrastructure-as-Code
+- **Lab Automation**: Docker, k8s, containerd, proxmox, vmware, major cloud platforms
 - **Version Control**: Git integration with automated workflows
 
 ## 7-Stage Security Operations Workflow Process
