@@ -1,7 +1,7 @@
 # ThreatResearchHub
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/sc-clmn-io/ThreatResearchHub/main/assets/7-stage-workflow-final.svg" alt="7-Stage Security Content Engineering Workflow" width="100%" style="max-width: 1200px; height: auto;">
+  <img src="https://raw.githubusercontent.com/sc-clmn-io/ThreatResearchHub/main/assets/7-stage-workflow-centered.svg" alt="7-Stage Security Content Engineering Workflow" width="100%" style="max-width: 1200px; height: auto;">
 </div>
 
 <div align="center">
