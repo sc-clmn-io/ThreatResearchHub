@@ -40,7 +40,7 @@ Note: Currently ThreatResearchHub is focused on support for the Palo Alto Networ
 | **Firewall** | Palo Alto, CheckPoint, Fortinet | Native configs |
 | **SOAR** | XSOAR, Phantom, Resilient | Playbook automation |
 | **ASM** | Cortex Xpanse, Censys, Shodan | Attack surface mapping |
-| **Attack Simulation** | BAS, SafeBreach, Cymulate | Validation testing |
+| **Attack Simulation** | BAS, Stratus Red Team, Kali, Caldera | Validation testing |
 
 ### Technology Stack
 
