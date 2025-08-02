@@ -1,49 +1,11 @@
 # ThreatResearchHub
 
 <div align="center">
+  <img src="https://raw.githubusercontent.com/sc-clmn-io/ThreatResearchHub/main/assets/7-stage-workflow.png" alt="7-Stage Security Content Engineering Workflow" width="100%" style="max-width: 1200px; height: auto;">
+</div>
 
-<table>
-<tr>
-<td align="center" width="140">
-<img src="https://img.shields.io/badge/🕐-Stage%201-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 1"/><br>
-<strong>Use Case<br>Definition</strong><br>
-<em>15-20 minutes</em>
-</td>
-<td align="center" width="140">
-<img src="https://img.shields.io/badge/🕑-Stage%202-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 2"/><br>
-<strong>Security Stack<br>Configuration</strong><br>
-<em>10-15 minutes</em>
-</td>
-<td align="center" width="140">
-<img src="https://img.shields.io/badge/🕒-Stage%203-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 3"/><br>
-<strong>Infrastructure<br>Deployment</strong><br>
-<em>2-4 hours</em>
-</td>
-<td align="center" width="140">
-<img src="https://img.shields.io/badge/🕓-Stage%204-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 4"/><br>
-<strong>Data Source<br>Configuration</strong><br>
-<em>1-2 hours</em>
-</td>
-<td align="center" width="140">
-<img src="https://img.shields.io/badge/🕔-Stage%205-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 5"/><br>
-<strong>Platform Content<br>Generation</strong><br>
-<em>45-60 minutes</em>
-</td>
-<td align="center" width="140">
-<img src="https://img.shields.io/badge/🕕-Stage%206-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 6"/><br>
-<strong>Testing &<br>Validation</strong><br>
-<em>30-45 minutes</em>
-</td>
-<td align="center" width="140">
-<img src="https://img.shields.io/badge/🕖-Stage%207-3b82f6?style=for-the-badge&logoColor=white" alt="Stage 7"/><br>
-<strong>Documentation &<br>Deployment</strong><br>
-<em>20-30 minutes</em>
-</td>
-</tr>
-</table>
-
-**Threat Use Case Build and Test Workflow** • *Complete in 4-6 hours*
-
+<div align="center">
+  <strong>Threat Use Case Build and Test Workflow</strong> • <em>Complete Implementation in 4-6 Hours</em>
 </div>
 
 **Threat Use Case Build and Test Workflow**
