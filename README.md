@@ -18,7 +18,7 @@ Complete step-by-step workflow from use case definition to deployed security con
 
 ## Overview
 
-ThreatResearchHub enables security professionals to build comprehensive threat detection capabilities using a vendor-agnostic "Lego Block" architecture. 
+Threat intelligence to detection and response content development platform with vendor-agnostic architecture. 
 
 Note: Currently ThreatResearchHub is focused on support for the Palo Alto Networks Cortex platform, but additional platforms will be added in the future, and are being reviewed by project contributors that are SMEs with other security tools.
 
