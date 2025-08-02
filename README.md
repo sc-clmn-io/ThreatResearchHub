@@ -1,6 +1,6 @@
 # ThreatResearchHub
 
-**Security Platform Enablement Workflow**
+**Threat Use Case Build and Test Workflow**
 
 Complete step-by-step workflow from use case definition to deployed security content across your selected platforms.
 
