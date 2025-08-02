@@ -18,9 +18,7 @@ Complete step-by-step workflow from use case definition to deployed security con
 
 ## Overview
 
-Threat intelligence to detection and response content development platform with vendor-agnostic architecture. 
-
-Note: Currently ThreatResearchHub is focused on support for the Palo Alto Networks Cortex platform, but additional platforms will be added in the future, and are being reviewed by project contributors that are SMEs with other security tools.
+Threat intelligence to detection and response content development platform with vendor-agnostic architecture.
 
 ### Key Capabilities
 
@@ -31,7 +29,7 @@ Note: Currently ThreatResearchHub is focused on support for the Palo Alto Networ
 
 ## Architecture
 
-### Supported Platform Categories
+### Supported Platform Categories*
 
 | Category | Platforms | Technology/Function |
 |----------|-----------|---------------------|
@@ -41,6 +39,8 @@ Note: Currently ThreatResearchHub is focused on support for the Palo Alto Networ
 | **SOAR** | XSOAR, Phantom, Resilient | Playbook automation |
 | **ASM** | Cortex Xpanse, Censys, Shodan | Attack surface mapping |
 | **Attack Simulation** | BAS, Stratus Red Team, Kali, Caldera | Validation testing |
+
+\*Note: Currently ThreatResearchHub is focused on support for the Palo Alto Networks Cortex platform, but additional platforms will be added in the future, and are being reviewed by project contributors that are SMEs with other security tools.
 
 ### Technology Stack
 
