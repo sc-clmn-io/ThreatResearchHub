@@ -1,0 +1,227 @@
+<svg width="1000" height="300" viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Modern gradient backgrounds -->
+    <linearGradient id="progressTrack" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#cbd5e1;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Stage-specific gradients - All Blue for Visual Contrast -->
+    <linearGradient id="stage1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="stage2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="stage3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="stage4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="stage5" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="stage6" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="stage7" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1000" height="300" fill="#ffffff"/>
+  
+  <!-- Title -->
+  <text x="500" y="35" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="22" font-weight="700" fill="#1e293b">
+    ThreatResearchHub: 7-Stage Security Content Engineering Workflow
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="500" y="55" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="14" fill="#64748b">
+    Complete implementation in 4-6 hours across 20+ security platforms
+  </text>
+  
+  <!-- Progress track background -->
+  <rect x="50" y="100" width="900" height="20" rx="10" fill="url(#progressTrack)" stroke="#cbd5e1" stroke-width="1"/>
+  
+  <!-- Stage 1: Use Case Definition -->
+  <rect x="50" y="100" width="125" height="20" rx="10" fill="url(#stage1)"/>
+  <circle cx="50" cy="110" r="12" fill="#3b82f6" stroke="#ffffff" stroke-width="3"/>
+  <text x="50" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="white">1</text>
+  
+  <!-- Stage 2: Security Stack Configuration -->
+  <rect x="175" y="100" width="125" height="20" rx="10" fill="url(#stage2)"/>
+  <circle cx="175" cy="110" r="12" fill="#3b82f6" stroke="#ffffff" stroke-width="3"/>
+  <text x="175" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="white">2</text>
+  
+  <!-- Stage 3: Infrastructure Deployment -->
+  <rect x="300" y="100" width="125" height="20" rx="10" fill="url(#stage3)"/>
+  <circle cx="300" cy="110" r="12" fill="#3b82f6" stroke="#ffffff" stroke-width="3"/>
+  <text x="300" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="white">3</text>
+  
+  <!-- Stage 4: Data Source Configuration -->
+  <rect x="425" y="100" width="125" height="20" rx="10" fill="url(#stage4)"/>  
+  <circle cx="425" cy="110" r="12" fill="#3b82f6" stroke="#ffffff" stroke-width="3"/>
+  <text x="425" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="white">4</text>
+  
+  <!-- Stage 5: Platform Content Generation -->
+  <rect x="550" y="100" width="125" height="20" rx="10" fill="url(#stage5)"/>
+  <circle cx="550" cy="110" r="12" fill="#3b82f6" stroke="#ffffff" stroke-width="3"/>
+  <text x="550" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="white">5</text>
+  
+  <!-- Stage 6: Testing & Validation -->
+  <rect x="675" y="100" width="125" height="20" rx="10" fill="url(#stage6)"/>
+  <circle cx="675" cy="110" r="12" fill="#3b82f6" stroke="#ffffff" stroke-width="3"/>
+  <text x="675" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="white">6</text>
+  
+  <!-- Stage 7: Documentation & Deployment -->
+  <rect x="800" y="100" width="150" height="20" rx="10" fill="url(#stage7)"/>
+  <circle cx="800" cy="110" r="12" fill="#3b82f6" stroke="#ffffff" stroke-width="3"/>
+  <text x="800" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="white">7</text>
+  
+  <!-- Completion circle -->
+  <circle cx="950" cy="110" r="12" fill="#3b82f6" stroke="#ffffff" stroke-width="3"/>
+  <path d="M 945 110 L 948 113 L 955 106" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Stage Labels -->
+  <g transform="translate(0, 150)">
+    <!-- Stage 1 -->
+    <g transform="translate(50, 0)">
+      <text x="62.5" y="0" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#1e293b">
+        Use Case Definition
+      </text>
+      <text x="62.5" y="16" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748b">
+        15-30 minutes
+      </text>
+      <text x="62.5" y="30" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#64748b">
+        Define security objectives
+      </text>
+    </g>
+    
+    <!-- Stage 2 -->
+    <g transform="translate(175, 0)">
+      <text x="62.5" y="0" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#1e293b">
+        Security Stack Config
+      </text>
+      <text x="62.5" y="16" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748b">
+        30-45 minutes
+      </text>
+      <text x="62.5" y="30" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#64748b">
+        Multi-vendor platforms
+      </text>
+    </g>
+    
+    <!-- Stage 3 -->
+    <g transform="translate(300, 0)">
+      <text x="62.5" y="0" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#1e293b">
+        Infrastructure Deploy
+      </text>
+      <text x="62.5" y="16" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748b">
+        60-90 minutes
+      </text>
+      <text x="62.5" y="30" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#64748b">
+        Lab environment setup
+      </text>
+    </g>
+    
+    <!-- Stage 4 -->
+    <g transform="translate(425, 0)">
+      <text x="62.5" y="0" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#1e293b">
+        Data Source Config
+      </text>
+      <text x="62.5" y="16" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748b">
+        60-90 minutes
+      </text>
+      <text x="62.5" y="30" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#64748b">
+        Platform data ingestion
+      </text>
+    </g>
+    
+    <!-- Stage 5 -->
+    <g transform="translate(550, 0)">
+      <text x="62.5" y="0" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#1e293b">
+        Content Generation
+      </text>
+      <text x="62.5" y="16" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748b">
+        45-75 minutes
+      </text>
+      <text x="62.5" y="30" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#64748b">
+        Rules, playbooks, dashboards
+      </text>
+    </g>
+    
+    <!-- Stage 6 -->
+    <g transform="translate(675, 0)">
+      <text x="62.5" y="0" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#1e293b">
+        Testing & Validation
+      </text>
+      <text x="62.5" y="16" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748b">
+        30-60 minutes
+      </text>
+      <text x="62.5" y="30" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#64748b">
+        Deploy and validate
+      </text>
+    </g>
+    
+    <!-- Stage 7 -->
+    <g transform="translate(800, 0)">
+      <text x="75" y="0" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#1e293b">
+        Documentation & Deployment
+      </text>
+      <text x="75" y="16" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748b">
+        30-45 minutes
+      </text>
+      <text x="75" y="30" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#64748b">
+        Production packages
+      </text>
+    </g>
+  </g>
+  
+  <!-- Platform Support Banner -->
+  <g transform="translate(0, 220)">
+    <rect x="50" y="0" width="900" height="50" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    
+    <text x="500" y="20" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1e293b">
+      Vendor-Agnostic Architecture Supporting 20+ Security Platforms
+    </text>
+    
+    <!-- Platform tags -->
+    <g transform="translate(150, 28)">
+      <rect width="55" height="18" rx="9" fill="#10b981"/>
+      <text x="27.5" y="12" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="white">XSIAM</text>
+    </g>
+    <g transform="translate(215, 28)">
+      <rect width="55" height="18" rx="9" fill="#3b82f6"/>
+      <text x="27.5" y="12" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="white">Splunk</text>
+    </g>
+    <g transform="translate(280, 28)">
+      <rect width="60" height="18" rx="9" fill="#8b5cf6"/>
+      <text x="30" y="12" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="white">Sentinel</text>
+    </g>
+    <g transform="translate(350, 28)">
+      <rect width="55" height="18" rx="9" fill="#f59e0b"/>
+      <text x="27.5" y="12" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="white">QRadar</text>
+    </g>
+    <g transform="translate(415, 28)">
+      <rect width="70" height="18" rx="9" fill="#6366f1"/>
+      <text x="35" y="12" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="white">CrowdStrike</text>
+    </g>
+    <g transform="translate(495, 28)">
+      <rect width="55" height="18" rx="9" fill="#ef4444"/>
+      <text x="27.5" y="12" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="white">Elastic</text>
+    </g>
+    <g transform="translate(560, 28)">
+      <rect width="80" height="18" rx="9" fill="#6b7280"/>
+      <text x="40" y="12" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="white">+14 More</text>
+    </g>
+  </g>
+</svg>
