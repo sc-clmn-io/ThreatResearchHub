@@ -251,24 +251,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Ready to transform your threat intelligence into actionable security content?**
 
-Start with the [7-Stage Sequential Workflow](http://localhost:5000/sequential-workflow) and experience comprehensive, vendor-agnostic security content engineering.
-- **API Reference**: Backend service documentation
-- **Deployment Guide**: Production deployment instructions
-- **Architecture Guide**: Technical implementation details
-- **Platform Adapters**: Vendor-specific integration guides
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For questions, issues, or feature requests:
-
-- **Issues**: Use GitHub Issues for bug reports and feature requests
-- **Discussions**: Join GitHub Discussions for community support
-- **Documentation**: Check the docs/ directory for detailed guides
-- **Email**: Contact sc@clmn.io for direct support
+Start with the 7-Stage Sequential Workflow and experience comprehensive, vendor-agnostic security content engineering.
 
 ## Roadmap
 
