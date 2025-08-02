@@ -388,7 +388,7 @@ export default function SequentialWorkflowManager({ onWorkflowComplete }: Props)
       {/* Overall Progress */}
       <Card>
         <CardHeader>
-          <CardTitle>Security Platform Enablement Workflow</CardTitle>
+          <CardTitle>Threat Use Case Build and Test Workflow</CardTitle>
           <CardDescription>
             Complete step-by-step workflow from use case definition to deployed security content across your selected platforms
           </CardDescription>

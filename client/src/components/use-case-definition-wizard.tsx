@@ -9,6 +9,78 @@ import { Separator } from "@/components/ui/separator";
 import { AlertCircle, CheckCircle, FileText, Users, Target, Settings, Database, Shield, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Import the ThreatFeedList component from threat-input
+function ThreatFeedList({ onThreatSelected }: { onThreatSelected: (threat: any) => void }) {
+  const [threats, setThreats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchThreats = async () => {
+      try {
+        const response = await fetch('/api/threats');
+        if (response.ok) {
+          const data = await response.json();
+          setThreats(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch threats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchThreats();
+  }, []);
+
+  if (loading) {
+    return <div className="text-center py-4 text-gray-500">Loading threat intelligence...</div>;
+  }
+
+  if (threats.length === 0) {
+    return (
+      <div className="text-center py-6 text-gray-500">
+        <p className="mb-2">No threats currently available in the feed.</p>
+        <p className="text-sm">The system automatically ingests threat intelligence every 6 hours.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-sm font-medium text-gray-700">Available Threat Intelligence</h3>
+        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+          {threats.length} threats available
+        </span>
+      </div>
+      <div className="space-y-3 max-h-96 overflow-y-auto">
+        {threats.map((threat, index) => (
+          <div key={threat.id || index} className="border border-gray-200 rounded-lg p-3 hover:border-blue-500 transition-colors cursor-pointer"
+               onClick={() => onThreatSelected(threat)}>
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-900 text-sm">{threat.title}</h4>
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{threat.description || threat.summary}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className={`px-2 py-1 text-xs rounded ${
+                    threat.severity === 'critical' ? 'bg-red-100 text-red-800' :
+                    threat.severity === 'high' ? 'bg-orange-100 text-orange-800' :
+                    threat.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {threat.severity || 'medium'}
+                  </span>
+                  <span className="text-xs text-gray-500">{threat.source}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface UseCaseDefinition {
   id: string;
   securityOutcome: string;
@@ -201,6 +273,22 @@ export default function UseCaseDefinitionWizard({ onUseCaseCreated, initialData,
                     'Manual Entry - Create use case from scratch'
                   }
                 </p>
+              </div>
+            )}
+
+            {selectedInputType === 'threat-feed' && (
+              <div className="mt-6 border rounded-lg p-4">
+                <ThreatFeedList onThreatSelected={(threat) => {
+                  // Auto-populate use case fields with threat data
+                  setUseCase({
+                    ...useCase,
+                    securityOutcome: threat.title || 'Detect and respond to identified threat',
+                    threatScenario: threat.description || threat.summary || '',
+                    title: threat.title,
+                    description: threat.description || threat.summary
+                  });
+                  setCurrentStep(1); // Move to next step
+                }} />
               </div>
             )}
           </div>
