@@ -8,7 +8,11 @@
   <strong>Threat Use Case Build and Test Workflow</strong> • <em>Complete Implementation in 4-6 Hours</em>
 </div>
 
+<br>
+
 Complete step-by-step workflow from use case definition to deployed security content across your selected platforms.
+
+<br>
 
 ## Security Operations Content Engineering Workflow
 
