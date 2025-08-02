@@ -22,10 +22,11 @@ interface InfrastructureStep {
 
 interface Props {
   useCase: any;
+  securityStack?: any;
   onInfrastructureComplete: (deploymentData: any) => void;
 }
 
-export default function InfrastructureDeploymentGuide({ useCase, onInfrastructureComplete }: Props) {
+export default function InfrastructureDeploymentGuide({ useCase, securityStack, onInfrastructureComplete }: Props) {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [deploymentSteps, setDeploymentSteps] = useState<InfrastructureStep[]>([]);

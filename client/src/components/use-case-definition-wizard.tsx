@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle, FileText, Users, Target, Settings, Database, Shield } from "lucide-react";
+import { AlertCircle, CheckCircle, FileText, Users, Target, Settings, Database, Shield, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface UseCaseDefinition {
@@ -37,10 +37,11 @@ interface Props {
 
 export default function UseCaseDefinitionWizard({ onUseCaseCreated, initialData, sourceType }: Props) {
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // Start with input selection
+  const [selectedInputType, setSelectedInputType] = useState<string>('');
   const [useCase, setUseCase] = useState<Partial<UseCaseDefinition>>({
     sourceType,
-    currentStep: 1,
+    currentStep: 0,
     category: initialData?.category || 'endpoint',
     severity: initialData?.severity || 'high',
     cves: initialData?.cves || [],
@@ -51,6 +52,12 @@ export default function UseCaseDefinitionWizard({ onUseCaseCreated, initialData,
   });
 
   const steps = [
+    {
+      id: 0,
+      title: "Select Input Source",
+      description: "Choose how to define your use case",
+      icon: <Database className="h-5 w-5" />
+    },
     {
       id: 1,
       title: "Security Outcome Definition",
@@ -84,13 +91,22 @@ export default function UseCaseDefinitionWizard({ onUseCaseCreated, initialData,
   ];
 
   const handleNext = () => {
-    if (currentStep < steps.length) {
+    if (currentStep === 0 && !selectedInputType) {
+      toast({
+        title: "Selection Required",
+        description: "Please select an input source to continue",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       // Create the use case
       const finalUseCase: UseCaseDefinition = {
-        id: Date.now().toString(),
         ...useCase as UseCaseDefinition,
+        id: Date.now().toString(),
         title: useCase.title || useCase.securityOutcome || 'Untitled Use Case',
         description: useCase.description || useCase.threatScenario || ''
       };
@@ -105,6 +121,90 @@ export default function UseCaseDefinitionWizard({ onUseCaseCreated, initialData,
 
   const renderStepContent = () => {
     switch (currentStep) {
+      case 0:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h3 className="text-lg font-semibold mb-2">Select Input Source</h3>
+              <p className="text-muted-foreground">Choose how you want to define your use case</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-md ${selectedInputType === 'threat-feed' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                onClick={() => setSelectedInputType('threat-feed')}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <Shield className="h-8 w-8 text-green-600" />
+                    <div>
+                      <h4 className="font-semibold">ThreatResearchHub Threat Feeds</h4>
+                      <p className="text-sm text-muted-foreground">Select from curated intelligence</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-md ${selectedInputType === 'url' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                onClick={() => setSelectedInputType('url')}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <LinkIcon className="h-8 w-8 text-blue-600" />
+                    <div>
+                      <h4 className="font-semibold">URL Import</h4>
+                      <p className="text-sm text-muted-foreground">Load threat reports from URLs</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-md ${selectedInputType === 'pdf' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                onClick={() => setSelectedInputType('pdf')}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="h-8 w-8 text-orange-600" />
+                    <div>
+                      <h4 className="font-semibold">PDF Upload</h4>
+                      <p className="text-sm text-muted-foreground">Upload threat intelligence PDFs</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-md ${selectedInputType === 'manual' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                onClick={() => setSelectedInputType('manual')}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <Users className="h-8 w-8 text-purple-600" />
+                    <div>
+                      <h4 className="font-semibold">Manual Entry</h4>
+                      <p className="text-sm text-muted-foreground">Enter use case details manually</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {selectedInputType && (
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Selected:</strong> {
+                    selectedInputType === 'threat-feed' ? 'ThreatResearchHub Threat Feeds - Browse curated threat intelligence' :
+                    selectedInputType === 'url' ? 'URL Import - Enter a URL to extract threat intelligence' :
+                    selectedInputType === 'pdf' ? 'PDF Upload - Upload a PDF document for analysis' :
+                    'Manual Entry - Create use case from scratch'
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+        );
       case 1:
         return (
           <div className="space-y-6">
@@ -325,14 +425,21 @@ export default function UseCaseDefinitionWizard({ onUseCaseCreated, initialData,
         <div className="flex justify-between pt-6 border-t">
           <Button
             variant="outline"
-            onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-            disabled={currentStep === 1}
+            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+            disabled={currentStep === 0}
           >
             Previous
           </Button>
           
-          <Button onClick={handleNext}>
-            {currentStep === steps.length ? 'Create Use Case' : 'Next'}
+          <div className="text-sm text-muted-foreground">
+            Step {currentStep + 1} of {steps.length}
+          </div>
+          
+          <Button
+            onClick={handleNext}
+            disabled={currentStep > steps.length - 1}
+          >
+            {currentStep === steps.length - 1 ? 'Create Use Case' : 'Next'}
           </Button>
         </div>
       </CardContent>

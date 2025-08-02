@@ -37,8 +37,8 @@ interface NavItem {
 }
 
 const navigationItems: NavItem[] = [
-  // STAGE 1: Load Threat Intelligence
-  { href: "/", icon: Home, label: "1. Load Threat Intelligence", category: 'stage1', description: "Start here: Load threat report from URL, PDF, or threat feeds to begin the workflow" },
+  // STAGE 1: Use Case Definition - Primary Entry Point
+  { href: "/", icon: Home, label: "1. 7-Stage Workflow", category: 'stage1', description: "Start here: Complete guided workflow from use case definition to production deployment" },
   { href: "/threat-monitoring", icon: Activity, label: "1a. TBH Threat Feeds", category: 'stage1', description: "View threat intelligence automatically ingested into ThreatResearchHub platform" },
   { href: "/pii-sanitizer", icon: Search, label: "1b. Homographic Sanitizer", category: 'stage1', description: "Transform sensitive information using homographic characters while preserving structure" },
   
@@ -80,12 +80,12 @@ const categoryColors = {
 };
 
 const categoryLabels = {
-  stage1: 'Stage 1: Load Threat Intelligence',
-  stage2: 'Stage 2: Threat Selection',
-  stage3: 'Stage 3: Plan Infrastructure', 
-  stage4: 'Stage 4: Setup Data Sources & XSIAM',
-  stage5: 'Stage 5: Generate Content',
-  stage6: 'Stage 6: Test & Deploy',
+  stage1: 'Stage 1: Use Case Definition',
+  stage2: 'Stage 2: Security Stack Configuration',
+  stage3: 'Stage 3: Infrastructure Deployment', 
+  stage4: 'Stage 4: Data Source Configuration',
+  stage5: 'Stage 5: Platform Content Generation',
+  stage6: 'Stage 6: Testing & Validation | Stage 7: Documentation & Deployment',
   tools: 'Supporting Tools & Resources'
 };
 

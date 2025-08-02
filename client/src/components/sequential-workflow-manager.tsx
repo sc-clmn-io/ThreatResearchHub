@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import UseCaseDefinitionWizard from "./use-case-definition-wizard";
 import InfrastructureDeploymentGuide from "./infrastructure-deployment-guide";
 import DataSourceConfigurationGuide from "./data-source-configuration-guide";
+import SecurityStackConfig from "../pages/security-stack-config";
+import ProductionDeploymentGenerator from "./production-deployment-generator";
 
 interface WorkflowStep {
   id: number;
@@ -28,6 +30,7 @@ interface Props {
 export default function SequentialWorkflowManager({ onWorkflowComplete }: Props) {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
+  const [showInputSelection, setShowInputSelection] = useState(false);
   const [workflowData, setWorkflowData] = useState<any>({});
   const [overallProgress, setOverallProgress] = useState(0);
 
@@ -50,62 +53,79 @@ export default function SequentialWorkflowManager({ onWorkflowComplete }: Props)
     },
     {
       id: 2,
-      title: "Infrastructure Deployment",
-      description: "Step-by-step deployment of required infrastructure (firewalls, endpoints, cloud, identity)",
-      icon: <Server className="h-5 w-5" />,
+      title: "Security Stack Configuration",
+      description: "Select and configure your security tools across 6 categories (SIEM, EDR, Firewall, SOAR, ASM, Attack Simulation)",
+      icon: <Shield className="h-5 w-5" />,
       status: currentStep === 2 ? 'in-progress' : currentStep > 2 ? 'completed' : currentStep < 2 ? 'blocked' : 'pending',
-      estimatedTime: "2-4 hours",
-      prerequisites: ["Use case definition completed", "Infrastructure requirements documented"],
+      estimatedTime: "10-15 minutes",
+      prerequisites: ["Use case definition completed", "Security requirements identified"],
       completionCriteria: [
-        "All required systems deployed and operational",
-        "Network segmentation configured",
-        "Security tools installed and running",
-        "Infrastructure verified with testing",
-        "All prerequisites for data generation ready"
+        "SIEM platform selected and configured",
+        "EDR solution chosen for endpoint monitoring",
+        "Firewall/network security tools configured",
+        "SOAR platform integrated for automation",
+        "Attack surface management tools selected",
+        "Attack simulation platform configured"
       ]
     },
     {
       id: 3,
-      title: "Data Source Configuration",
-      description: "Configure data sources to generate required logs and integrate with XSIAM",
-      icon: <Database className="h-5 w-5" />,
+      title: "Infrastructure Deployment",
+      description: "Step-by-step deployment of required infrastructure with selected security tools integration",
+      icon: <Server className="h-5 w-5" />,
       status: currentStep === 3 ? 'in-progress' : currentStep > 3 ? 'completed' : currentStep < 3 ? 'blocked' : 'pending',
+      estimatedTime: "2-4 hours",
+      prerequisites: ["Use case definition completed", "Security stack configured", "Infrastructure requirements documented"],
+      completionCriteria: [
+        "All required systems deployed and operational",
+        "Network segmentation configured",
+        "Selected security tools installed and running",
+        "Platform integrations verified with testing",
+        "All prerequisites for data generation ready"
+      ]
+    },
+    {
+      id: 4,
+      title: "Data Source Configuration",
+      description: "Configure data sources to generate required logs and integrate with selected SIEM platform",
+      icon: <Database className="h-5 w-5" />,
+      status: currentStep === 4 ? 'in-progress' : currentStep > 4 ? 'completed' : currentStep < 4 ? 'blocked' : 'pending',
       estimatedTime: "1-2 hours",
-      prerequisites: ["Infrastructure operational", "XSIAM instance available"],
+      prerequisites: ["Infrastructure operational", "Security stack configured", "SIEM platform available"],
       completionCriteria: [
         "All data sources configured and generating logs",
-        "XSIAM integration completed and tested",
+        "Selected SIEM integration completed and tested",
         "Field mappings verified with test queries",
         "Real-time log ingestion confirmed",
         "Data quality validated"
       ]
     },
     {
-      id: 4,
-      title: "XSIAM Content Generation",
-      description: "Generate correlation rules, alert layouts, playbooks, and dashboards",
+      id: 5,
+      title: "Platform Content Generation",
+      description: "Generate platform-specific detection rules, alert layouts, playbooks, and dashboards",
       icon: <Shield className="h-5 w-5" />,
-      status: currentStep === 4 ? 'in-progress' : currentStep > 4 ? 'completed' : currentStep < 4 ? 'blocked' : 'pending',
+      status: currentStep === 5 ? 'in-progress' : currentStep > 5 ? 'completed' : currentStep < 5 ? 'blocked' : 'pending',
       estimatedTime: "45-60 minutes",
       prerequisites: ["Data sources configured", "Field mappings validated"],
       completionCriteria: [
-        "XQL correlation rules generated and syntax-validated",
+        "Platform-specific detection rules generated and syntax-validated",
         "Alert layouts created with analyst decision buttons",
         "Automation playbooks built with proper task workflows",
         "Operational dashboards designed with KPIs",
-        "Content ready for XSIAM deployment"
+        "Content ready for selected platform deployment"
       ]
     },
     {
-      id: 5,
+      id: 6,
       title: "Testing & Validation",
-      description: "Deploy content to XSIAM and validate with controlled testing",
+      description: "Deploy content to selected platforms and validate with controlled testing",
       icon: <TestTube className="h-5 w-5" />,
-      status: currentStep === 5 ? 'in-progress' : currentStep > 5 ? 'completed' : currentStep < 5 ? 'blocked' : 'pending',
+      status: currentStep === 6 ? 'in-progress' : currentStep > 6 ? 'completed' : currentStep < 6 ? 'blocked' : 'pending',
       estimatedTime: "30-45 minutes",
-      prerequisites: ["XSIAM content generated", "Test scenarios prepared"],
+      prerequisites: ["Platform content generated", "Test scenarios prepared"],
       completionCriteria: [
-        "Content deployed to XSIAM successfully",
+        "Content deployed to selected platforms successfully",
         "Correlation rules tested with sample data",
         "Playbooks executed and verified",
         "Dashboard metrics displaying correctly",
@@ -114,11 +134,11 @@ export default function SequentialWorkflowManager({ onWorkflowComplete }: Props)
       ]
     },
     {
-      id: 6,
+      id: 7,
       title: "Documentation & Deployment",
       description: "Generate final documentation and prepare for production deployment",
       icon: <FileText className="h-5 w-5" />,
-      status: currentStep === 6 ? 'in-progress' : currentStep > 6 ? 'completed' : currentStep < 6 ? 'blocked' : 'pending',
+      status: currentStep === 7 ? 'in-progress' : currentStep > 7 ? 'completed' : currentStep < 7 ? 'blocked' : 'pending',
       estimatedTime: "20-30 minutes",
       prerequisites: ["Testing completed successfully", "Content validated"],
       completionCriteria: [
@@ -145,18 +165,21 @@ export default function SequentialWorkflowManager({ onWorkflowComplete }: Props)
         updatedData.useCaseDefinition = data;
         break;
       case 2:
-        updatedData.infrastructureDeployment = data;
+        updatedData.securityStack = data;
         break;
       case 3:
-        updatedData.dataSourceConfiguration = data;
+        updatedData.infrastructureDeployment = data;
         break;
       case 4:
-        updatedData.xsiamContent = data;
+        updatedData.dataSourceConfiguration = data;
         break;
       case 5:
-        updatedData.testingResults = data;
+        updatedData.platformContent = data;
         break;
       case 6:
+        updatedData.testingResults = data;
+        break;
+      case 7:
         updatedData.documentation = data;
         break;
     }
@@ -182,10 +205,11 @@ export default function SequentialWorkflowManager({ onWorkflowComplete }: Props)
   const canProceedToStep = (stepId: number) => {
     if (stepId === 1) return true;
     if (stepId === 2) return !!workflowData.useCaseDefinition;
-    if (stepId === 3) return !!workflowData.infrastructureDeployment;
-    if (stepId === 4) return !!workflowData.dataSourceConfiguration;
-    if (stepId === 5) return !!workflowData.xsiamContent;
-    if (stepId === 6) return !!workflowData.testingResults;
+    if (stepId === 3) return !!workflowData.securityStack;
+    if (stepId === 4) return !!workflowData.infrastructureDeployment;
+    if (stepId === 5) return !!workflowData.dataSourceConfiguration;
+    if (stepId === 6) return !!workflowData.platformContent;
+    if (stepId === 7) return !!workflowData.testingResults;
     return false;
   };
 
@@ -206,17 +230,23 @@ export default function SequentialWorkflowManager({ onWorkflowComplete }: Props)
     switch (currentStep) {
       case 1:
         return (
-          <UseCaseDefinitionWizard
-            onUseCaseCreated={(useCase) => handleStepComplete(1, useCase)}
-            sourceType="customer_pov"
-          />
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold mb-4">Stage 1: Use Case Definition</h2>
+              <p className="text-muted-foreground">Start by selecting your input source and defining your security use case</p>
+            </div>
+            <UseCaseDefinitionWizard
+              onUseCaseCreated={(useCase) => handleStepComplete(1, useCase)}
+              sourceType="customer_pov"
+            />
+          </div>
         );
       
       case 2:
         return workflowData.useCaseDefinition ? (
-          <InfrastructureDeploymentGuide
+          <SecurityStackConfig
             useCase={workflowData.useCaseDefinition}
-            onInfrastructureComplete={(deployment) => handleStepComplete(2, deployment)}
+            onSecurityStackComplete={(stack: any) => handleStepComplete(2, stack)}
           />
         ) : (
           <div className="text-center py-8">
@@ -226,44 +256,30 @@ export default function SequentialWorkflowManager({ onWorkflowComplete }: Props)
         );
       
       case 3:
-        return workflowData.infrastructureDeployment ? (
-          <DataSourceConfigurationGuide
+        return workflowData.securityStack ? (
+          <InfrastructureDeploymentGuide
             useCase={workflowData.useCaseDefinition}
-            onDataSourceComplete={(configuration) => handleStepComplete(3, configuration)}
+            securityStack={workflowData.securityStack}
+            onInfrastructureComplete={(deployment: any) => handleStepComplete(3, deployment)}
           />
         ) : (
           <div className="text-center py-8">
             <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-muted-foreground">Please complete Step 2 first</p>
+            <p className="text-muted-foreground">Please complete security stack configuration first</p>
           </div>
         );
       
       case 4:
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                XSIAM Content Generation
-              </CardTitle>
-              <CardDescription>
-                Generate correlation rules, alert layouts, playbooks, and dashboards
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Ready to Generate Content</h4>
-                  <p className="text-sm text-muted-foreground">
-                    All prerequisites completed. Ready to generate XSIAM content based on your use case definition and data source configuration.
-                  </p>
-                </div>
-                <Button onClick={() => handleStepComplete(4, { status: 'generated' })}>
-                  Generate XSIAM Content
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        return workflowData.infrastructureDeployment ? (
+          <DataSourceConfigurationGuide
+            useCase={workflowData.useCaseDefinition}
+            onDataSourceComplete={(configuration: any) => handleStepComplete(4, configuration)}
+          />
+        ) : (
+          <div className="text-center py-8">
+            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-muted-foreground">Please complete infrastructure deployment first</p>
+          </div>
         );
       
       case 5:
@@ -271,23 +287,23 @@ export default function SequentialWorkflowManager({ onWorkflowComplete }: Props)
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TestTube className="h-5 w-5" />
-                Testing & Validation
+                <Shield className="h-5 w-5" />
+                Platform Content Generation
               </CardTitle>
               <CardDescription>
-                Deploy and test your XSIAM content
+                Generate platform-specific detection rules, alert layouts, playbooks, and dashboards
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Ready for Testing</h4>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Ready to Generate Content</h4>
                   <p className="text-sm text-muted-foreground">
-                    Deploy content to XSIAM and run validation tests to ensure everything works correctly.
+                    All prerequisites completed. Ready to generate security content for your selected platforms based on use case and data configuration.
                   </p>
                 </div>
-                <Button onClick={() => handleStepComplete(5, { status: 'tested' })}>
-                  Start Testing
+                <Button onClick={() => handleStepComplete(5, { status: 'generated' })}>
+                  Generate Security Content
                 </Button>
               </div>
             </CardContent>
@@ -299,24 +315,64 @@ export default function SequentialWorkflowManager({ onWorkflowComplete }: Props)
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
+                <TestTube className="h-5 w-5" />
+                Testing & Validation
+              </CardTitle>
+              <CardDescription>
+                Deploy and test your security content
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Ready for Testing</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Deploy content to XSIAM and run validation tests to ensure everything works correctly.
+                  </p>
+                </div>
+                <Button onClick={() => handleStepComplete(6, { status: 'tested' })}>
+                  Start Testing
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      
+      case 7:
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 Documentation & Deployment
               </CardTitle>
               <CardDescription>
-                Generate final documentation and deployment packages
+                Generate final documentation and production deployment packages
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="bg-purple-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Ready for Documentation</h4>
+                  <h4 className="font-medium mb-2">Production Deployment Ready</h4>
                   <p className="text-sm text-muted-foreground">
-                    Generate implementation guides, runbooks, and deployment packages for production use.
+                    Generate complete deployment packages with documentation, scripts, and content for production deployment.
                   </p>
                 </div>
-                <Button onClick={() => handleStepComplete(6, { status: 'documented' })}>
-                  Generate Documentation
-                </Button>
+                
+                <ProductionDeploymentGenerator 
+                  useCases={JSON.parse(localStorage.getItem('useCases') || '[]')}
+                  contentLibrary={JSON.parse(localStorage.getItem('contentLibrary') || '[]')}
+                />
+                
+                <div className="pt-4">
+                  <Button onClick={() => handleStepComplete(7, { 
+                    status: 'documented',
+                    deploymentPackageGenerated: true,
+                    timestamp: new Date().toISOString()
+                  })}>
+                    Complete Workflow
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -332,9 +388,9 @@ export default function SequentialWorkflowManager({ onWorkflowComplete }: Props)
       {/* Overall Progress */}
       <Card>
         <CardHeader>
-          <CardTitle>XSIAM Enablement Workflow</CardTitle>
+          <CardTitle>Security Platform Enablement Workflow</CardTitle>
           <CardDescription>
-            Complete step-by-step workflow from use case definition to deployed XSIAM content
+            Complete step-by-step workflow from use case definition to deployed security content across your selected platforms
           </CardDescription>
         </CardHeader>
         <CardContent>

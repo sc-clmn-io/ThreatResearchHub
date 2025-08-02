@@ -28,7 +28,7 @@ import ThreatInputPage from "@/pages/threat-input";
 import ThreatMonitoringPage from "@/pages/threat-monitoring";
 import FindingsReportPage from "@/pages/findings-report";
 import XSIAMDebuggerPage from "@/pages/xsiam-debugger";
-import XSIAMTestingPage from "@/pages/xsiam-testing.tsx";
+import XSIAMTestingPage from "@/pages/xsiam-testing";
 import XSIAMDeployment from "@/pages/xsiam-deployment";
 import GitHubExportPage from "@/pages/github-export";
 import ContentRecommendationsPage from "@/pages/content-recommendations";
@@ -40,13 +40,15 @@ import { ProxmoxTest } from "@/pages/ProxmoxTest";
 import { AzureTest } from "@/pages/AzureTest";
 import { InfrastructureSetup } from "@/pages/InfrastructureSetup";
 import { DockerHostManager } from "@/components/docker-host-manager";
+import SecurityStackConfig from "@/pages/security-stack-config";
 
 
 function Router() {
   return (
     <PlatformLayout>
       <Switch>
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={SequentialWorkflowPage} />
+        <Route path="/dashboard" component={Dashboard} />
         <Route path="/sequential-workflow" component={SequentialWorkflowPage} />
         <Route path="/threat-input" component={ThreatInputPage} />
         <Route path="/threat-feeds" component={ThreatFeeds} />
@@ -82,6 +84,7 @@ function Router() {
         <Route path="/docker-host-manager" component={DockerHostManager} />
 
         <Route path="/infrastructure-setup" component={InfrastructureSetup} />
+        <Route path="/security-stack-config" component={() => <SecurityStackConfig useCase={null} onSecurityStackComplete={() => {}} />} />
         <Route component={NotFound} />
       </Switch>
     </PlatformLayout>
