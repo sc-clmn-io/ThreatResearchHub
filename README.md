@@ -1,6 +1,6 @@
 # ThreatResearchHub
 
-![7-Stage Workflow](assets/7-stage-workflow.svg)
+![7-Stage Workflow](https://raw.githubusercontent.com/sc-clmn-io/ThreatResearchHub/main/assets/7-stage-workflow.svg)
 
 **Threat Use Case Build and Test Workflow**
 
