@@ -1,10 +1,10 @@
 # ThreatResearchHub
 
+![7-Stage Workflow](assets/7-stage-workflow.svg)
+
 **Threat Use Case Build and Test Workflow**
 
 Complete step-by-step workflow from use case definition to deployed security content across your selected platforms.
-
-![7-Stage Workflow](assets/7-stage-workflow.svg)
 
 ## Security Operations Content Engineering Workflow
 
