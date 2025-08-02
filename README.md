@@ -4,7 +4,7 @@
 
 Transform threat intelligence into complete detection packages through systematic engineering processes across any security platform.
 
-![7-Stage Security Content Engineering Workflow](assets/7-stage-workflow.svg)
+## 7-Stage Security Content Engineering Workflow
 
 ## Overview
 
@@ -124,7 +124,7 @@ ThreatResearchHub enables security professionals to build comprehensive threat d
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/ThreatResearchHub.git
+git clone https://github.com/sc-clmn-io/ThreatResearchHub.git
 cd ThreatResearchHub
 
 # Install dependencies
