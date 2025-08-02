@@ -1,0 +1,100 @@
+<svg width="1200" height="180" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .stage-bg { fill: #3b82f6; stroke: #1e40af; stroke-width: 2; }
+      .stage-text { fill: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 16px; font-weight: 700; text-anchor: middle; }
+      .stage-time { fill: #6b7280; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; text-anchor: middle; font-style: italic; }
+      .stage-title { fill: #1e293b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 13px; font-weight: 600; text-anchor: middle; }
+      .connector { stroke: #d1d5db; stroke-width: 3; }
+      .subtitle { fill: #374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 16px; font-weight: 500; text-anchor: middle; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="180" fill="white"/>
+  
+  <!-- Stage 1 -->
+  <g transform="translate(75, 20)">
+    <circle cx="45" cy="30" r="22" class="stage-bg"/>
+    <text x="45" y="37" class="stage-text">1</text>
+    <text x="45" y="70" class="stage-title">Use Case</text>
+    <text x="45" y="85" class="stage-title">Definition</text>
+    <text x="45" y="105" class="stage-time">15-20 minutes</text>
+  </g>
+  
+  <!-- Connector 1-2 -->
+  <line x1="142" y1="50" x2="178" y2="50" class="connector"/>
+  
+  <!-- Stage 2 -->
+  <g transform="translate(200, 20)">
+    <circle cx="45" cy="30" r="22" class="stage-bg"/>
+    <text x="45" y="37" class="stage-text">2</text>
+    <text x="45" y="70" class="stage-title">Security Stack</text>
+    <text x="45" y="85" class="stage-title">Configuration</text>
+    <text x="45" y="105" class="stage-time">10-15 minutes</text>
+  </g>
+  
+  <!-- Connector 2-3 -->
+  <line x1="267" y1="50" x2="303" y2="50" class="connector"/>
+  
+  <!-- Stage 3 -->
+  <g transform="translate(325, 20)">
+    <circle cx="45" cy="30" r="22" class="stage-bg"/>
+    <text x="45" y="37" class="stage-text">3</text>
+    <text x="45" y="70" class="stage-title">Infrastructure</text>
+    <text x="45" y="85" class="stage-title">Deployment</text>
+    <text x="45" y="105" class="stage-time">2-4 hours</text>
+  </g>
+  
+  <!-- Connector 3-4 -->
+  <line x1="392" y1="50" x2="428" y2="50" class="connector"/>
+  
+  <!-- Stage 4 -->
+  <g transform="translate(450, 20)">
+    <circle cx="45" cy="30" r="22" class="stage-bg"/>
+    <text x="45" y="37" class="stage-text">4</text>
+    <text x="45" y="70" class="stage-title">Data Source</text>
+    <text x="45" y="85" class="stage-title">Configuration</text>
+    <text x="45" y="105" class="stage-time">1-2 hours</text>
+  </g>
+  
+  <!-- Connector 4-5 -->
+  <line x1="517" y1="50" x2="553" y2="50" class="connector"/>
+  
+  <!-- Stage 5 -->
+  <g transform="translate(575, 20)">
+    <circle cx="45" cy="30" r="22" class="stage-bg"/>
+    <text x="45" y="37" class="stage-text">5</text>
+    <text x="45" y="70" class="stage-title">Platform Content</text>
+    <text x="45" y="85" class="stage-title">Generation</text>
+    <text x="45" y="105" class="stage-time">45-60 minutes</text>
+  </g>
+  
+  <!-- Connector 5-6 -->
+  <line x1="642" y1="50" x2="678" y2="50" class="connector"/>
+  
+  <!-- Stage 6 -->
+  <g transform="translate(700, 20)">
+    <circle cx="45" cy="30" r="22" class="stage-bg"/>
+    <text x="45" y="37" class="stage-text">6</text>
+    <text x="45" y="70" class="stage-title">Testing &amp;</text>
+    <text x="45" y="85" class="stage-title">Validation</text>
+    <text x="45" y="105" class="stage-time">30-45 minutes</text>
+  </g>
+  
+  <!-- Connector 6-7 -->
+  <line x1="767" y1="50" x2="803" y2="50" class="connector"/>
+  
+  <!-- Stage 7 -->
+  <g transform="translate(825, 20)">
+    <circle cx="45" cy="30" r="22" class="stage-bg"/>
+    <text x="45" y="37" class="stage-text">7</text>
+    <text x="45" y="70" class="stage-title">Documentation &amp;</text>
+    <text x="45" y="85" class="stage-title">Deployment</text>
+    <text x="45" y="105" class="stage-time">20-30 minutes</text>
+  </g>
+  
+  <!-- Title -->
+  <text x="600" y="150" class="subtitle">Threat Use Case Build and Test Workflow</text>
+  <text x="600" y="170" class="subtitle" font-style="italic">Complete Implementation in 4-6 Hours</text>
+</svg>
