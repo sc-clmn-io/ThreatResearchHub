@@ -165,21 +165,21 @@ export default function GitHubExport() {
       
       if (data.success) {
         toast({
-          title: "XSIAM Content Library Ready",
-          description: `${data.message}. Ready to deploy to: ${config.username}/${config.repository}`,
+          title: "Content Backed Up Successfully",
+          description: `${data.message}. Available at: ${config.username}/${config.repository}`,
           action: (
             <Button 
               variant="outline" 
               size="sm"
               onClick={() => window.open(`https://github.com/${config.username}/${config.repository}`, '_blank')}
             >
-              View Content Library
+              View Repository
             </Button>
           ),
         });
       } else {
         toast({
-          title: "Content Library Creation Failed",
+          title: "Backup Failed",
           description: data.message || "Unknown error occurred",
           variant: "destructive",
         });
@@ -535,7 +535,7 @@ export default function GitHubExport() {
                       ) : (
                         <Zap className="h-4 w-4 mr-2" />
                       )}
-                      {uploadMutation.isPending ? "Building Content Library..." : "Deploy Content Library"}
+                      {uploadMutation.isPending ? "Backing up to GitHub..." : "Backup Content to GitHub"}
                     </Button>
                     
                     <Button 
