@@ -33,8 +33,8 @@ Note: Currently ThreatResearchHub is focused on support for the Palo Alto Networ
 
 ### Supported Platform Categories
 
-| Category | Platforms | Query Languages |
-|----------|-----------|----------------|
+| Category | Platforms | Technology/Function |
+|----------|-----------|---------------------|
 | **SIEM** | XSIAM, Splunk, Sentinel, QRadar, Elastic, Chronicle | XQL, SPL, KQL, AQL, Lucene, YARA-L |
 | **EDR** | Cortex XDR, CrowdStrike, SentinelOne, Defender | Platform APIs |
 | **Firewall** | Palo Alto, CheckPoint, Fortinet | Native configs |
